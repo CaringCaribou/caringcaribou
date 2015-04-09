@@ -46,6 +46,7 @@ def decode_connect_response(response_message):
 
     :param data: The response message
     """
+    print("> DECODE CONNECT RESPONSE")
     print(response_message)
     data = response_message.data
     print("-" * 20)
@@ -67,9 +68,53 @@ def decode_connect_response(response_message):
     print("Transport layer version: {0}\n".format(data[7]))
 
 
+def decode_get_comm_mode_info_response(response_message):
+    """
+    Decodes an XCP GET_COMM_MODE_INFO response and prints the response information.
+
+    :param data: The response message
+    """
+    print("> DECODE GET COMM MODE INFO")
+    print(response_message)
+    data = response_message.data
+    print("Reserved: 0x{0:02x}".format(data[1]))
+    print("-" * 20)
+    print("COMM_MODE_OPTIONAL")
+    comm_mode_optional_bits = ["MASTER_BLOCK_MODE", "INTERLEAVED_MODE"] + ["X (bit {0})".format(i) for i in range(2,8)]
+    for i in range(8):
+        print("{0:<20}{1}".format(comm_mode_optional_bits[i], bool(data[2] & 2**i)))
+    print("-" * 20)
+    print("Reserved: 0x{0:02x}".format(data[3]))
+    print("MAX_BS (master block mode): {0} command packets".format(data[4]))
+    print("MIN_ST (minimum separation time): {0} * 100 us".format(data[5]))
+    print("QUEUE_SIZE (interleaved mode): {0} command packets".format(data[6]))
+    print("XCP Driver version: 0x{0:02x}\n".format(data[7]))
+
+
+def decode_get_status_response(response_message):
+    print("> DECODE GET STATUS")
+    print(response_message)
+    data = response_message.data
+    print("-" * 20)
+    print("CURRENT_SESSION_STATUS")
+    current_session_status_bits = ["STORE_CAL_REQ", "X (bit 1)", "STORE_DAQ_REQ", "CLEAR_DAQ_REQ",
+                                   "X (bit 4)", "X (bit 5)", "DAQ_RUNNING", "RESUME"]
+    for i in range(8):
+        print("{0:<16}{1}".format(current_session_status_bits[i], int(bool(data[1] & 2**i))))
+    print("-" * 20)
+    print("RESOURCE PROTECTION STATUS | Seed/key required")
+    resource_protection_bits = ["CAL/PAG", "X (bit 1)", "DAQ", "STIM", "PGM", "X (bit 5)", "X (bit 6)", "X (bit 7)"]
+    for i in range(8):
+        print("{0:<27}| {1}".format(resource_protection_bits[i], bool(data[2] & 2**i)))
+    print("-" * 20)
+    print("Reserved: 0x{0:02x}".format(data[3]))
+    print("Session configuration ID: {0}\n".format(2 ** ((data[5] & 4) * 2 + data[4] & 2)))
+
+
+
 def xcp_arbitration_id_discovery():
     """
-    Scans for XCP support by bruteforcing XCP connect messages against different arbitration IDs.
+    Scans for XCP support by brute forcing XCP connect messages against different arbitration IDs.
     """
     can_wrap = CanActions()
     print("Starting XCP discovery")
@@ -91,7 +136,178 @@ def xcp_arbitration_id_discovery():
                 decode_xcp_error(msg)
         return response_analyser
 
-    can_wrap.bruteforce_arbitration_id([0xff], response_analyser_wrapper, min_id=0x300, max_id=0x400)  # FIXME values
+    can_wrap.bruteforce_arbitration_id([0xff], response_analyser_wrapper, min_id=0x3e0, max_id=0x400)  # FIXME values
+
+
+def xcp_get_basic_information(send_arb_id, rcv_arb_id):
+    def handle_description_file(msg):  # FIXME better handling - related to reply from 0xfa, 0x0*
+        if msg.arbitration_id != rcv_arb_id:
+            return
+        if msg.data[0] == 0xfe:
+            decode_xcp_error(msg)
+            return
+        if msg.data[0] == 0xff:
+            can_wrap.notifier.listeners = []
+            print("Desc file response:\n{0}".format(msg))
+            print("".join([chr(x) for x in msg.data[1:]]))
+            # TODO Handle, send next
+        else:
+            print("Weird get status reply: {0}\n".format(msg))
+
+    def handle_get_id_reply(msg):  # FIXME better handling - related to reply from 0xfa, 0x0*
+        if msg.arbitration_id != rcv_arb_id:
+            return
+        if msg.data[0] == 0xfe:
+            decode_xcp_error(msg)
+            return
+        if msg.data[0] == 0xff:
+            can_wrap.notifier.listeners = []
+            print("GET ID response:\n{0}".format(msg))
+            can_wrap.send_single_message_with_callback([0xf5, msg.data[4]], handle_description_file)
+            # TODO Handle, send next
+        else:
+            print("Weird get status reply: {0}\n".format(msg))
+
+    def handle_get_status_reply(msg):
+        if msg.arbitration_id != rcv_arb_id:
+            return
+        if msg.data[0] == 0xfe:
+            decode_xcp_error(msg)
+            return
+        if msg.data[0] == 0xff:
+            decode_get_status_response(msg)
+            can_wrap.send_single_message_with_callback([0xfa, 0x01], handle_get_id_reply)  # FIXME: Different values (1=ASAM-MC2 filename etc)
+        else:
+            print("Weird get status reply: {0}\n".format(msg))
+
+    def handle_get_comm_mode_reply(msg):
+        if msg.arbitration_id != rcv_arb_id:
+            return
+        if msg.data[0] == 0xfe:
+            decode_xcp_error(msg)
+            return
+        if msg.data[0] == 0xff:
+            decode_get_comm_mode_info_response(msg)
+            can_wrap.send_single_message_with_callback([0xfd], handle_get_status_reply)
+        else:
+            print("Weird comm mode reply: {0}\n".format(msg))
+
+    def handle_connect(msg):
+        if msg.arbitration_id != rcv_arb_id:
+            return
+        if msg.data[0] == 0xfe:
+            decode_xcp_error(msg)
+            return
+        if msg.data[0] == 0xff:
+            can_wrap.send_single_message_with_callback([0xfb], handle_get_comm_mode_reply)
+        else:
+            print("Weird connect reply: {0}\n".format(msg))
+
+    can_wrap = CanActions(arb_id=send_arb_id)
+    can_wrap.send_single_message_with_callback([0xff], handle_connect)
+    time.sleep(2)
+    print("End of sequence")
+
+
+def xcp_memory_dump(send_arb_id, rcv_arb_id, start_address=0x00, length=0xff, dump_file=None):
+    global byte_counter, bytes_left, dump_complete, segment_counter, idle_timeout
+    # Timeout timer
+    idle_timeout = 3.0
+    dump_complete = False
+    # Counters for data length
+    byte_counter = 0
+    segment_counter = 0
+
+    def handle_upload_reply(msg):
+        global byte_counter, bytes_left, dump_complete, idle_timeout, segment_counter
+        if msg.arbitration_id != rcv_arb_id:
+            return
+        if msg.data[0] == 0xfe:
+            decode_xcp_error(msg)
+            return
+        if msg.data[0] == 0xff:
+            # Reset timeout timer
+            idle_timeout = 3.0
+            # Calculate end index of data to handle
+            end_index = min(8, bytes_left + 1)
+
+            print(" ".join(["{0:02x}".format(i) for i in msg.data[1:end_index]]))  # TODO: Print to file instead?
+            if dump_file:
+                with open(dump_file, "ab") as outfile:
+                    outfile.write(bytearray(msg.data[1:end_index]))
+            # Update counters
+            byte_counter += 7
+            bytes_left -= 7
+            if bytes_left < 1:
+                print("\nDump complete!")
+                dump_complete = True
+            elif byte_counter > 251:
+                # Dump another segment
+                segment_counter += 1
+                print("--- SEGMENT {0} ---".format(segment_counter))
+                byte_counter = 0
+                can_wrap.send_single_message_with_callback([0xf5, min(0xfc, bytes_left)], handle_upload_reply)
+
+    def handle_set_mta_reply(msg):
+        if msg.arbitration_id != rcv_arb_id:
+            return
+        if msg.data[0] == 0xfe:
+            decode_xcp_error(msg)
+            return
+        if msg.data[0] == 0xff:
+            print("Set MTA acked")
+            print("Dumping data:")
+            # Initiate dumping
+            print("--- SEGMENT 0 ---")
+            can_wrap.send_single_message_with_callback([0xf5, min(0xfc, bytes_left)], handle_upload_reply)
+        else:
+            print("Unexpected reply: {0}\n".format(msg))
+
+    def handle_connect_reply(msg):
+        if msg.arbitration_id != rcv_arb_id:
+            return
+        if msg.data[0] == 0xfe:
+            decode_xcp_error(msg)
+            return
+        if msg.data[0] == 0xff:
+            print("Connected")
+            can_wrap.send_single_message_with_callback([0xf6, 0x00, 0x00, 0x00, r[0], r[1], r[2], r[3]],
+                                                       handle_set_mta_reply)
+        else:
+            print("Weird connect reply: {0}\n".format(msg))
+
+    # Calculate address bytes (4 bytes, least significant first)
+    r = []
+    n = start_address
+    bytes_left = length
+    n &= 0xFFFFFFFF
+    for i in range(4):
+        r.append(n & 0xFF)
+        n >>= 8
+    # Make sure dump_file can be opened if specified (clearing it if it already exists)
+    if dump_file:
+        with open(dump_file, "w") as tmp:
+            pass
+    # Initialize
+    can_wrap = CanActions(arb_id=send_arb_id)
+    print("Attempting XCP memory dump")
+    # Connect and prepare for dump
+    can_wrap.send_single_message_with_callback([0xff], handle_connect_reply)
+    # Idle timeout handling
+    while idle_timeout > 0.0 and not dump_complete:
+        time.sleep(1)
+        idle_timeout -= 1.0
+    if not dump_complete:
+        print("\nDump ended due to idle timeout")
+    can_wrap.notifier.listeners = []  # TODO: Always do this before shutting down in order to prevent crashie crashie
+
 
 if __name__ == "__main__":
-    xcp_arbitration_id_discovery()
+    try:
+        #xcp_memory_dump(0x3e8, 0x3e9, start_address=0x1fffb000, length=0x4800, dump_file="dump_file.hex")  # Complete bootloader
+        xcp_memory_dump(0x3e8, 0x3e9, start_address=0x1fffb000, length=0x123, dump_file="dump_file.hex")
+        time.sleep(0.5)
+        #xcp_get_basic_information(0x3e8, 0x3e9)
+        #xcp_arbitration_id_discovery()  # FIXME
+    except KeyboardInterrupt:
+        print("\n\nTerminated by user")

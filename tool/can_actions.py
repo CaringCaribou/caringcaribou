@@ -22,7 +22,7 @@ class CanActions():
         self.arb_id = arb_id
         self.bruteforce_running = False
 
-    def send(self, *data):
+    def send(self, data):
         if len(data) > 8:
             raise IndexError("Invalid CAN message length: {0}".format(len(data)))
         full_data = pad_data(data)
@@ -51,17 +51,9 @@ class CanActions():
             if not self.bruteforce_running:
                 break
 
-    def send_single_message_with_callback(self, arbitration_id, data, callback, timeout=MESSAGE_DELAY):
+    def send_single_message_with_callback(self, data, callback):
         self.notifier.listeners = [callback]
-        msg = can.Message(arbitration_id=arbitration_id, data=data, extended_id=False)
-        self.bus.send(msg)
-        time.sleep(timeout)
-        # If callback handler is still registered after timeout, remove it.
-        # This might not be the case if another message has already been sent by the callback handler.
-        try:
-            self.notifier.listeners.remove(callback)
-        except ValueError:
-            pass
+        self.send(data)
 
     def bruteforce_stop(self):
         self.bruteforce_running = False

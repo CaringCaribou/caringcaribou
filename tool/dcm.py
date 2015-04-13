@@ -1,6 +1,6 @@
 import can_actions
 
-services = {
+DCM_SERVICE_NAMES = {
     0x10: 'DIAGNOSTIC_SESSION_CONTROL',
     0x11: 'ECU_RESET',
     0x14: 'CLEAR_DIAGNOSTIC_INFORMATION',

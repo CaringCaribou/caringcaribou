@@ -14,6 +14,18 @@ BYTE_MAX = 0xFF
 def pad_data(data):
     return list(data) + [0] * ( 8 - len(data))
 
+def insert_message_length(data):
+    """
+    Inserts a message length byte before data
+
+    :param data: Message data
+    :return:
+    """
+    if len(data) > 7:
+        raise IndexError("send_with_auto_length: data can only contain up to 7 bytes: {0}".format(len(data)))
+    full_data = [len(data)] + data
+    return full_data
+
 
 class CanActions():
     def __init__(self, arb_id=None):

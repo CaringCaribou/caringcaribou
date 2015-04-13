@@ -1,4 +1,5 @@
-import can_actions
+from can_actions import *
+from sys import stdout
 
 DCM_SERVICE_NAMES = {
     0x10: 'DIAGNOSTIC_SESSION_CONTROL',
@@ -43,3 +44,30 @@ NRC = {
     0x78: 'requestCorrectlyReceivedResponsePending',
     0x7F: 'serviceNotSupportedInActiveSession'
 }
+
+def dcm_discovery():
+    """
+    Scans for DCM support by brute forcing diagnostic session control messages against different arbitration IDs.
+    """
+    can_wrap = CanActions()
+    print("Starting DCM service discovery")
+
+    def response_analyser_wrapper(arb_id):
+        print "\rSending DCM Tester Present to {0:04x}".format(arb_id),
+        stdout.flush()
+
+        def response_analyser(msg):
+            # Catch both ok and negative response
+            if msg.data[1] == 0x40 or msg.data[1] == 0x7F:
+                print("\nFound DCM at arbitration ID {0:04x}, reply at {1:04x}".format(arb_id, msg.arbitration_id))
+                can_wrap.bruteforce_stop()
+        return response_analyser
+    # Message to bruteforce - [length, session control, default session]
+    message = insert_message_length([0x10, 0x01])
+    can_wrap.bruteforce_arbitration_id(message, response_analyser_wrapper, min_id=0x720, max_id=0x740)  # FIXME values
+
+if __name__ == "__main__":
+    try:
+        dcm_discovery()
+    except KeyboardInterrupt:
+        print("Interrupted by user")

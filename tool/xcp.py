@@ -136,7 +136,7 @@ def xcp_arbitration_id_discovery():
                 decode_xcp_error(msg)
         return response_analyser
 
-    can_wrap.bruteforce_arbitration_id([0xff], response_analyser_wrapper, min_id=0x3e0, max_id=0x400)  # FIXME values
+    can_wrap.bruteforce_arbitration_id([0xff], response_analyser_wrapper, min_id=0x300, max_id=0x400)  # FIXME values
 
 
 def xcp_get_basic_information(send_arb_id, rcv_arb_id):
@@ -231,7 +231,7 @@ def xcp_memory_dump(send_arb_id, rcv_arb_id, start_address=0x00, length=0xff, du
             # Calculate end index of data to handle
             end_index = min(8, bytes_left + 1)
 
-            print(" ".join(["{0:02x}".format(i) for i in msg.data[1:end_index]]))  # TODO: Print to file instead?
+            # print(" ".join(["{0:02x}".format(i) for i in msg.data[1:end_index]]))  # FIXME remove?
             if dump_file:
                 with open(dump_file, "ab") as outfile:
                     outfile.write(bytearray(msg.data[1:end_index]))
@@ -239,12 +239,17 @@ def xcp_memory_dump(send_arb_id, rcv_arb_id, start_address=0x00, length=0xff, du
             byte_counter += 7
             bytes_left -= 7
             if bytes_left < 1:
-                print("\nDump complete!")
+                print "\rDumping segment {0} ({1} b, 0 b left)".format(segment_counter, length)
+                print("Dump complete!")
                 dump_complete = True
             elif byte_counter > 251:
                 # Dump another segment
                 segment_counter += 1
-                print("--- SEGMENT {0} ---".format(segment_counter))
+                # print("--- SEGMENT {0} ---".format(segment_counter))  # FIXME Remove
+                # Print progress
+                print "\rDumping segment {0} ({1} b, {2} b left)".format(segment_counter, ((segment_counter+1)*0xf5+byte_counter), bytes_left),
+                stdout.flush()
+
                 byte_counter = 0
                 can_wrap.send_single_message_with_callback([0xf5, min(0xfc, bytes_left)], handle_upload_reply)
 
@@ -258,7 +263,7 @@ def xcp_memory_dump(send_arb_id, rcv_arb_id, start_address=0x00, length=0xff, du
             print("Set MTA acked")
             print("Dumping data:")
             # Initiate dumping
-            print("--- SEGMENT 0 ---")
+            print "\rDumping segment 0",
             can_wrap.send_single_message_with_callback([0xf5, min(0xfc, bytes_left)], handle_upload_reply)
         else:
             print("Unexpected reply: {0}\n".format(msg))
@@ -295,17 +300,18 @@ def xcp_memory_dump(send_arb_id, rcv_arb_id, start_address=0x00, length=0xff, du
     can_wrap.send_single_message_with_callback([0xff], handle_connect_reply)
     # Idle timeout handling
     while idle_timeout > 0.0 and not dump_complete:
-        time.sleep(1)
-        idle_timeout -= 1.0
+        time.sleep(0.5)
+        idle_timeout -= 0.5
     if not dump_complete:
-        print("\nDump ended due to idle timeout")
+        print("\nERROR: Dump ended due to idle timeout")
     can_wrap.notifier.listeners = []  # TODO: Always do this before shutting down in order to prevent crashie crashie
 
 
 if __name__ == "__main__":
     try:
-        #xcp_memory_dump(0x3e8, 0x3e9, start_address=0x1fffb000, length=0x4800, dump_file="dump_file.hex")  # Complete bootloader
-        xcp_memory_dump(0x3e8, 0x3e9, start_address=0x1fffb000, length=0x123, dump_file="dump_file.hex")
+        xcp_memory_dump(0x3e8, 0x3e9, start_address=0x1fffb000, length=0x4800, dump_file="dump_file.hex")  # Complete bootloader
+        #xcp_memory_dump(0x3e8, 0x3e9, start_address=0x08000000, length=0x3F33F, dump_file="flash.hex")  # Flash
+        #xcp_memory_dump(0x3e8, 0x3e9, start_address=0x1fffb000, length=0x123, dump_file="dump_file.hex")
         time.sleep(0.5)
         #xcp_get_basic_information(0x3e8, 0x3e9)
         #xcp_arbitration_id_discovery()  # FIXME

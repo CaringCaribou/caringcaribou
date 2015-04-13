@@ -73,6 +73,53 @@ def dcm_discovery():
                                        min_id=0x720, max_id=0x740, callback_not_found=none_found)  # FIXME values
 
 
+def service_discovery(send_arb_id, rcv_arb_id):
+    """
+    Scans for supported DCM services. Prints a list of all supported services afterwards.
+
+    :param send_arb_id: Arbitration ID used for outgoing messages
+    :param rcv_arb_id: Arbitration ID expected for incoming messages
+    :return:
+    """
+    can_wrap = CanActions(arb_id=send_arb_id)
+    print("Starting DCM service discovery")
+    supported_services = []
+
+    def response_analyser_wrapper(service_id):
+        print "\rProbing service 0x{0:02x} ({1} found)".format(service_id, len(supported_services)),
+        stdout.flush()
+
+        def response_analyser(msg):
+            # Skip incoming messages with wrong arbitration ID
+            if msg.arbitration_id != rcv_arb_id:
+                return
+            # Skip replies where service is not supported
+            if msg.data[3] == 0x11:
+                return
+            # Service supported - add to list
+            supported_services.append(msg.data[2])
+        return response_analyser
+
+    def done():
+        print("\nDone!")
+
+    # Message to bruteforce - [length, service id]
+    msg = insert_message_length([0x00])
+    # Index of service id byte in message
+    service_index = 1
+    try:
+        # Initiate bruteforce
+        can_wrap.bruteforce_data(msg, service_index, response_analyser_wrapper, callback_not_found=done)
+    finally:
+        # Clear listeners
+        can_wrap.notifier.listeners = []
+        print("")
+        # Print id and name of all found services
+        for service in supported_services:
+            service_name = DCM_SERVICE_NAMES.get(service, "Unknown service")
+            print("Supported service 0x{0:02x}: {1}".format(service, service_name))
+
+
 def subfunc_discovery(service_id, send_arb_id, rcv_arb_id):
     can_wrap = CanActions(arb_id=send_arb_id)
     print("Starting DCM sub function discovery")
@@ -102,6 +149,7 @@ def subfunc_discovery(service_id, send_arb_id, rcv_arb_id):
 if __name__ == "__main__":
     try:
         # dcm_discovery()
-        subfunc_discovery(0x10, 0x733, 0x633)
+        service_discovery(0x733, 0x633)
+        #subfunc_discovery(0x10, 0x733, 0x633)
     except KeyboardInterrupt:
-        print("Interrupted by user")
+        print("\nInterrupted by user")

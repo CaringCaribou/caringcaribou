@@ -42,17 +42,25 @@ class CanActions():
                           data=full_data, extended_id=False)
         self.bus.send(msg)
 
-    def bruteforce_arbitration_id(self, data, callback, min_id=ARBITRATION_ID_MIN, max_id=ARBITRATION_ID_MAX):
+    def bruteforce_arbitration_id(self, data, callback, min_id=ARBITRATION_ID_MIN, max_id=ARBITRATION_ID_MAX,
+                                  callback_not_found=None):
         self.bruteforce_running = True
         for arb_id in range(min_id, max_id+1):
             self.notifier.listeners = [callback(arb_id)]
             msg = can.Message(arbitration_id=arb_id, data=pad_data(data), extended_id=False)
             self.bus.send(msg)
             time.sleep(MESSAGE_DELAY)
+            # Return if stopped by calling module
             if not self.bruteforce_running:
-                break
+                self.notifier.listeners = []
+                return
+        # Callback if bruteforce finished without being stopped
+        if callback_not_found:
+            self.notifier.listeners = []
+            callback_not_found()
 
-    def bruteforce_data(self, arbitration_id, data, bruteforce_index, callback, min_value=BYTE_MIN, max_value=BYTE_MAX):
+    def bruteforce_data(self, arbitration_id, data, bruteforce_index, callback, min_value=BYTE_MIN, max_value=BYTE_MAX,
+                        callback_not_found=None):
         self.bruteforce_running = True
         for value in range(min_value, max_value+1):
             self.notifier.listeners = [callback(value)]
@@ -61,7 +69,11 @@ class CanActions():
             self.bus.send(msg)
             time.sleep(MESSAGE_DELAY)
             if not self.bruteforce_running:
-                break
+                self.notifier.listeners = []
+                return
+        if callback_not_found:
+            self.notifier.listeners = []
+            callback_not_found()
 
     def send_single_message_with_callback(self, data, callback):
         self.notifier.listeners = [callback]

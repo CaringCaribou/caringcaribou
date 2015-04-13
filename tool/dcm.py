@@ -45,6 +45,7 @@ NRC = {
     0x7F: 'serviceNotSupportedInActiveSession'
 }
 
+
 def dcm_discovery():
     """
     Scans for DCM support by brute forcing diagnostic session control messages against different arbitration IDs.
@@ -62,9 +63,15 @@ def dcm_discovery():
                 print("\nFound DCM at arbitration ID {0:04x}, reply at {1:04x}".format(arb_id, msg.arbitration_id))
                 can_wrap.bruteforce_stop()
         return response_analyser
+
+    def none_found():
+        print("\nDCM could not be found")
+
     # Message to bruteforce - [length, session control, default session]
     message = insert_message_length([0x10, 0x01])
-    can_wrap.bruteforce_arbitration_id(message, response_analyser_wrapper, min_id=0x720, max_id=0x740)  # FIXME values
+    can_wrap.bruteforce_arbitration_id(message, response_analyser_wrapper,
+                                       min_id=0x720, max_id=0x740, callback_not_found=none_found)  # FIXME values
+
 
 if __name__ == "__main__":
     try:

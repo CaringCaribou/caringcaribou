@@ -126,17 +126,22 @@ def xcp_arbitration_id_discovery():
         def response_analyser(msg):
             # Handle positive response
             if msg.data[0] == 0xff:
-                print("\nFound XCP at arbitration ID {0:04x}!".format(arb_id))
+                print("\nFound XCP at arbitration ID {0:04x}, reply at {1:04x}".format(arb_id, msg.arbitration_id))
                 can_wrap.bruteforce_stop()
                 decode_connect_response(msg)
             # Handle negative response
             elif msg.data[0] == 0xfe:
-                print("\nFound XCP (but with a bad reply) at arbitration ID {0:03x}".format(arb_id))
+                print("\nFound XCP (with a bad reply) at arbitration ID {0:03x}, reply at {1:04x}".format(
+                    arb_id, msg.arbitration_id))
                 can_wrap.bruteforce_stop()
                 decode_xcp_error(msg)
         return response_analyser
 
-    can_wrap.bruteforce_arbitration_id([0xff], response_analyser_wrapper, min_id=0x300, max_id=0x400)  # FIXME values
+    def none_found():
+        print("\nXCP could not be found")
+
+    can_wrap.bruteforce_arbitration_id([0xff], response_analyser_wrapper,
+                                       min_id=0x3d0, max_id=0x400, callback_not_found=none_found)  # FIXME values
 
 
 def xcp_get_basic_information(send_arb_id, rcv_arb_id):
@@ -311,7 +316,6 @@ if __name__ == "__main__":
     try:
         xcp_memory_dump(0x3e8, 0x3e9, start_address=0x1fffb000, length=0x4800, dump_file="dump_file.hex")  # Complete bootloader
         #xcp_memory_dump(0x3e8, 0x3e9, start_address=0x08000000, length=0x3F33F, dump_file="flash.hex")  # Flash
-        #xcp_memory_dump(0x3e8, 0x3e9, start_address=0x1fffb000, length=0x123, dump_file="dump_file.hex")
         time.sleep(0.5)
         #xcp_get_basic_information(0x3e8, 0x3e9)
         #xcp_arbitration_id_discovery()  # FIXME

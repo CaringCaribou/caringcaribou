@@ -73,31 +73,35 @@ def dcm_discovery():
                                        min_id=0x720, max_id=0x740, callback_not_found=none_found)  # FIXME values
 
 
-def subfunc_discovery(serviceId):
-    can_wrap = CanActions()
+def subfunc_discovery(service_id, send_arb_id, rcv_arb_id):
+    can_wrap = CanActions(arb_id=send_arb_id)
     print("Starting DCM sub function discovery")
 
     def response_analyser_wrapper(subfuncId):
-        print "\rTesting sub function {0:04x} of function {1:04x}".format(subfuncId, serviceId),
+        print "\rTesting sub function {0:04x} of function {1:04x}".format(subfuncId, service_id),
         stdout.flush()
 
         def response_analyser(msg):
+            if msg.arbitration_id != rcv_arb_id:
+                return
             # Catch both ok and ??? TODO - read iso 14229 spec to find out what 0x12 means
-            if msg.data[1]-0x40 == serviceId or (msg.data[1] == 0x7F and msg.data[3] != 0x12):
+            if msg.data[1]-0x40 == service_id or (msg.data[1] == 0x7F and msg.data[3] == 0x12):
                 print("\nFound valid subfunction {0:04x}".format(subfuncId))
+                print(msg)
         return response_analyser
 
     def finished():
         print("\nDone")
 
     # Message to bruteforce - [length, session control, default session]
-    message = insert_message_length([serviceId, 0x00])
-    can_wrap.bruteforce_data(0x733, message, 2, response_analyser_wrapper, callback_not_found=finished)  # FIXME values
+    message = insert_message_length([service_id, 0x00])
+    can_wrap.bruteforce_data(message, bruteforce_index=2, callback=response_analyser_wrapper,
+                             callback_not_found=finished)
 
 
 if __name__ == "__main__":
     try:
         # dcm_discovery()
-        subfunc_discovery(0x10)
+        subfunc_discovery(0x10, 0x733, 0x633)
     except KeyboardInterrupt:
         print("Interrupted by user")

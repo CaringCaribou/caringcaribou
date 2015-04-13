@@ -59,14 +59,13 @@ class CanActions():
             self.notifier.listeners = []
             callback_not_found()
 
-    def bruteforce_data(self, arbitration_id, data, bruteforce_index, callback, min_value=BYTE_MIN, max_value=BYTE_MAX,
+    def bruteforce_data(self, data, bruteforce_index, callback, min_value=BYTE_MIN, max_value=BYTE_MAX,
                         callback_not_found=None):
         self.bruteforce_running = True
         for value in range(min_value, max_value+1):
             self.notifier.listeners = [callback(value)]
             data[bruteforce_index] = value
-            msg = can.Message(arbitration_id=arbitration_id, data=data, extended_id=False)
-            self.bus.send(msg)
+            self.send(data)
             time.sleep(MESSAGE_DELAY)
             if not self.bruteforce_running:
                 self.notifier.listeners = []

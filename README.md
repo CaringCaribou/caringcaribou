@@ -32,8 +32,11 @@ TBD - ArbId listener - register all ArbIds heard on the CAN bus
 
 ## How to install
 ### Ubuntu
+Focus
 ### Windows 7
+TDB
 ### Raspberry Pi
+TBD
 
 # The target
 We used an open source implementation of Autosar from ArcCore available here: http://www.arccore.com/hg FIXME

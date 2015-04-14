@@ -70,7 +70,7 @@ def dcm_discovery():
     # Message to bruteforce - [length, session control, default session]
     message = insert_message_length([0x10, 0x01])
     can_wrap.bruteforce_arbitration_id(message, response_analyser_wrapper,
-                                       min_id=0x720, max_id=0x740, callback_not_found=none_found)  # FIXME values
+                                       min_id=0x700, max_id=0x740, callback_not_found=none_found)  # FIXME values
 
 
 def service_discovery(send_arb_id, rcv_arb_id):
@@ -120,12 +120,14 @@ def service_discovery(send_arb_id, rcv_arb_id):
             print("Supported service 0x{0:02x}: {1}".format(service, service_name))
 
 
-def subfunc_discovery(service_id, send_arb_id, rcv_arb_id):
+def subfunc_discovery(service_id, send_arb_id, rcv_arb_id, bruteforce_indices, show_data=True):
     can_wrap = CanActions(arb_id=send_arb_id)
-    print("Starting DCM sub function discovery")
+    found_sub_functions = []
+    print("Starting DCM sub-function discovery")
 
-    def response_analyser_wrapper(subfunc_id):
-        print "\rTesting sub function {0:04x} of function {1:04x}".format(subfunc_id, service_id),
+    def response_analyser_wrapper(data):
+        print "\rProbing sub-function 0x{0:02x} data {1} (found: {2})".format(
+            service_id, data, len(found_sub_functions)),
         stdout.flush()
 
 
@@ -133,24 +135,54 @@ def subfunc_discovery(service_id, send_arb_id, rcv_arb_id):
             if msg.arbitration_id != rcv_arb_id:
                 return
             # Catch both ok and ??? TODO - read iso 14229 spec to find out what 0x12 means
-            if msg.data[1]-0x40 == service_id or (msg.data[1] == 0x7F and msg.data[3] == 0x12):
-                print("\nFound valid subfunction {0:04x}".format(subfunc_id))
-                print(msg)
+            if msg.data[1]-0x40 == service_id or (msg.data[1] == 0x7F and msg.data[3] not in [0x11, 0x12, 0x31]):
+                found_sub_functions.append((data, [msg]))
+            if msg.data[0] == 0x10:
+                # If response takes up multiple frames
+                can_wrap.current_delay = 1.0
+                found_sub_functions.append((data, [msg]))
+                if show_data:
+                    # Cool, give me the rest
+                    can_wrap.send([0x30])
+                else:
+                    # Fine, but I don't want the remaining data
+                    can_wrap.send([0x32])
+            elif show_data and msg.data[0] & 0xF0 == 0x20:
+                # Parts following a 0x30 in multiple frame response (keep waiting)
+                can_wrap.current_delay = 1.0
+                found_sub_functions[-1][1].append(msg)
+            else:
+                # We've got an answer - no reason to keep waiting
+                can_wrap.current_delay = 0.0
         return response_analyser
 
     def finished():
         print("\nDone")
 
-    # Message to bruteforce - [length, session control, default session]
-    message = insert_message_length([service_id, 0x00])
-    can_wrap.bruteforce_data_new(message, bruteforce_indices=2, callback=response_analyser_wrapper,
-                             callback_not_found=finished)
+    try:
+        # Message to bruteforce - [length, session control, default session]
+        message = insert_message_length([service_id, 0x00, 0x00])
+        can_wrap.bruteforce_data_new(message, bruteforce_indices=bruteforce_indices, callback=response_analyser_wrapper,
+                                 callback_done=finished)
+        can_wrap.notifier.listeners = []
+    finally:
+        # Print found functions
+        if len(found_sub_functions) > 0:
+            print("\n\nFound sub-functions for service 0x{0:02x} ({1}):\n".format(
+                service_id, DCM_SERVICE_NAMES.get(service_id, "Unknown service")))
+            for (sub_function, msgs) in found_sub_functions:
+                print("Sub-function {0}".format(" ".join(sub_function)))
+                if show_data:
+                    for msg in msgs:
+                        print("  {0}".format(msg))
+        else:
+            print("\n\nNo sub-functions were found")
 
 
 if __name__ == "__main__":
     try:
-        # dcm_discovery()
-        service_discovery(0x733, 0x633)
-        #subfunc_discovery(0x10, 0x733, 0x633)
+        #dcm_discovery()
+        #service_discovery(0x733, 0x633)
+        subfunc_discovery(0x22, 0x733, 0x633, [2, 3], False)
     except KeyboardInterrupt:
         print("\nInterrupted by user")

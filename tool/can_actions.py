@@ -3,6 +3,7 @@ import time
 
 
 MESSAGE_DELAY = 0.1
+DELAY_STEP = 0.02
 
 ARBITRATION_ID_MIN = 0x0
 ARBITRATION_ID_MAX = 0x7FF
@@ -75,12 +76,17 @@ class CanActions():
             callback_not_found()
 
     def bruteforce_data_new(self, data, bruteforce_indices, callback, min_value=BYTE_MIN, max_value=BYTE_MAX,
-                        callback_not_found=None):
+                        callback_done=None):
         def send(data, idxs):
-            value = idxs #TODO Some formatting of the bruteforced value
-            self.notifier.listeners = [callback(value)]
+            global current_delay
+            #if data[2] == 0x01 and data[3] == 0x00:  # FIXME Ugliest hack in the universe, preventing ECU bug REMOVE
+            #    return
+            self.notifier.listeners = [callback(["{0:02x}".format(data[a]) for a in idxs])]
             self.send(data)
-            time.sleep(MESSAGE_DELAY)
+            current_delay = 0.2
+            while current_delay > 0.0:
+                time.sleep(DELAY_STEP)
+                current_delay -= DELAY_STEP
             if not self.bruteforce_running:
                 self.notifier.listeners = []
                 return
@@ -96,6 +102,9 @@ class CanActions():
         for idx in bruteforce_indices:
             data[idx] = 0
         bruteforce(0)
+        if callback_done:
+            callback_done()
+
 
 
     def send_single_message_with_callback(self, data, callback):

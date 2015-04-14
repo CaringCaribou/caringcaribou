@@ -124,16 +124,17 @@ def subfunc_discovery(service_id, send_arb_id, rcv_arb_id):
     can_wrap = CanActions(arb_id=send_arb_id)
     print("Starting DCM sub function discovery")
 
-    def response_analyser_wrapper(subfuncId):
-        print "\rTesting sub function {0:04x} of function {1:04x}".format(subfuncId, service_id),
+    def response_analyser_wrapper(subfunc_id):
+        print "\rTesting sub function {0:04x} of function {1:04x}".format(subfunc_id, service_id),
         stdout.flush()
+
 
         def response_analyser(msg):
             if msg.arbitration_id != rcv_arb_id:
                 return
             # Catch both ok and ??? TODO - read iso 14229 spec to find out what 0x12 means
             if msg.data[1]-0x40 == service_id or (msg.data[1] == 0x7F and msg.data[3] == 0x12):
-                print("\nFound valid subfunction {0:04x}".format(subfuncId))
+                print("\nFound valid subfunction {0:04x}".format(subfunc_id))
                 print(msg)
         return response_analyser
 
@@ -142,7 +143,7 @@ def subfunc_discovery(service_id, send_arb_id, rcv_arb_id):
 
     # Message to bruteforce - [length, session control, default session]
     message = insert_message_length([service_id, 0x00])
-    can_wrap.bruteforce_data(message, bruteforce_index=2, callback=response_analyser_wrapper,
+    can_wrap.bruteforce_data_new(message, bruteforce_indices=2, callback=response_analyser_wrapper,
                              callback_not_found=finished)
 
 

@@ -35,6 +35,16 @@ class CanActions():
         self.arb_id = arb_id
         self.bruteforce_running = False
 
+    def add_listener(self, listener):
+        self.notifier.listeners.append(listener)
+
+    def clear_listeners(self):
+        self.notifier.listeners = []
+
+    def set_listener(self, listener):
+        self.clear_listeners()
+        self.add_listener(listener)
+
     def send(self, data):
         if len(data) > 8:
             raise IndexError("Invalid CAN message length: {0}".format(len(data)))

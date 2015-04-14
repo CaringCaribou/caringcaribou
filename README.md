@@ -4,7 +4,7 @@ A friendly car security exploration tool
 ## Rationale
 We are lacking a security testing tool for automotive. A zero-knowledge tool that can be dropped onto any automotive network and collect information regarding what services exist and what vulnerabilities exist. This is a start.
 
-The start of this work is done as part of the HeavenS research project.
+The start of this work was done as part of the HeavenS research project.
 
 ## Features
 Currently this is just a bunch of python files, typically one per area-of-interest. In time, the idea is to build a master application that takes arguments and then imports and executes modules as required.
@@ -35,6 +35,15 @@ TBD - ArbId listener - register all ArbIds heard on the CAN bus
 ### Windows 7
 ### Raspberry Pi
 
+# The target
+We used an open source implementation of Autosar from ArcCore available here: http://www.arccore.com/hg FIXME
+We used a devboard from ArcCore, called Arctic EVK-M3 - an STM32F107 based device
+
 # Contributors
-The HeavenS project - 
+The HeavenS project, funded by VINNOVA - http://www.vinnova.se/sv/Resultat/Projekt/Effekta/HEAVENS-HEAling-Vulnerabilities-to-ENhance-Software-Security-and-Safety/
 Christian Sandberg
+Kasper Karlsson
+Tobias Lans
+Mattias Jidhage
+Johannes Weschke
+Filip Hesslund

@@ -59,7 +59,7 @@ def dcm_discovery():
 
         def response_analyser(msg):
             # Catch both ok and negative response
-            if msg.data[1] == 0x50 or msg.data[1] == 0x7F:
+            if msg.data[1] in [0x50, 0x7F]:
                 print("\nFound DCM at arbitration ID {0:04x}, reply at {1:04x}".format(arb_id, msg.arbitration_id))
                 can_wrap.bruteforce_stop()
         return response_analyser
@@ -73,7 +73,7 @@ def dcm_discovery():
                                        min_id=0x700, max_id=0x740, callback_not_found=none_found)  # FIXME values
 
 
-def service_discovery(send_arb_id, rcv_arb_id):
+def service_discovery(send_arb_id, rcv_arb_id, function_length=1):
     """
     Scans for supported DCM services. Prints a list of all supported services afterwards.
 
@@ -104,7 +104,7 @@ def service_discovery(send_arb_id, rcv_arb_id):
         print("\nDone!")
 
     # Message to bruteforce - [length, service id]
-    msg = insert_message_length([0x00])
+    msg = insert_message_length([0x00] * function_length)
     # Index of service id byte in message
     service_index = 1
     try:
@@ -134,10 +134,14 @@ def subfunc_discovery(service_id, send_arb_id, rcv_arb_id, bruteforce_indices, s
         def response_analyser(msg):
             if msg.arbitration_id != rcv_arb_id:
                 return
-            # Catch both ok and ??? TODO - read iso 14229 spec to find out what 0x12 means
-            if msg.data[1]-0x40 == service_id or (msg.data[1] == 0x7F and msg.data[3] not in [0x11, 0x12, 0x31]):
+            # Response queued - do not handle
+            if msg.data[:4] == [0x03, 0x7f, service_id, 0x78]:
+                can_wrap.current_delay = 1.0
+                return
+            # Catch ok status
+            elif msg.data[1]-0x40 == service_id or (msg.data[1] == 0x7F and msg.data[3] not in [0x11, 0x12, 0x31, 0x78]): # TODO - more?
                 found_sub_functions.append((data, [msg]))
-            if msg.data[0] == 0x10:
+            elif msg.data[0] == 0x10:
                 # If response takes up multiple frames
                 can_wrap.current_delay = 1.0
                 found_sub_functions.append((data, [msg]))
@@ -182,7 +186,7 @@ def subfunc_discovery(service_id, send_arb_id, rcv_arb_id, bruteforce_indices, s
 if __name__ == "__main__":
     try:
         #dcm_discovery()
-        #service_discovery(0x733, 0x633)
+        #service_discovery(0x733, 0x633, function_length=2)
         subfunc_discovery(0x22, 0x733, 0x633, [2, 3], False)
     except KeyboardInterrupt:
         print("\nInterrupted by user")

@@ -54,7 +54,7 @@ The setup consists of two steps. First we need to get the USB-to-Can device work
 
 
 #### Python-Can
-Clone/download Python-Can from [bitbucket.org/hardbyte/python-can](https://bitbucket.org/hardbyte/python-can)
+Download Python-Can from [bitbucket.org/hardbyte/python-can commit 77eea796362b](https://bitbucket.org/hardbyte/python-can/get/77eea796362b.zip). Try other commits at your own peril.
 ##### Install
 1. Install [pip](https://pypi.python.org/pypi/pip)
 2. Install python-can:

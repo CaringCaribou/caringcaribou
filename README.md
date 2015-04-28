@@ -27,7 +27,6 @@ This is the daddy of all classes. Imported by all other modules. Abstraction for
 
 ## Hardware requirements
 Some sort of interface towards an automotive bus that is compatible with socketCAN (http://elinux.org/CAN_Bus#CAN_Support_in_Linux).
-We used a PEAK hardware called PCAN-USB
 
 ## Software requirements
 - python2.7

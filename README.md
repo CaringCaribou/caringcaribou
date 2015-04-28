@@ -87,7 +87,7 @@ Connect the USB-to-CAN device to an actual CAN-bus and run the following:
 
 If packets are received everything is good to go!
 
-#### Windows 7 
+### Windows 7 
 The simplest solution is to download [VMPlayer](https://my.vmware.com/web/vmware/free#desktop_end_user_computing/vmware_player/7_0), install a Linux distribution and to follow the Linux guide above.
 ### Raspberry Pi
 - http://www.cowfishstudios.com/blog/canned-pi-part1

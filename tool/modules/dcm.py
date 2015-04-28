@@ -1,8 +1,8 @@
-from can_actions import CanActions, insert_message_length
+from can_actions import CanActions, insert_message_length, int_from_str_base
 from sys import stdout
 import argparse
 
-
+'''
 def int_from_str_base(s):
     """
     Converts a str to an int, supporting both base 10 and base 16 literals.
@@ -17,7 +17,7 @@ def int_from_str_base(s):
         else:
             return int(s)
     except (AttributeError, ValueError):
-        return None
+        return None'''
 
 DCM_SERVICE_NAMES = {
     0x10: 'DIAGNOSTIC_SESSION_CONTROL',
@@ -65,7 +65,11 @@ NRC = {
 
 
 def dcm_discovery(args):
-    """Scans for diagnostics support by sending session control against different arbitration IDs."""
+    """
+    Scans for diagnostics support by sending session control against different arbitration IDs.
+
+    :param: args: A namespace containing min and max
+    """
     # TODO docstring args
     min_id = int_from_str_base(args.min)
     max_id = int_from_str_base(args.max)
@@ -89,18 +93,15 @@ def dcm_discovery(args):
     # Message to bruteforce - [length, session control, default session]
     message = insert_message_length([0x10, 0x01])
     can_wrap.bruteforce_arbitration_id(message, response_analyser_wrapper,
-                                       min_id=min_id, max_id=max_id, callback_not_found=none_found)  # FIXME values
+                                       min_id=min_id, max_id=max_id, callback_not_found=none_found)
 
 
 def service_discovery(args):
     """
     Scans for supported DCM services. Prints a list of all supported services afterwards.
 
-    :param send_arb_id: Arbitration ID used for outgoing messages
-    :param rcv_arb_id: Arbitration ID expected for incoming messages
-    :return:
+    :param args: A namespace containing src and dst
     """
-    # TODO docstring args
     send_arb_id = int_from_str_base(args.src)
     rcv_arb_id = int_from_str_base(args.dst)
 
@@ -120,7 +121,7 @@ def service_discovery(args):
             if msg.data[3] == 0x11:
                 return
             # Service supported - add to list
-            supported_services.append(msg.data[2])  # TODO: Does this really work for functions with length>1?
+            supported_services.append(msg.data[2])
         return response_analyser
 
     def done():

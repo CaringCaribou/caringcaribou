@@ -27,18 +27,18 @@ def start_listener(handler, args):
     :param handler: Message handler function
     :param args: Argument namespace (reversed sorting applied if args.reverse)
     """
-    can_wrap = CanActions()
-    can_wrap.add_listener(handler)
-    try:
-        while True:
-            pass
-    finally:
-        can_wrap.clear_listeners()
-        print("\n\nDetected arbitration IDs:")
-        for (arb_id, hits) in sorted(found_arb_ids.items(),
-                                     key=lambda x: x[1],
-                                     reverse=args.reverse):
-            print("Arb id 0x{0:03x} {1} hits".format(arb_id, hits))
+    with CanActions() as can_wrap:
+        can_wrap.add_listener(handler)
+        try:
+            while True:
+                pass
+        finally:
+            can_wrap.clear_listeners()
+            print("\n\nDetected arbitration IDs:")
+            for (arb_id, hits) in sorted(found_arb_ids.items(),
+                                         key=lambda x: x[1],
+                                         reverse=args.reverse):
+                print("Arb id 0x{0:03x} {1} hits".format(arb_id, hits))
 
 
 def parse_args(args):

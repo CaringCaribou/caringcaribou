@@ -16,6 +16,23 @@ def pad_data(data):
     return list(data) + [0] * ( 8 - len(data))
 
 
+def int_from_str_base(s):
+    """
+    Converts a str to an int, supporting both base 10 and base 16 literals.
+
+    :param s: str representing an int in base 10 or 16
+    :return: int version of s on success, None otherwise
+    :rtype: int
+    """
+    try:
+        if s.startswith("0x"):
+            return int(s, base=16)
+        else:
+            return int(s)
+    except (AttributeError, ValueError):
+        return None
+
+
 def insert_message_length(data):
     """
     Inserts a message length byte before data
@@ -35,6 +52,13 @@ class CanActions():
         self.notifier = can.Notifier(self.bus, listeners=[])
         self.arb_id = arb_id
         self.bruteforce_running = False
+
+    def __enter__(self):
+        return self  # FIXME correct?
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.clear_listeners()
+        time.sleep(0.5)
 
     def add_listener(self, listener):
         self.notifier.listeners.append(listener)

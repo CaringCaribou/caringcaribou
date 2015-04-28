@@ -93,9 +93,87 @@ If packets are received everything is good to go!
 ### Windows 7 
 The simplest solution is to download [VMPlayer](https://my.vmware.com/web/vmware/free#desktop_end_user_computing/vmware_player/7_0), install a Linux distribution and to follow the Linux guide above.
 ### Raspberry Pi
+#### Parts
+- Rapsberry pi model B (250 SEK)
+- SD-card 8 GB
+- piCAN - shield (£32.28 Inc VAT)
+- DBUS 9 male
+- 2 wires
+
+#### Helpful sites
 - http://www.cowfishstudios.com/blog/canned-pi-part1
-- http://skpang.co.uk/catalog/pican-canbus-board-for-raspberry-pi-p-1196.html
-Wireshark is up and running but python-can is currently defunct
+- http://skpang.co.uk/blog/archives/1141
+- http://www.raspberrypi.org/forums/viewtopic.php?p=675658#p675658
+- http://lnxpps.de/rpie/
+- http://ifinterface.com/page/page3.php?langid=1
+
+#### USB-to-CAN
+##### Raspian
+1. Download and flash latest raspian image to SD card.
+We used ```http://downloads.raspberrypi.org/raspbian/images/raspbian-2015-02-17/```
+1. Update, upgrade & reboot
+
+```
+sudo apt-get update
+sudo apt-get upgrade
+sudo reboot
+```
+
+##### Kernel modules
+1. Download kernel modules for mcp2501x that fits your kernel version. We used ifinterface and ```rpi-can-3.18.7+ (not for Raspberry 2)``` 
+1. ```cd /```
+1. Unpack into ```/lib``` and ```/usr``` using ```sudo tar -jxvf /path-to/<archivename>```
+1. Register the new modules
+
+```
+sudo depmod -a
+sudo reboot
+```
+###### Add modules in /etc/modules to enable them at boot
+
+```
+# /etc/modules: kernel modules to load at boot time.
+#
+# This file contains the names of kernel modules that should be loaded
+# at boot time, one per line. Lines beginning with "#" are ignored.
+# Parameters can be specified after the module name.
+
+snd-bcm2835
+spi_bcm2708
+
+# MCP2515 configuration for PICAN module
+spi-config devices=\
+bus=0:cs=0:modalias=mcp2515:speed=10000000:gpioirq=25:pd=20:pds32-0=16000000:pdu32-4=0x2002:force_release
+
+# load the module
+mcp251x
+```
+
+
+Make sure they are not in a blacklist in ```/etc/modprobe.d/<blacklist>``` If they are - comment this entries:
+
+
+```
+#blacklist spi-bcm2708
+#blacklist mcp251x
+```
+##### Enable spi in Device Tree
+In /boot/config.txt, add
+
+```
+# add SPI-support for piCAN
+dtparam=spi=on
+```
+Note: Enabling spi in the device tree was required when we performed install due to changes in how Raspberry handles devices. It will change and/or be removed with new releases.
+
+##### Bring up the interface
+11. Configure CAN interface
+```sudo ip link set can0 type can bitrate 500000```
+
+12. Bring the interface up
+```sudo ip link set can0 up ```
+
+
 
 ## How to use
 The best way to understand how to use Caring Caribou is by envoking cc.py's help menu:

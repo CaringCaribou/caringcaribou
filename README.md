@@ -70,6 +70,8 @@ Clone/download Python-Can from [bitbucket.org/hardbyte/python-can](https://bitbu
    >>> import can
    >>> 
    ```
+
+
 ##### Configure
 Python-Can uses a configuration file ```~/.canrc``` to specify a CAN interface.
 The contents of this file should be:
@@ -77,6 +79,7 @@ The contents of this file should be:
     [default]
     interface = socketcan_ctypes
     channel = can0
+
 ##### Test it
 Connect the USB-to-CAN device to an actual CAN-bus and run the following: 
 

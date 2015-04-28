@@ -15,6 +15,7 @@ BYTE_MAX = 0xFF
 def pad_data(data):
     return list(data) + [0] * ( 8 - len(data))
 
+
 def insert_message_length(data):
     """
     Inserts a message length byte before data
@@ -53,8 +54,18 @@ class CanActions():
                           data=full_data, extended_id=False)
         self.bus.send(msg)
 
-    def bruteforce_arbitration_id(self, data, callback, min_id=ARBITRATION_ID_MIN, max_id=ARBITRATION_ID_MAX,
+    def bruteforce_arbitration_id(self, data, callback, min_id, max_id,
                                   callback_not_found=None):
+        # Sanity checks
+        if min_id is None:
+            min_id = ARBITRATION_ID_MIN
+        if max_id is None:
+            max_id = ARBITRATION_ID_MAX
+        if min_id > max_id:
+            if callback_not_found:
+                callback_not_found("Invalid range: min > max")
+            return
+        # Start bruteforce
         self.bruteforce_running = True
         for arb_id in range(min_id, max_id+1):
             self.notifier.listeners = [callback(arb_id)]
@@ -68,10 +79,11 @@ class CanActions():
         # Callback if bruteforce finished without being stopped
         if callback_not_found:
             self.notifier.listeners = []
-            callback_not_found()
+            callback_not_found("Finished without reply")
 
     def bruteforce_data(self, data, bruteforce_index, callback, min_value=BYTE_MIN, max_value=BYTE_MAX,
                         callback_not_found=None):
+        # TODO: Add reason to callback_not_found?
         self.bruteforce_running = True
         for value in range(min_value, max_value+1):
             self.notifier.listeners = [callback(value)]
@@ -87,6 +99,7 @@ class CanActions():
 
     def bruteforce_data_new(self, data, bruteforce_indices, callback, min_value=BYTE_MIN, max_value=BYTE_MAX,
                         callback_done=None):
+        # TODO: Add reason to callback_not_found?
         def send(data, idxs):
             #global current_delay
             self.notifier.listeners = [callback(["{0:02x}".format(data[a]) for a in idxs])]

@@ -1,6 +1,24 @@
-from can_actions import *
+from can_actions import CanActions
 from sys import stdout
+import argparse
+import time
 
+
+def int_from_str_base(s):
+    """
+    Converts a str to an int, supporting both base 10 and base 16 literals.
+
+    :param s: str representing an int in base 10 or 16
+    :return: int version of s on success, None otherwise
+    :rtype: int
+    """
+    try:
+        if s.startswith("0x"):
+            return int(s, base=16)
+        else:
+            return int(s)
+    except (AttributeError, ValueError):
+        return None
 
 # Dictionary of XCP error codes, mapping (code -> (error, description))
 XCP_ERROR_CODES = dict([
@@ -37,7 +55,7 @@ def decode_xcp_error(error_message):
         return
     error_lookup = XCP_ERROR_CODES.get(data[1], ("UNKNOWN", "Unknown error"))
     print("Received error message:\n{0}".format(error_message))
-    print("Error code (0x{0:02x}): {1}\nDescription: {2}\n".format(data[1], error_lookup[0], error_lookup[1]))
+    print("Error code (0x{0:02x}): {1}\nDescription: {2}".format(data[1], error_lookup[0], error_lookup[1]))
 
 
 def decode_connect_response(response_message):
@@ -65,7 +83,7 @@ def decode_connect_response(response_message):
     print("Max CTO message length: {0} bytes".format(data[3]))
     print("Max DTO message length: {0} bytes".format(data[5] * 16 + data[4]))
     print("Protocol layer version: {0}".format(data[6]))
-    print("Transport layer version: {0}\n".format(data[7]))
+    print("Transport layer version: {0}".format(data[7]))
 
 
 def decode_get_comm_mode_info_response(response_message):
@@ -112,23 +130,24 @@ def decode_get_status_response(response_message):
 
 
 
-def xcp_arbitration_id_discovery():
-    """
-    Scans for XCP support by brute forcing XCP connect messages against different arbitration IDs.
-    """
+def xcp_arbitration_id_discovery(args):
+    """Scans for XCP support by brute forcing XCP connect messages against different arbitration IDs."""
+    min_id = int_from_str_base(args.min)
+    max_id = int_from_str_base(args.max)
+
     can_wrap = CanActions()
     print("Starting XCP discovery")
 
     def response_analyser_wrapper(arb_id):
-        print "\rSending XCP connect to {0:04x}".format(arb_id),
+        print "\rSending XCP connect to 0x{0:04x}".format(arb_id),
         stdout.flush()
 
         def response_analyser(msg):
             # Handle positive response
             if msg.data[0] == 0xff:
-                print("\nFound XCP at arbitration ID {0:04x}, reply at {1:04x}".format(arb_id, msg.arbitration_id))
                 can_wrap.bruteforce_stop()
                 decode_connect_response(msg)
+                print("Found XCP at arbitration ID 0x{0:04x}, reply at 0x{1:04x}".format(arb_id, msg.arbitration_id))
             # Handle negative response
             elif msg.data[0] == 0xfe:
                 print("\nFound XCP (with a bad reply) at arbitration ID {0:03x}, reply at {1:04x}".format(
@@ -137,14 +156,18 @@ def xcp_arbitration_id_discovery():
                 decode_xcp_error(msg)
         return response_analyser
 
-    def none_found():
-        print("\nXCP could not be found")
+    def none_found(s):
+        print("\nXCP could not be found: {0}".format(s))
 
     can_wrap.bruteforce_arbitration_id([0xff], response_analyser_wrapper,
-                                       min_id=0x3d0, max_id=0x400, callback_not_found=none_found)  # FIXME values
+                                       min_id=min_id, max_id=max_id, callback_not_found=none_found)
 
 
-def xcp_get_basic_information(send_arb_id, rcv_arb_id):
+def xcp_get_basic_information(args):
+
+    send_arb_id = int_from_str_base(args.src)
+    rcv_arb_id = int_from_str_base(args.dst)
+
     def handle_description_file(msg):  # FIXME better handling - related to reply from 0xfa, 0x0*
         if msg.arbitration_id != rcv_arb_id:
             return
@@ -208,13 +231,20 @@ def xcp_get_basic_information(send_arb_id, rcv_arb_id):
         else:
             print("Weird connect reply: {0}\n".format(msg))
 
+    print("Probing for XCP info")
     can_wrap = CanActions(arb_id=send_arb_id)
     can_wrap.send_single_message_with_callback([0xff], handle_connect)
     time.sleep(2)
     print("End of sequence")
 
 
-def xcp_memory_dump(send_arb_id, rcv_arb_id, start_address=0x00, length=0xff, dump_file=None):
+def xcp_memory_dump(args):
+    send_arb_id = int_from_str_base(args.src)
+    rcv_arb_id = int_from_str_base(args.dst)
+    start_address = int_from_str_base(args.start)
+    length = int_from_str_base(args.length)
+    dump_file = args.f
+
     global byte_counter, bytes_left, dump_complete, segment_counter, idle_timeout
     # Timeout timer
     idle_timeout = 3.0
@@ -236,10 +266,12 @@ def xcp_memory_dump(send_arb_id, rcv_arb_id, start_address=0x00, length=0xff, du
             # Calculate end index of data to handle
             end_index = min(8, bytes_left + 1)
 
-            # print(" ".join(["{0:02x}".format(i) for i in msg.data[1:end_index]]))  # FIXME remove?
             if dump_file:
                 with open(dump_file, "ab") as outfile:
                     outfile.write(bytearray(msg.data[1:end_index]))
+            else:
+                # TODO Check that this looks nice in console
+                print(" ".join(["{0:02x}".format(i) for i in msg.data[1:end_index]]))
             # Update counters
             byte_counter += 7
             bytes_left -= 7
@@ -250,7 +282,6 @@ def xcp_memory_dump(send_arb_id, rcv_arb_id, start_address=0x00, length=0xff, du
             elif byte_counter > 251:
                 # Dump another segment
                 segment_counter += 1
-                # print("--- SEGMENT {0} ---".format(segment_counter))  # FIXME Remove
                 # Print progress
                 print "\rDumping segment {0} ({1} b, {2} b left)".format(segment_counter, ((segment_counter+1)*0xf5+byte_counter), bytes_left),
                 stdout.flush()
@@ -312,12 +343,51 @@ def xcp_memory_dump(send_arb_id, rcv_arb_id, start_address=0x00, length=0xff, du
     can_wrap.notifier.listeners = []  # TODO: Always do this before shutting down in order to prevent crashie crashie
 
 
-if __name__ == "__main__":
+def parse_args(args):
+    """
+    Parser for XCP module arguments.
+
+    :return: Namespace containing action and action-specific arguments
+    :rtype: argparse.Namespace
+    """
+    parser = argparse.ArgumentParser(prog="cc.py xcp",
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     description="""XCP module for CaringCaribou""",
+                                     epilog="""Example usage:
+  cc.py xcp discovery
+  cc.py xcp info 1000 1001
+  cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex""")
+    subparsers = parser.add_subparsers()
+
+    # Parser for XCP discovery
+    parser_disc = subparsers.add_parser("discovery")
+    parser_disc.add_argument("-min", type=str, default=None)
+    parser_disc.add_argument("-max", type=str, default=None)
+    parser_disc.set_defaults(func=xcp_arbitration_id_discovery)
+
+    # Parser for XCP info
+    parser_info = subparsers.add_parser("info")
+    parser_info.add_argument("src", type=str, help="arbitration ID to transmit from")
+    parser_info.add_argument("dst", type=str, help="arbitration ID to listen to")
+    parser_info.set_defaults(func=xcp_get_basic_information)
+
+    # Parser for XCP data dump
+    parser_dump = subparsers.add_parser("dump")
+    parser_dump.add_argument("src", type=str, help="arbitration ID to transmit from")
+    parser_dump.add_argument("dst", type=str, help="arbitration ID to listen to")
+    parser_dump.add_argument("start", type=str, help="start address")
+    # TODO: length OR end address - mutually exclusive group?
+    parser_dump.add_argument("length", type=str, help="dump length")
+    parser_dump.add_argument("-f", "-file", type=str, help="output file", default=None)
+    parser_dump.set_defaults(func=xcp_memory_dump)
+
+    args = parser.parse_args(args)
+    return args
+
+
+def module_main(arg_list):
     try:
-        xcp_memory_dump(0x3e8, 0x3e9, start_address=0x1fffb000, length=0x4800, dump_file="dump_file.hex")  # Complete bootloader
-        #xcp_memory_dump(0x3e8, 0x3e9, start_address=0x08000000, length=0x3F33F, dump_file="flash.hex")  # Flash
-        time.sleep(0.5)
-        #xcp_get_basic_information(0x3e8, 0x3e9)
-        #xcp_arbitration_id_discovery()  # FIXME
+        args = parse_args(arg_list)
+        args.func(args)
     except KeyboardInterrupt:
         print("\n\nTerminated by user")

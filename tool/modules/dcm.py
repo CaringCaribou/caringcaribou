@@ -1,5 +1,23 @@
-from can_actions import *
+from can_actions import CanActions, insert_message_length
 from sys import stdout
+import argparse
+
+
+def int_from_str_base(s):
+    """
+    Converts a str to an int, supporting both base 10 and base 16 literals.
+
+    :param s: str representing an int in base 10 or 16
+    :return: int version of s on success, None otherwise
+    :rtype: int
+    """
+    try:
+        if s.startswith("0x"):
+            return int(s, base=16)
+        else:
+            return int(s)
+    except (AttributeError, ValueError):
+        return None
 
 DCM_SERVICE_NAMES = {
     0x10: 'DIAGNOSTIC_SESSION_CONTROL',
@@ -46,31 +64,33 @@ NRC = {
 }
 
 
-def dcm_discovery():
+def dcm_discovery(args):
     """
     Scans for DCM support by brute forcing diagnostic session control messages against different arbitration IDs.
     """
+    min_id = int_from_str_base(args.min)
+    max_id = int_from_str_base(args.max)
     can_wrap = CanActions()
-    print("Starting DCM service discovery")
+    print("Starting diagnostics service discovery")
 
     def response_analyser_wrapper(arb_id):
-        print "\rSending DCM Tester Present to {0:04x}".format(arb_id),
+        print "\rSending diagnostics Tester Present to 0x{0:04x}".format(arb_id),
         stdout.flush()
 
         def response_analyser(msg):
             # Catch both ok and negative response
             if msg.data[1] in [0x50, 0x7F]:
-                print("\nFound DCM at arbitration ID {0:04x}, reply at {1:04x}".format(arb_id, msg.arbitration_id))
+                print("\nFound diagnostics at arbitration ID 0x{0:04x}, reply at 0x{1:04x}".format(arb_id, msg.arbitration_id))
                 can_wrap.bruteforce_stop()
         return response_analyser
 
-    def none_found():
-        print("\nDCM could not be found")
+    def none_found(s):
+        print("\nDiagnostics service could not be found: {0}".format(s))
 
     # Message to bruteforce - [length, session control, default session]
     message = insert_message_length([0x10, 0x01])
     can_wrap.bruteforce_arbitration_id(message, response_analyser_wrapper,
-                                       min_id=0x700, max_id=0x740, callback_not_found=none_found)  # FIXME values
+                                       min_id=min_id, max_id=max_id, callback_not_found=none_found)  # FIXME values
 
 
 def service_discovery(send_arb_id, rcv_arb_id, function_length=1):
@@ -79,6 +99,7 @@ def service_discovery(send_arb_id, rcv_arb_id, function_length=1):
 
     :param send_arb_id: Arbitration ID used for outgoing messages
     :param rcv_arb_id: Arbitration ID expected for incoming messages
+    :param: function_length: Function length in bytes (1-7)
     :return:
     """
     can_wrap = CanActions(arb_id=send_arb_id)
@@ -97,7 +118,7 @@ def service_discovery(send_arb_id, rcv_arb_id, function_length=1):
             if msg.data[3] == 0x11:
                 return
             # Service supported - add to list
-            supported_services.append(msg.data[2])
+            supported_services.append(msg.data[2])  # TODO: Does this really work for functions with length>1?
         return response_analyser
 
     def done():
@@ -183,10 +204,57 @@ def subfunc_discovery(service_id, send_arb_id, rcv_arb_id, bruteforce_indices, s
             print("\n\nNo sub-functions were found")
 
 
+def parse_args(args):
+    """
+    Parser for DCM module arguments.
+
+    :return: Namespace containing action and action-specific arguments
+    :rtype: argparse.Namespace
+    """
+    parser = argparse.ArgumentParser(prog="cc.py dcm",
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     description="""Diagnostics module for CaringCaribou""",
+                                     epilog="""Example usage:
+  TODO""")  # FIXME
+    subparsers = parser.add_subparsers()
+
+    # Parser for diagnostics discovery
+    parser_disc = subparsers.add_parser("discovery")
+    parser_disc.add_argument("-min", type=str, default=None)
+    parser_disc.add_argument("-max", type=str, default=None)
+    parser_disc.set_defaults(func=dcm_discovery)
+
+    # Parser for diagnostics service discovery
+    parser_info = subparsers.add_parser("services")  # TODO Args
+    parser_info.add_argument("src", type=str, help="arbitration ID to transmit from")
+    parser_info.add_argument("dst", type=str, help="arbitration ID to listen to")
+    parser_info.set_defaults(func=service_discovery)
+
+    # Parser for diagnostics sub-function discovery
+    parser_dump = subparsers.add_parser("subfunc")  # TODO Args
+    parser_dump.add_argument("src", type=str, help="arbitration ID to transmit from")
+    parser_dump.add_argument("dst", type=str, help="arbitration ID to listen to")
+    parser_dump.add_argument("start", type=str, help="start address")
+    # TODO: length OR end address - mutually exclusive group?
+    parser_dump.add_argument("length", type=str, help="dump length")
+    parser_dump.add_argument("-f", "-file", type=str, help="output file", default=None)
+    parser_dump.set_defaults(func=subfunc_discovery)
+
+    args = parser.parse_args(args)
+    return args
+
+
+def module_main(arg_list):
+    try:
+        args = parse_args(arg_list)
+        args.func(args)
+    except KeyboardInterrupt:
+        print("\n\nTerminated by user")
+
+# TODO: Remove!
 if __name__ == "__main__":
     try:
-        #dcm_discovery()
-        #service_discovery(0x733, 0x633, function_length=2)
-        subfunc_discovery(0x22, 0x733, 0x633, [2, 3], False)
+        service_discovery(0x733, 0x633, function_length=2)
+        #subfunc_discovery(0x22, 0x733, 0x633, [2, 3], False)
     except KeyboardInterrupt:
         print("\nInterrupted by user")

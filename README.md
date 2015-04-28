@@ -172,7 +172,8 @@ Note: Enabling spi in the device tree was required when we performed install due
 
 12. Bring the interface up
 ```sudo ip link set can0 up ```
-
+##### Python-Can
+See instructions above in the Linux guide
 
 
 ## How to use

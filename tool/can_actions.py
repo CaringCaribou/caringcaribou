@@ -97,9 +97,9 @@ class CanActions():
             self.notifier.listeners = []
             callback_not_found()
 
-    def bruteforce_data_new(self, data, bruteforce_indices, callback, min_value=BYTE_MIN, max_value=BYTE_MAX,
-                        callback_done=None):
-        # TODO: Add reason to callback_not_found?
+    def bruteforce_data_new(self, data, bruteforce_indices, callback,
+                            min_value=BYTE_MIN, max_value=BYTE_MAX,
+                            callback_done=None):
         def send(data, idxs):
             #global current_delay
             self.notifier.listeners = [callback(["{0:02x}".format(data[a]) for a in idxs])]
@@ -116,7 +116,7 @@ class CanActions():
             if idx >= len(bruteforce_indices):
                 send(data, bruteforce_indices)
                 return
-            for i in range(0, 0xFF + 1):
+            for i in range(min_value, max_value + 1):
                 data[bruteforce_indices[idx]] = i
                 bruteforce(idx + 1)
         # Make sure that the data array is correctly initialized for the bruteforce
@@ -124,7 +124,7 @@ class CanActions():
             data[idx] = 0
         bruteforce(0)
         if callback_done:
-            callback_done()
+            callback_done("Scan finished")
 
 
 

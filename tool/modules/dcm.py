@@ -194,8 +194,8 @@ def subfunc_discovery(args):
                 can_wrap.current_delay = 0.0
         return response_analyser
 
-    def finished():
-        print("\nDone")
+    def finished(s):
+        print("\nDone: {0}".format(s))
 
     try:
         # Message to bruteforce - [length, session control, default session]
@@ -228,7 +228,9 @@ def parse_args(args):
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description="""Diagnostics module for CaringCaribou""",
                                      epilog="""Example usage:
-  TODO""")  # FIXME
+  cc.py dcm discovery
+  cc.py dcm services 0x733 0x633
+  cc.py dcm subfunc 0x733 0x633 0x22 2 3""")  # FIXME
     subparsers = parser.add_subparsers()
 
     # Parser for diagnostics discovery
@@ -244,7 +246,7 @@ def parse_args(args):
     parser_info.set_defaults(func=service_discovery)
 
     # Parser for diagnostics sub-function discovery
-    parser_dump = subparsers.add_parser("subfunc")  # TODO Args
+    parser_dump = subparsers.add_parser("subfunc")
     parser_dump.add_argument("src", type=str, help="arbitration ID to transmit from")
     parser_dump.add_argument("dst", type=str, help="arbitration ID to listen to")
     parser_dump.add_argument("service", type=str, help="service ID (e.g. 0x22 for Read DID)")

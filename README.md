@@ -30,9 +30,9 @@ Some sort of interface towards an automotive bus that is compatible with socketC
 We used a PEAK hardware called PCAN-USB
 
 ## Software requirements
-python2.7
-python-can
-a pretty modern linux kernel
+- python2.7
+- python-can
+- a pretty modern linux kernel
 ## How to install
 
 ### Linux

@@ -33,6 +33,7 @@ We used a PEAK hardware called PCAN-USB
 - python2.7
 - python-can
 - a pretty modern linux kernel
+
 ## How to install
 
 ### Linux
@@ -45,10 +46,10 @@ The setup consists of two steps. First we need to get the USB-to-Can device work
    ```
    sudo modprobe can
    ```
-4. Set up the can device:
+4. Set up the can device (bitrate may differ between different CAN buses):
 
    ```
-   sudo ip link set can0 up type can bitrate <bitrate_of_CAN-Bus> 
+   sudo ip link set can0 up type can bitrate 500000 
    ```
 5. ```can0``` will now display as a normal network interface
 

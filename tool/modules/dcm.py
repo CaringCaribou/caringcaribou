@@ -65,9 +65,8 @@ NRC = {
 
 
 def dcm_discovery(args):
-    """
-    Scans for DCM support by brute forcing diagnostic session control messages against different arbitration IDs.
-    """
+    """Scans for diagnostics support by sending session control against different arbitration IDs."""
+    # TODO docstring args
     min_id = int_from_str_base(args.min)
     max_id = int_from_str_base(args.max)
     can_wrap = CanActions()
@@ -93,15 +92,18 @@ def dcm_discovery(args):
                                        min_id=min_id, max_id=max_id, callback_not_found=none_found)  # FIXME values
 
 
-def service_discovery(send_arb_id, rcv_arb_id, function_length=1):
+def service_discovery(args):
     """
     Scans for supported DCM services. Prints a list of all supported services afterwards.
 
     :param send_arb_id: Arbitration ID used for outgoing messages
     :param rcv_arb_id: Arbitration ID expected for incoming messages
-    :param: function_length: Function length in bytes (1-7)
     :return:
     """
+    # TODO docstring args
+    send_arb_id = int_from_str_base(args.src)
+    rcv_arb_id = int_from_str_base(args.dst)
+
     can_wrap = CanActions(arb_id=send_arb_id)
     print("Starting DCM service discovery")
     supported_services = []
@@ -125,7 +127,7 @@ def service_discovery(send_arb_id, rcv_arb_id, function_length=1):
         print("\nDone!")
 
     # Message to bruteforce - [length, service id]
-    msg = insert_message_length([0x00] * function_length)
+    msg = [0x01, 0x00]
     # Index of service id byte in message
     service_index = 1
     try:
@@ -141,7 +143,18 @@ def service_discovery(send_arb_id, rcv_arb_id, function_length=1):
             print("Supported service 0x{0:02x}: {1}".format(service, service_name))
 
 
-def subfunc_discovery(service_id, send_arb_id, rcv_arb_id, bruteforce_indices, show_data=True):
+def subfunc_discovery(args):
+    """
+    Scans for subfunctions of a given service.
+
+    :param args: A namespace containing src, dst, service, show and i
+    """
+    send_arb_id = int_from_str_base(args.src)
+    rcv_arb_id = int_from_str_base(args.dst)
+    service_id = int_from_str_base(args.service)
+    show_data = args.show
+    bruteforce_indices = args.i
+
     can_wrap = CanActions(arb_id=send_arb_id)
     found_sub_functions = []
     print("Starting DCM sub-function discovery")
@@ -206,7 +219,7 @@ def subfunc_discovery(service_id, send_arb_id, rcv_arb_id, bruteforce_indices, s
 
 def parse_args(args):
     """
-    Parser for DCM module arguments.
+    Parser for diagnostics module arguments.
 
     :return: Namespace containing action and action-specific arguments
     :rtype: argparse.Namespace
@@ -225,7 +238,7 @@ def parse_args(args):
     parser_disc.set_defaults(func=dcm_discovery)
 
     # Parser for diagnostics service discovery
-    parser_info = subparsers.add_parser("services")  # TODO Args
+    parser_info = subparsers.add_parser("services")
     parser_info.add_argument("src", type=str, help="arbitration ID to transmit from")
     parser_info.add_argument("dst", type=str, help="arbitration ID to listen to")
     parser_info.set_defaults(func=service_discovery)
@@ -234,10 +247,9 @@ def parse_args(args):
     parser_dump = subparsers.add_parser("subfunc")  # TODO Args
     parser_dump.add_argument("src", type=str, help="arbitration ID to transmit from")
     parser_dump.add_argument("dst", type=str, help="arbitration ID to listen to")
-    parser_dump.add_argument("start", type=str, help="start address")
-    # TODO: length OR end address - mutually exclusive group?
-    parser_dump.add_argument("length", type=str, help="dump length")
-    parser_dump.add_argument("-f", "-file", type=str, help="output file", default=None)
+    parser_dump.add_argument("service", type=str, help="service ID (e.g. 0x22 for Read DID)")
+    parser_dump.add_argument("-show", action="store_true", help="show data in terminal")
+    parser_dump.add_argument("i", type=int, nargs="+", help="sub-function indices")
     parser_dump.set_defaults(func=subfunc_discovery)
 
     args = parser.parse_args(args)
@@ -250,11 +262,3 @@ def module_main(arg_list):
         args.func(args)
     except KeyboardInterrupt:
         print("\n\nTerminated by user")
-
-# TODO: Remove!
-if __name__ == "__main__":
-    try:
-        service_discovery(0x733, 0x633, function_length=2)
-        #subfunc_discovery(0x22, 0x733, 0x633, [2, 3], False)
-    except KeyboardInterrupt:
-        print("\nInterrupted by user")

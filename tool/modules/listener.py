@@ -1,4 +1,4 @@
-from can_actions import *
+from can_actions import CanActions
 from sys import stdout
 from collections import Counter
 import argparse

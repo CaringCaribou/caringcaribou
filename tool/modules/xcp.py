@@ -1,24 +1,8 @@
-from can_actions import CanActions
+from can_actions import CanActions, int_from_str_base
 from sys import stdout
 import argparse
 import time
 
-
-def int_from_str_base(s):
-    """
-    Converts a str to an int, supporting both base 10 and base 16 literals.
-
-    :param s: str representing an int in base 10 or 16
-    :return: int version of s on success, None otherwise
-    :rtype: int
-    """
-    try:
-        if s.startswith("0x"):
-            return int(s, base=16)
-        else:
-            return int(s)
-    except (AttributeError, ValueError):
-        return None
 
 # Dictionary of XCP error codes, mapping (code -> (error, description))
 XCP_ERROR_CODES = dict([
@@ -135,32 +119,32 @@ def xcp_arbitration_id_discovery(args):
     min_id = int_from_str_base(args.min)
     max_id = int_from_str_base(args.max)
 
-    can_wrap = CanActions()
-    print("Starting XCP discovery")
+    with CanActions() as can_wrap:
+        print("Starting XCP discovery")
 
-    def response_analyser_wrapper(arb_id):
-        print "\rSending XCP connect to 0x{0:04x}".format(arb_id),
-        stdout.flush()
+        def response_analyser_wrapper(arb_id):
+            print "\rSending XCP connect to 0x{0:04x}".format(arb_id),
+            stdout.flush()
 
-        def response_analyser(msg):
-            # Handle positive response
-            if msg.data[0] == 0xff:
-                can_wrap.bruteforce_stop()
-                decode_connect_response(msg)
-                print("Found XCP at arbitration ID 0x{0:04x}, reply at 0x{1:04x}".format(arb_id, msg.arbitration_id))
-            # Handle negative response
-            elif msg.data[0] == 0xfe:
-                print("\nFound XCP (with a bad reply) at arbitration ID {0:03x}, reply at {1:04x}".format(
-                    arb_id, msg.arbitration_id))
-                can_wrap.bruteforce_stop()
-                decode_xcp_error(msg)
-        return response_analyser
+            def response_analyser(msg):
+                # Handle positive response
+                if msg.data[0] == 0xff:
+                    can_wrap.bruteforce_stop()
+                    decode_connect_response(msg)
+                    print("Found XCP at arbitration ID 0x{0:04x}, reply at 0x{1:04x}".format(arb_id, msg.arbitration_id))
+                # Handle negative response
+                elif msg.data[0] == 0xfe:
+                    print("\nFound XCP (with a bad reply) at arbitration ID {0:03x}, reply at {1:04x}".format(
+                        arb_id, msg.arbitration_id))
+                    can_wrap.bruteforce_stop()
+                    decode_xcp_error(msg)
+            return response_analyser
 
-    def none_found(s):
-        print("\nXCP could not be found: {0}".format(s))
+        def none_found(s):
+            print("\nXCP could not be found: {0}".format(s))
 
-    can_wrap.bruteforce_arbitration_id([0xff], response_analyser_wrapper,
-                                       min_id=min_id, max_id=max_id, callback_not_found=none_found)
+        can_wrap.bruteforce_arbitration_id([0xff], response_analyser_wrapper,
+                                           min_id=min_id, max_id=max_id, callback_not_found=none_found)
 
 
 def xcp_get_basic_information(args):
@@ -168,31 +152,27 @@ def xcp_get_basic_information(args):
     send_arb_id = int_from_str_base(args.src)
     rcv_arb_id = int_from_str_base(args.dst)
 
-    def handle_description_file(msg):  # FIXME better handling - related to reply from 0xfa, 0x0*
+    def handle_description_file(msg):
         if msg.arbitration_id != rcv_arb_id:
             return
         if msg.data[0] == 0xfe:
             decode_xcp_error(msg)
             return
         if msg.data[0] == 0xff:
-            can_wrap.notifier.listeners = []
             print("Desc file response:\n{0}".format(msg))
             print("".join([chr(x) for x in msg.data[1:]]))
-            # TODO Handle, send next
         else:
             print("Weird get status reply: {0}\n".format(msg))
 
-    def handle_get_id_reply(msg):  # FIXME better handling - related to reply from 0xfa, 0x0*
+    def handle_get_id_reply(msg):
         if msg.arbitration_id != rcv_arb_id:
             return
         if msg.data[0] == 0xfe:
             decode_xcp_error(msg)
             return
         if msg.data[0] == 0xff:
-            can_wrap.notifier.listeners = []
             print("GET ID response:\n{0}".format(msg))
             can_wrap.send_single_message_with_callback([0xf5, msg.data[4]], handle_description_file)
-            # TODO Handle, send next
         else:
             print("Weird get status reply: {0}\n".format(msg))
 
@@ -204,7 +184,8 @@ def xcp_get_basic_information(args):
             return
         if msg.data[0] == 0xff:
             decode_get_status_response(msg)
-            can_wrap.send_single_message_with_callback([0xfa, 0x01], handle_get_id_reply)  # FIXME: Different values (1=ASAM-MC2 filename etc)
+            # TODO: Different values possible (1=ASAM-MC2 filename etc)
+            can_wrap.send_single_message_with_callback([0xfa, 0x01], handle_get_id_reply)
         else:
             print("Weird get status reply: {0}\n".format(msg))
 
@@ -232,13 +213,18 @@ def xcp_get_basic_information(args):
             print("Weird connect reply: {0}\n".format(msg))
 
     print("Probing for XCP info")
-    can_wrap = CanActions(arb_id=send_arb_id)
-    can_wrap.send_single_message_with_callback([0xff], handle_connect)
-    time.sleep(2)
-    print("End of sequence")
+    with CanActions(arb_id=send_arb_id) as can_wrap:
+        can_wrap.send_single_message_with_callback([0xff], handle_connect)
+        time.sleep(2)
+        print("End of sequence")
 
 
 def xcp_memory_dump(args):
+    """
+    Performs a memory dump to file or stdout via XCP.
+
+    :param args: A namespace containing src, dst, start, length and f
+    """
     send_arb_id = int_from_str_base(args.src)
     rcv_arb_id = int_from_str_base(args.dst)
     start_address = int_from_str_base(args.start)
@@ -270,21 +256,23 @@ def xcp_memory_dump(args):
                 with open(dump_file, "ab") as outfile:
                     outfile.write(bytearray(msg.data[1:end_index]))
             else:
-                # TODO Check that this looks nice in console
                 print(" ".join(["{0:02x}".format(i) for i in msg.data[1:end_index]]))
             # Update counters
             byte_counter += 7
             bytes_left -= 7
             if bytes_left < 1:
-                print "\rDumping segment {0} ({1} b, 0 b left)".format(segment_counter, length)
+                if dump_file:
+                    print "\rDumping segment {0} ({1} b, 0 b left)".format(segment_counter, length)
                 print("Dump complete!")
                 dump_complete = True
             elif byte_counter > 251:
                 # Dump another segment
                 segment_counter += 1
-                # Print progress
-                print "\rDumping segment {0} ({1} b, {2} b left)".format(segment_counter, ((segment_counter+1)*0xf5+byte_counter), bytes_left),
-                stdout.flush()
+                if dump_file:
+                    # Print progress
+                    print "\rDumping segment {0} ({1} b, {2} b left)".format(
+                        segment_counter, ((segment_counter+1)*0xf5 + byte_counter), bytes_left),
+                    stdout.flush()
 
                 byte_counter = 0
                 can_wrap.send_single_message_with_callback([0xf5, min(0xfc, bytes_left)], handle_upload_reply)
@@ -312,8 +300,9 @@ def xcp_memory_dump(args):
             return
         if msg.data[0] == 0xff:
             print("Connected")
-            can_wrap.send_single_message_with_callback([0xf6, 0x00, 0x00, 0x00, r[0], r[1], r[2], r[3]],
-                                                       handle_set_mta_reply)
+            can_wrap.send_single_message_with_callback(
+                [0xf6, 0x00, 0x00, 0x00, r[0], r[1], r[2], r[3]],
+                handle_set_mta_reply)
         else:
             print("Weird connect reply: {0}\n".format(msg))
 
@@ -330,17 +319,16 @@ def xcp_memory_dump(args):
         with open(dump_file, "w") as tmp:
             pass
     # Initialize
-    can_wrap = CanActions(arb_id=send_arb_id)
-    print("Attempting XCP memory dump")
-    # Connect and prepare for dump
-    can_wrap.send_single_message_with_callback([0xff], handle_connect_reply)
-    # Idle timeout handling
-    while idle_timeout > 0.0 and not dump_complete:
-        time.sleep(0.5)
-        idle_timeout -= 0.5
-    if not dump_complete:
-        print("\nERROR: Dump ended due to idle timeout")
-    can_wrap.notifier.listeners = []  # TODO: Always do this before shutting down in order to prevent crashie crashie
+    with CanActions(arb_id=send_arb_id) as can_wrap:
+        print("Attempting XCP memory dump")
+        # Connect and prepare for dump
+        can_wrap.send_single_message_with_callback([0xff], handle_connect_reply)
+        # Idle timeout handling
+        while idle_timeout > 0.0 and not dump_complete:
+            time.sleep(0.5)
+            idle_timeout -= 0.5
+        if not dump_complete:
+            print("\nERROR: Dump ended due to idle timeout")
 
 
 def parse_args(args):
@@ -376,7 +364,7 @@ def parse_args(args):
     parser_dump.add_argument("src", type=str, help="arbitration ID to transmit from")
     parser_dump.add_argument("dst", type=str, help="arbitration ID to listen to")
     parser_dump.add_argument("start", type=str, help="start address")
-    # TODO: length OR end address - mutually exclusive group?
+    # TODO: use length OR end address as mutually exclusive group?
     parser_dump.add_argument("length", type=str, help="dump length")
     parser_dump.add_argument("-f", "-file", type=str, help="output file", default=None)
     parser_dump.set_defaults(func=xcp_memory_dump)
@@ -386,6 +374,11 @@ def parse_args(args):
 
 
 def module_main(arg_list):
+    """
+    Module main wrapper.
+
+    :param arg_list: Module argument list
+    """
     try:
         args = parse_args(arg_list)
         args.func(args)

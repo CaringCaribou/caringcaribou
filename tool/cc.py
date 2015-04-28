@@ -1,4 +1,4 @@
-# TODO: shebang here?
+#!/usr/bin/env python
 # https://github.com/CaringCaribou/caringcaribou
 # TODO: License stuff/info here?
 

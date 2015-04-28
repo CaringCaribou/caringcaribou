@@ -41,13 +41,13 @@ The setup consists of two steps. First we need to get the USB-to-Can device work
 1. Install a Linux dist with a kernel >= 3.4 e.g. latest Ubuntu (we used Ubuntu 14.04 LTS)
 2. Plug in the USB-to-Can device (we used [PEAK PCAN-USB](http://www.peak-system.com/PCAN-USB.199.0.html))
 3. Load the CAN module:
-```
-sudo modprobe can
-```
+   ```
+   sudo modprobe can
+   ```
 4. Set up the can device
-```
-sudo ip link set can0 up type can bitrate <bitrate_of_CAN-Bus> 
-```
+   ```
+   sudo ip link set can0 up type can bitrate <bitrate_of_CAN-Bus> 
+   ```
 5. ```can0``` will now display as a normal network interface
 
 

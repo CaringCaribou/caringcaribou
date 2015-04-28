@@ -1,7 +1,6 @@
 #!/usr/bin/env python
+# Released under GNU General Public License v3
 # https://github.com/CaringCaribou/caringcaribou
-# TODO: License stuff/info here?
-
 import argparse
 import imp
 import os
@@ -11,14 +10,31 @@ MODULES_DIR = "modules"
 
 
 def show_script_header():
-    """
-    Prints the script header (duh)
-    """
-    print("""
+    """Show script header"""
+    print(r"""
 -------------------
 CARING CARIBOU v{0}
 -------------------
 """.format(VERSION))
+
+
+def fancy_header():
+    """
+    Returns a fancy header string.
+
+    :rtype: str
+    """
+    return r"""-------------------
+CARING CARIBOU v{0}
+\_\_    _/_/
+    \__/
+    (oo)\_______
+    (__)\       )\/
+        ||-----||
+        ||     ||
+-------------------
+
+""".format(VERSION)
 
 
 def available_modules():
@@ -41,7 +57,7 @@ def parse_arguments():
     :return: Namespace containing module name and arguments
     :rtype: argparse.Namespace
     """
-    parser = argparse.ArgumentParser(description="A friendly car security exploration tool",
+    parser = argparse.ArgumentParser(description="{0}A friendly car security exploration tool".format(fancy_header()),
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=available_modules())
     parser.add_argument("module", type=str,
@@ -76,10 +92,10 @@ def load_module(module_name):
 
 def main():
     """Main execution handler"""
-    # Print fancy header
-    show_script_header()
     # Parse and validate arguments
     args = parse_arguments()
+    # Show header
+    show_script_header()
     # Dynamically load module
     mod = load_module(args.module)
     if mod is not None:

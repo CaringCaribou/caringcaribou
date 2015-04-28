@@ -54,11 +54,13 @@ class CanActions():
         self.bruteforce_running = False
 
     def __enter__(self):
-        return self  # FIXME correct?
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.clear_listeners()
-        time.sleep(0.5)
+        # The following line prevents threading errors during shutdown
+        self.notifier.running.clear()
+        time.sleep(0.1)
 
     def add_listener(self, listener):
         self.notifier.listeners.append(listener)

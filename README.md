@@ -54,22 +54,25 @@ The setup consists of two steps. First we need to get the USB-to-Can device work
 
 
 #### Python-Can
-Download Python-Can from [bitbucket.org/hardbyte/python-can commit 77eea796362b](https://bitbucket.org/hardbyte/python-can/get/77eea796362b.zip). Try other commits at your own peril.
+Download Python-Can from [bitbucket.org/hardbyte/python-can commit 77eea796362b](https://bitbucket.org/hardbyte/python-can/get/77eea796362b.zip). 
+
+Use other commits at your own peril.
+
 ##### Install
 1. Install [pip](https://pypi.python.org/pypi/pip)
-2. Install python-can:
+2. Install python-can by running:
 
-   ```sudo python setup.py install```
+        sudo python setup.py install
 
-3. Verify that the installation worked by running python from the terminal and  load the can module. 
+3. Verify that the installation worked by running python from the terminal and load the can module. 
 
-   ```
-   Python 2.7.6 (default, Mar 22 2014, 22:59:56) 
-   [GCC 4.8.2] on linux2
-   Type "help", "copyright", "credits" or "license" for more information.
-   >>> import can
-   >>> 
-   ```
+    ```
+    Python 2.7.6 (default, Mar 22 2014, 22:59:56) 
+    [GCC 4.8.2] on linux2
+    Type "help", "copyright", "credits" or "license" for more information.
+    >>> import can
+    >>> 
+    ```
 
 
 ##### Configure
@@ -94,11 +97,19 @@ The simplest solution is to download [VMPlayer](https://my.vmware.com/web/vmware
 - http://skpang.co.uk/catalog/pican-canbus-board-for-raspberry-pi-p-1196.html
 Wireshark is up and running but python-can is currently defunct
 
-# The target
+## How to use
+The best way to understand how to use Caring Caribou is by envoking cc.py's help menu:
+    
+    python cc.py -h
+
+ 
+## Extending the project
+
+## The target
 We used an open source implementation of Autosar from ArcCore available here: http://www.arccore.com/hg **FIXME**
 We used a devboard from ArcCore, called Arctic EVK-M3 - an STM32F107 based device
 
-# Contributors
+## Contributors
 * The HeavenS project, funded by VINNOVA - http://www.vinnova.se/sv/Resultat/Projekt/Effekta/HEAVENS-HEAling-Vulnerabilities-to-ENhance-Software-Security-and-Safety/
 * Christian Sandberg
 * Kasper Karlsson

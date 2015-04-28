@@ -34,10 +34,56 @@ python2.7
 python-can
 a pretty modern linux kernel
 ## How to install
-### Ubuntu
-Focus-area DO THIS
-### Windows 7
-Help needed
+
+### Linux
+The setup consists of two steps. First we need to get the USB-to-Can device working and secondly configure Python-Can for the device.
+#### USB-to-Can Setup
+1. Install a Linux dist with a kernel >= 3.4 e.g. latest Ubuntu (we used Ubuntu 14.04 LTS)
+2. Plug in the USB-to-Can device (we used [PEAK PCAN-USB](http://www.peak-system.com/PCAN-USB.199.0.html))
+3. Load the CAN module:
+```
+sudo modprobe can
+```
+4. Set up the can device
+```
+sudo ip link set can0 up type can bitrate <bitrate_of_CAN-Bus> 
+```
+5. ```can0``` will now display as a normal network interface
+
+
+#### Python-Can
+Clone/download Python-Can from [bitbucket.org/hardbyte/python-can](https://bitbucket.org/hardbyte/python-can)
+##### Install
+1. Install [pip](https://pypi.python.org/pypi/pip)
+2. Install python-can:
+
+   ```sudo python setup.py install```
+
+3. Verify that the installation worked by running python from the terminal and  load the can module. 
+
+   ```
+   Python 2.7.6 (default, Mar 22 2014, 22:59:56) 
+   [GCC 4.8.2] on linux2
+   Type "help", "copyright", "credits" or "license" for more information.
+   >>> import can
+   >>> 
+   ```
+##### Configure
+Python-Can uses a configuration file ```~/.canrc``` to specify a CAN interface.
+The contents of this file should be:
+
+    [default]
+    interface = socketcan_ctypes
+    channel = can0
+##### Test it
+Connect the USB-to-CAN device to an actual CAN-bus and run the following: 
+
+``` python bin/canlogger.py ```
+
+If packets are received everything is good to go!
+
+#### Windows 7 
+The simplest solution is to download [VMPlayer](https://my.vmware.com/web/vmware/free#desktop_end_user_computing/vmware_player/7_0), install a Linux distribution and to follow the Linux guide above.
 ### Raspberry Pi
 - http://www.cowfishstudios.com/blog/canned-pi-part1
 - http://skpang.co.uk/catalog/pican-canbus-board-for-raspberry-pi-p-1196.html

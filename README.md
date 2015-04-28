@@ -93,19 +93,20 @@ If packets are received everything is good to go!
 ### Windows 7 
 The simplest solution is to download [VMPlayer](https://my.vmware.com/web/vmware/free#desktop_end_user_computing/vmware_player/7_0), install a Linux distribution and to follow the Linux guide above.
 ### Raspberry Pi
-#### Parts
-- Rapsberry pi model B (250 SEK)
+#### Parts list
+- Raspberry Pi model B 
 - SD-card 8 GB
-- piCAN - shield (£32.28 Inc VAT)
+- piCAN-shield
 - DBUS 9 male
 - 2 wires
 
 #### Helpful sites
-- http://www.cowfishstudios.com/blog/canned-pi-part1
-- http://skpang.co.uk/blog/archives/1141
-- http://www.raspberrypi.org/forums/viewtopic.php?p=675658#p675658
-- http://lnxpps.de/rpie/
-- http://ifinterface.com/page/page3.php?langid=1
+- http://skpang.co.uk/blog/archives/1141 (piCAN shield)
+- http://www.cowfishstudios.com/blog/canned-pi-part1 (Kernel modules and howto)
+- http://lnxpps.de/rpie/ (Kernel modules & config)
+- http://ifinterface.com/page/page3.php?langid=1 (Kernel modules)
+- http://www.raspberrypi.org/forums/viewtopic.php?p=675658#p675658 (Device Tree)
+
 
 #### USB-to-CAN
 ##### Raspian
@@ -172,6 +173,7 @@ Note: Enabling spi in the device tree was required when we performed install due
 
 12. Bring the interface up
 ```sudo ip link set can0 up ```
+
 ##### Python-Can
 See instructions above in the Linux guide
 

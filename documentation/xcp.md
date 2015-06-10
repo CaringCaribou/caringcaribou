@@ -21,7 +21,8 @@ Example usage:
  cc.py xcp info 1000 1001
  cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex
  ```
- ## discovery
+ 
+## Discovery
  ```
 -------------------
 CARING CARIBOU v0.1
@@ -29,17 +30,16 @@ CARING CARIBOU v0.1
 
 Loaded module 'xcp'
 
-usage: cc.py xcp [-h] {discovery,info,dump} ...
-
-XCP module for CaringCaribou
-
-positional arguments:
- {discovery,info,dump}
+usage: cc.py xcp discovery [-h] [-min MIN] [-max MAX]
 
 optional arguments:
  -h, --help            show this help message and exit
+ -min MIN
+ -max MAX
  ```
- ## info
+ 
+## Info
+ 
  ```
 -------------------
 CARING CARIBOU v0.1
@@ -47,17 +47,18 @@ CARING CARIBOU v0.1
 
 Loaded module 'xcp'
 
-usage: cc.py xcp [-h] {discovery,info,dump} ...
-
-XCP module for CaringCaribou
+usage: cc.py xcp info [-h] src dst
 
 positional arguments:
- {discovery,info,dump}
+  src         arbitration ID to transmit from
+  dst         arbitration ID to listen to
 
 optional arguments:
  -h, --help            show this help message and exit
  ```
- ## dump
+ 
+## Dump
+ 
  ```
 -------------------
 CARING CARIBOU v0.1
@@ -65,13 +66,15 @@ CARING CARIBOU v0.1
 
 Loaded module 'xcp'
 
-usage: cc.py xcp [-h] {discovery,info,dump} ...
-
-XCP module for CaringCaribou
+usage: cc.py xcp dump [-h] [-f F] src dst start length
 
 positional arguments:
- {discovery,info,dump}
+  src         arbitration ID to transmit from
+  dst         arbitration ID to listen to
+  start       start adress
+  length      dump length
 
 optional arguments:
  -h, --help            show this help message and exit
+ -f F, -file F         output file
  ```

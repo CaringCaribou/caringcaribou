@@ -12,19 +12,29 @@ CaringCaribou is module based with a master command (cc.py) that runs the show. 
 ## List of Modules
 
 ### dcm.py - Diagnostics ISO 14229
-- ArbID Discovery - try to connect (02 10 01) to all possible ArbId (000-7FF) and collect valid responses (xx 7F or xx 50)
-- Service Discovery - Brute force all SIDs and report any responses (anything that is not xx F7 11)
-- Sub-function Discovery - Brute force engine that takes SID and an index indicating which positions to brute force as input
+- discovery - ArbID Discovery. Tries to connect (02 10 01) to all possible ArbId (000-7FF) and collect valid responses (xx 7F or xx 50)
+- services - Service Discovery.Brute force all Service Id's (SID) and report any responses (anything that is not xx F7 11)
+- subfunc - Sub-function Discovery. Brute force engine that takes SID and an index indicating which positions to brute force as input.
+
+Detailed information on the [dcm-modulen](https://github.com/CaringCaribou/caringcaribou/edit/master/documentation/dcm.md).
 
 ### xcp.py - Universal Measurement and Calibration Protocol (XCP)
-- ArbId Discovery - try to connect (FF) to all possible ArbId (000-7FF) and collect all valid responses (FF or FE)
-- Get Basic Information - connect and get information about XCP abilities in the target environment
-- Upload - dump ECU memory (SRAM, flash and bootloader) to file 
+- discovery - ArbId Discovery. Tries to connect (FF) to all possible ArbId (000-7FF) and collect all valid responses (FF or FE)
+- info - XCP Get Basic Information. Connects and gets information about XCP abilities in the target environment
+- dump - XCP Upload. Used to dump ECU memory (SRAM, flash and bootloader) to file 
+
+
+Detailed information on the [dcm-modulen](https://github.com/CaringCaribou/caringcaribou/edit/master/documentation/xcp.md).
 
 ### listener.py - Listener
 - ArbId listener - register all ArbIds heard on the CAN bus
 
-### send.py - Manually send commands
+Detailed information on the [dcm-modulen](https://github.com/CaringCaribou/caringcaribou/edit/master/documentation/listener.md).
+
+### send.py - Send CAN packets
+- Raw message transmission module, used to drive manual test cases
+
+Detailed information on the [dcm-modulen](https://github.com/CaringCaribou/caringcaribou/edit/master/documentation/send.md).
 
 ### CAN.Action.py
 This is the daddy of all classes. Imported by all other modules. Abstraction for all access to the CAN bus

@@ -199,6 +199,7 @@ The best way to understand how to use Caring Caribou is by envoking cc.py's help
 
  
 ## Extending the project
+Create a python file with a ```module_main(args)``` function. Put it in the ```modules``` folder. CaringCaribou (cc.py) will automagically recognize it as a module and list it in the output of ```./cc.py -h```
 
 ## The target
 We used an open source implementation of Autosar from ArcCore available here: http://www.arccore.com/hg **FIXME**

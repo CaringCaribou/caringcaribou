@@ -67,7 +67,7 @@ def parse_args(args):
     parser.add_argument("msg", nargs="+", help="Message on format ARB_ID#DATA where ARB_ID is interpreted "
                                                "as hex if it starts with 0x and decimal otherwise. DATA "
                                                "consists of 1-8 bytes, written in hex.")
-    parser.add_argument("--delay", "-d", type=float, default=0, help="Delay between messages in seconds")
+    parser.add_argument("--delay", "-d", metavar="D", type=float, default=0, help="Delay between messages in seconds")
     args = parser.parse_args(args)
     return args
 

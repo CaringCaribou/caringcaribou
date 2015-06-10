@@ -130,7 +130,6 @@ def xcp_arbitration_id_discovery(args):
             stdout.flush()
 
             def response_analyser(msg):
-                #print(msg)  # TODO Remove
                 # Handle positive response
                 if msg.data[0] == 0xff and any(msg.data[1:]):
                     # can_wrap.bruteforce_stop()  # FIXME Enable/disable through flag?
@@ -224,119 +223,6 @@ def xcp_get_basic_information(args):
         time.sleep(2)
         print("End of sequence")
 
-
-def xcp_memory_dump_old(args): # TODO This is the old (working) code for test board
-    """
-    Performs a memory dump to file or stdout via XCP.
-
-    :param args: A namespace containing src, dst, start, length and f
-    """
-    send_arb_id = int_from_str_base(args.src)
-    rcv_arb_id = int_from_str_base(args.dst)
-    start_address = int_from_str_base(args.start)
-    length = int_from_str_base(args.length)
-    dump_file = args.f
-
-    global byte_counter, bytes_left, dump_complete, segment_counter, idle_timeout
-    # Timeout timer
-    idle_timeout = 3.0
-    dump_complete = False
-    # Counters for data length
-    byte_counter = 0
-    segment_counter = 0
-
-    def handle_upload_reply(msg):
-        global byte_counter, bytes_left, dump_complete, idle_timeout, segment_counter
-        if msg.arbitration_id != rcv_arb_id:
-            return
-        if msg.data[0] == 0xfe:
-            decode_xcp_error(msg)
-            return
-        if msg.data[0] == 0xff:
-            # Reset timeout timer
-            idle_timeout = 3.0
-            # Calculate end index of data to handle
-            end_index = min(8, bytes_left + 1)
-
-            if dump_file:
-                with open(dump_file, "ab") as outfile:
-                    outfile.write(bytearray(msg.data[1:end_index]))
-            else:
-                print(" ".join(["{0:02x}".format(i) for i in msg.data[1:end_index]]))
-            # Update counters
-            byte_counter += 7
-            bytes_left -= 7
-            if bytes_left < 1:
-                if dump_file:
-                    print "\rDumping segment {0} ({1} b, 0 b left)".format(segment_counter, length)
-                print("Dump complete!")
-                dump_complete = True
-            else:
-                # Dump another segment
-                segment_counter += 1
-                if dump_file:
-                    # Print progress
-                    print "\rDumping segment {0} ({1} b, {2} b left)".format(
-                        segment_counter, ((segment_counter+1)*0xf5 + byte_counter), bytes_left),
-                    stdout.flush()
-
-                byte_counter = 0
-                can_wrap.send_single_message_with_callback([0xf5, min(0xfc, bytes_left)], handle_upload_reply)
-
-    def handle_set_mta_reply(msg):
-        if msg.arbitration_id != rcv_arb_id:
-            return
-        if msg.data[0] == 0xfe:
-            decode_xcp_error(msg)
-            return
-        if msg.data[0] == 0xff:
-            print("Set MTA acked")
-            print("Dumping data:")
-            # Initiate dumping
-            print "\rDumping segment 0",
-            can_wrap.send_single_message_with_callback([0xf5, min(0xfc, bytes_left)], handle_upload_reply)
-        else:
-            print("Unexpected reply: {0}\n".format(msg))
-
-    def handle_connect_reply(msg):
-        if msg.arbitration_id != rcv_arb_id:
-            return
-        if msg.data[0] == 0xfe:
-            decode_xcp_error(msg)
-            return
-        if msg.data[0] == 0xff:
-            print("Connected")
-            can_wrap.send_single_message_with_callback(
-                [0xf6, 0x00, 0x00, 0x00, r[0], r[1], r[2], r[3]],
-                handle_set_mta_reply)
-        else:
-            print("Weird connect reply: {0}\n".format(msg))
-
-    # Calculate address bytes (4 bytes, least significant first)
-    r = []
-    n = start_address
-    bytes_left = length
-    n &= 0xFFFFFFFF
-    for i in range(4):
-        r.append(n & 0xFF)
-        n >>= 8
-    # Make sure dump_file can be opened if specified (clearing it if it already exists)
-    if dump_file:
-        with open(dump_file, "w") as tmp:
-            pass
-    # Initialize
-    with CanActions(arb_id=send_arb_id) as can_wrap:
-        print("Attempting XCP memory dump")
-        # Connect and prepare for dump
-        can_wrap.send_single_message_with_callback([0xff], handle_connect_reply)
-        # Idle timeout handling
-        while idle_timeout > 0.0 and not dump_complete:
-            time.sleep(0.5)
-            idle_timeout -= 0.5
-        if not dump_complete:
-            print("\nERROR: Dump ended due to idle timeout")
-
-
 def xcp_memory_dump(args):
     """
     Performs a memory dump to file or stdout via XCP.
@@ -422,7 +308,7 @@ def xcp_memory_dump(args):
             decode_xcp_error(msg)
             return
         if msg.data[0] == 0xff:
-            print("Connected")
+            print "Connected: Using",
             # Check connect reply to see whether to reverse byte order for MTA
             msb_format = msg.data[2] & 1
             if msb_format:
@@ -434,22 +320,25 @@ def xcp_memory_dump(args):
                 [0xf6, 0x00, 0x00, 0x00, r[0], r[1], r[2], r[3]],
                 handle_set_mta_reply)
         else:
-            print("Weird connect reply: {0}\n".format(msg))
+            print("Unexpected connect reply: {0}\n".format(msg))
 
     # Calculate address bytes (4 bytes, least significant first)
     r = []
     n = start_address
     bytes_left = length
+    # Calculate start address (r is automatically reversed after connect if needed)
     n &= 0xFFFFFFFF
     for i in range(4):
         r.append(n & 0xFF)
         n >>= 8
-    #r.reverse() # FIXME: this controls whether to reverse address. Add argument flag
-    print("r={0}".format(",".join([hex(a) for a in r])))
     # Make sure dump_file can be opened if specified (clearing it if it already exists)
     if dump_file:
-        with open(dump_file, "w") as tmp:
-            pass
+        try:
+            with open(dump_file, "w") as tmp:
+                pass
+        except IOError as e:
+            print("Error when opening dump file:\n\n{0}".format(e))
+            return
     # Initialize
     with CanActions(arb_id=send_arb_id) as can_wrap:
         print("Attempting XCP memory dump")

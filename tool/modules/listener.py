@@ -45,7 +45,7 @@ def start_listener(handler, args):
 
 def parse_args(args):
     """
-    Argument parser for the lister module.
+    Argument parser for the listener module.
 
     :param args: List of arguments
     :return: Argument namespace

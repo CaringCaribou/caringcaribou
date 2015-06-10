@@ -72,11 +72,13 @@ class CanActions():
         self.clear_listeners()
         self.add_listener(listener)
 
-    def send(self, data):
+    def send(self, data, arb_id=None):
         if len(data) > 8:
             raise IndexError("Invalid CAN message length: {0}".format(len(data)))
+        if arb_id is None:
+            arb_id = self.arb_id
         full_data = pad_data(data)
-        msg = can.Message(arbitration_id=self.arb_id,
+        msg = can.Message(arbitration_id=arb_id,
                           data=full_data, extended_id=False)
         # print("--- SENDING ---\n{0}\n".format(msg))   # TODO Remove
         self.bus.send(msg)

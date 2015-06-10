@@ -16,7 +16,7 @@ CaringCaribou is module based with a master command (cc.py) that runs the show. 
 - services - Service Discovery.Brute force all Service Id's (SID) and report any responses (anything that is not xx F7 11)
 - subfunc - Sub-function Discovery. Brute force engine that takes SID and an index indicating which positions to brute force as input.
 
-Detailed information on the [dcm-module](https://github.com/CaringCaribou/caringcaribou/edit/master/documentation/dcm.md).
+Detailed information on the [dcm-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/dcm.md).
 
 ### xcp.py - Universal Measurement and Calibration Protocol (XCP)
 - discovery - ArbId Discovery. Tries to connect (FF) to all possible ArbId (000-7FF) and collect all valid responses (FF or FE)
@@ -24,17 +24,17 @@ Detailed information on the [dcm-module](https://github.com/CaringCaribou/caring
 - dump - XCP Upload. Used to dump ECU memory (SRAM, flash and bootloader) to file 
 
 
-Detailed information on the [xcp-module](https://github.com/CaringCaribou/caringcaribou/edit/master/documentation/xcp.md).
+Detailed information on the [xcp-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/xcp.md).
 
 ### listener.py - Listener
 - ArbId listener - register all ArbIds heard on the CAN bus
 
-Detailed information on the [listener-module](https://github.com/CaringCaribou/caringcaribou/edit/master/documentation/listener.md).
+Detailed information on the [listener-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/listener.md).
 
 ### send.py - Send CAN packets
 - Raw message transmission module, used to drive manual test cases
 
-Detailed information on the [send-module](https://github.com/CaringCaribou/caringcaribou/edit/master/documentation/send.md).
+Detailed information on the [send-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/send.md).
 
 ### CAN.Action.py
 This is the daddy of all classes. Imported by all other modules. Abstraction for all access to the CAN bus

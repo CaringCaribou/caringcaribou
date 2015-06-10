@@ -1,4 +1,7 @@
 # DCM
+```
+>./cc.py dmc -h
+
 -------------------
 CARING CARIBOU v0.1
 -------------------
@@ -19,8 +22,12 @@ Example usage:
  cc.py dcm discovery
  cc.py dcm services 0x733 0x633
  cc.py dcm subfunc 0x733 0x633 0x22 2 3
+ ```
 
 ## Discovery
+```
+>./cc.py dmc -h
+
 -------------------
 CARING CARIBOU v0.1
 -------------------
@@ -33,8 +40,11 @@ optional arguments:
  -h, --help            show this help message and exit
  -min MIN
  -max MAX
-
+```
 ## Services
+````
+>./cc.py dmc -h
+
 -------------------
 CARING CARIBOU v0.1
 -------------------
@@ -49,8 +59,10 @@ positional arguments:
 
 optional arguments:
  -h, --help            show this help message and exit
-
+```
 ## Subfunc
+```
+>./cc.py dmc -h
 -------------------
 CARING CARIBOU v0.1
 -------------------
@@ -68,3 +80,4 @@ positional arguments:
 optional arguments:
  -h, --help            show this help message and exit
  -show                 show data in terminal
+```

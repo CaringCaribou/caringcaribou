@@ -175,8 +175,7 @@ def xcp_get_basic_information(args):
 
     class ProbeMessage():
         """Wrapper class for probe messages"""
-        def __init__(self, name, message_data, callback):
-            self.name = name
+        def __init__(self, message_data, callback):
             self.message_data = message_data
             self.callback = callback_wrapper(callback)
 
@@ -191,15 +190,14 @@ def xcp_get_basic_information(args):
         can_wrap.send_single_message_with_callback([0xf5, msg.data[4]], callback_wrapper(print_msg_as_text))
 
     # Define probe messages
-    probe_msgs = [ProbeMessage("Connect", [0xff], decode_connect_response),
-                  ProbeMessage("GetCommMode", [0xfb], decode_get_comm_mode_info_response),
-                  ProbeMessage("GetStatus", [0xfd], decode_get_status_response),
-                  ProbeMessage("GetId ASCII text", [0xfa, 0x00], handle_get_id_reply),
-                  ProbeMessage("GetId ASAM-MC2 filename w/o path/ext", [0xfa, 0x01], handle_get_id_reply),
-                  ProbeMessage("GetId ASAM-MC2 filename with path/ext", [0xfa, 0x02], handle_get_id_reply),
-                  ProbeMessage("GetId ASAM-MC2 URL", [0xfa, 0x03], handle_get_id_reply),
-                  ProbeMessage("GetId ASAM-MC2 fileToUpload", [0xfa, 0x04], handle_get_id_reply),
-    ]
+    probe_msgs = [ProbeMessage([0xff], decode_connect_response),  # Connect
+                  ProbeMessage([0xfb], decode_get_comm_mode_info_response),  # GetCommMode
+                  ProbeMessage([0xfd], decode_get_status_response),  # GetStatus
+                  ProbeMessage([0xfa, 0x00], handle_get_id_reply),  # GetId ASCII text
+                  ProbeMessage([0xfa, 0x01], handle_get_id_reply),  # GetId ASAM-MC2 filename w/o path/ext
+                  ProbeMessage([0xfa, 0x02], handle_get_id_reply),  # GetId ASAM-MC2 filename with path/ext
+                  ProbeMessage([0xfa, 0x03], handle_get_id_reply),  # GetId ASAM-MC2 URL
+                  ProbeMessage([0xfa, 0x04], handle_get_id_reply)]  # GetId ASAM-MC2 fileToUpload
 
     # Initiate probing
     with CanActions(arb_id=send_arb_id) as can_wrap:

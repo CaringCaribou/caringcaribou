@@ -46,7 +46,7 @@ def decode_connect_response(response_message):
     """
     Decodes an XCP connect response and prints the response information.
 
-    :param data: The response message
+    :param response_message: The connect response message
     """
     print("> DECODE CONNECT RESPONSE")
     print(response_message)
@@ -93,7 +93,7 @@ def decode_get_comm_mode_info_response(response_message):
     print("MAX_BS (master block mode): {0} command packets".format(data[4]))
     print("MIN_ST (minimum separation time): {0} * 100 us".format(data[5]))
     print("QUEUE_SIZE (interleaved mode): {0} command packets".format(data[6]))
-    print("XCP Driver version: 0x{0:02x}\n".format(data[7]))
+    print("XCP Driver version: 0x{0:02x}".format(data[7]))
 
 
 def decode_get_status_response(response_message):
@@ -113,8 +113,7 @@ def decode_get_status_response(response_message):
         print("{0:<27}| {1}".format(resource_protection_bits[i], bool(data[2] & 2**i)))
     print("-" * 20)
     print("Reserved: 0x{0:02x}".format(data[3]))
-    print("Session configuration ID: {0}\n".format(2 ** ((data[5] & 4) * 2 + data[4] & 2)))
-
+    print("Session configuration ID: {0}".format(2 ** ((data[5] & 4) * 2 + data[4] & 2)))
 
 
 def xcp_arbitration_id_discovery(args):
@@ -139,7 +138,7 @@ def xcp_arbitration_id_discovery(args):
                     print("\n")
                 # Handle negative response
                 elif msg.data[0] == 0xfe:
-                    print("\nFound XCP (with a bad reply) at arbitration ID {0:03x}, reply at {1:04x}".format(
+                    print("\nFound XCP (with a bad reply) at arbitration ID 0x{0:03x}, reply at 0x{1:04x}".format(
                         arb_id, msg.arbitration_id))
                     # can_wrap.bruteforce_stop()  # FIXME Enable/disable through flag?
                     decode_xcp_error(msg)
@@ -153,75 +152,64 @@ def xcp_arbitration_id_discovery(args):
 
 
 def xcp_get_basic_information(args):
-
     send_arb_id = int_from_str_base(args.src)
     rcv_arb_id = int_from_str_base(args.dst)
 
-    def handle_description_file(msg):
-        if msg.arbitration_id != rcv_arb_id:
-            return
-        if msg.data[0] == 0xfe:
-            decode_xcp_error(msg)
-            return
-        if msg.data[0] == 0xff:
-            print("Desc file response:\n{0}".format(msg))
-            print("".join([chr(x) for x in msg.data[1:]]))
-        else:
-            print("Weird get status reply: {0}\n".format(msg))
+    def callback_wrapper(callback):
+        """
+        Adds handling of uninteresting or error messages to a callback function.
+
+        :param callback: The callback function to run on successful messages
+        :return: A callback function with extended message handling
+        """
+        def c(msg):
+            if msg.arbitration_id != rcv_arb_id:
+                return
+            if msg.data[0] == 0xfe:
+                return
+            if msg.data[0] == 0xff:
+                callback(msg)
+            else:
+                print("Unexpected reply:\n{0}\n".format(msg))
+        return c
+
+    class ProbeMessage():
+        """Wrapper class for probe messages"""
+        def __init__(self, name, message_data, callback):
+            self.name = name
+            self.message_data = message_data
+            self.callback = callback_wrapper(callback)
+
+        def __str__(self):
+            return "{0}: {1}".format(self.name, ["{0:02x}".format(a) for a in self.message_data])
+
+    # Callback handler for GetId messages
+    def print_msg_as_text(msg):
+        print("".join([chr(x) for x in msg.data[1:]]))
 
     def handle_get_id_reply(msg):
-        if msg.arbitration_id != rcv_arb_id:
-            return
-        if msg.data[0] == 0xfe:
-            decode_xcp_error(msg)
-            return
-        if msg.data[0] == 0xff:
-            print("GET ID response:\n{0}".format(msg))
-            can_wrap.send_single_message_with_callback([0xf5, msg.data[4]], handle_description_file)
-        else:
-            print("Weird get status reply: {0}\n".format(msg))
+        can_wrap.send_single_message_with_callback([0xf5, msg.data[4]], callback_wrapper(print_msg_as_text))
 
-    def handle_get_status_reply(msg):
-        if msg.arbitration_id != rcv_arb_id:
-            return
-        if msg.data[0] == 0xfe:
-            decode_xcp_error(msg)
-            return
-        if msg.data[0] == 0xff:
-            decode_get_status_response(msg)
-            # TODO: Different values possible (1=ASAM-MC2 filename etc)
-            can_wrap.send_single_message_with_callback([0xfa, 0x01], handle_get_id_reply)
-        else:
-            print("Weird get status reply: {0}\n".format(msg))
+    # Define probe messages
+    probe_msgs = [ProbeMessage("Connect", [0xff], decode_connect_response),
+                  ProbeMessage("GetCommMode", [0xfb], decode_get_comm_mode_info_response),
+                  ProbeMessage("GetStatus", [0xfd], decode_get_status_response),
+                  ProbeMessage("GetId ASCII text", [0xfa, 0x00], handle_get_id_reply),
+                  ProbeMessage("GetId ASAM-MC2 filename w/o path/ext", [0xfa, 0x01], handle_get_id_reply),
+                  ProbeMessage("GetId ASAM-MC2 filename with path/ext", [0xfa, 0x02], handle_get_id_reply),
+                  ProbeMessage("GetId ASAM-MC2 URL", [0xfa, 0x03], handle_get_id_reply),
+                  ProbeMessage("GetId ASAM-MC2 fileToUpload", [0xfa, 0x04], handle_get_id_reply),
+    ]
 
-    def handle_get_comm_mode_reply(msg):
-        if msg.arbitration_id != rcv_arb_id:
-            return
-        if msg.data[0] == 0xfe:
-            decode_xcp_error(msg)
-            return
-        if msg.data[0] == 0xff:
-            decode_get_comm_mode_info_response(msg)
-            can_wrap.send_single_message_with_callback([0xfd], handle_get_status_reply)
-        else:
-            print("Weird comm mode reply: {0}\n".format(msg))
-
-    def handle_connect(msg):
-        if msg.arbitration_id != rcv_arb_id:
-            return
-        if msg.data[0] == 0xfe:
-            decode_xcp_error(msg)
-            return
-        if msg.data[0] == 0xff:
-            can_wrap.send_single_message_with_callback([0xfb], handle_get_comm_mode_reply)
-        else:
-            print("Weird connect reply: {0}\n".format(msg))
-
-    print("Probing for XCP info")
+    # Initiate probing
     with CanActions(arb_id=send_arb_id) as can_wrap:
-        can_wrap.send_single_message_with_callback([0xff], handle_connect)
-        time.sleep(2)
-        print("End of sequence")
+        print("Probing for XCP info")
+        for probe in probe_msgs:
+            print("Sending probe message: {0}".format(probe))
+            can_wrap.send_single_message_with_callback(probe.message_data, probe.callback)
+            time.sleep(2)
+        print("Probing finished")
+
 
 def xcp_memory_dump(args):
     """

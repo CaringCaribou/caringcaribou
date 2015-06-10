@@ -78,6 +78,7 @@ class CanActions():
         full_data = pad_data(data)
         msg = can.Message(arbitration_id=self.arb_id,
                           data=full_data, extended_id=False)
+        # print("--- SENDING ---\n{0}\n".format(msg))   # TODO Remove
         self.bus.send(msg)
 
     def bruteforce_arbitration_id(self, data, callback, min_id, max_id,
@@ -100,12 +101,12 @@ class CanActions():
             time.sleep(MESSAGE_DELAY)
             # Return if stopped by calling module
             if not self.bruteforce_running:
-                self.notifier.listeners = []
+                self.clear_listeners()
                 return
         # Callback if bruteforce finished without being stopped
         if callback_not_found:
-            self.notifier.listeners = []
-            callback_not_found("Finished without reply")
+            self.clear_listeners()
+            callback_not_found("Bruteforce of range 0x{0:x}-0x{1:x} completed".format(min_id, max_id))
 
     def bruteforce_data(self, data, bruteforce_index, callback, min_value=BYTE_MIN, max_value=BYTE_MAX,
                         callback_not_found=None):

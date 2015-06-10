@@ -21,7 +21,9 @@ Example usage:
  cc.py xcp info 1000 1001
  cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex
  ```
+ 
  ## discovery
+ 
  ```
 -------------------
 CARING CARIBOU v0.1
@@ -36,7 +38,9 @@ optional arguments:
  -min MIN
  -max MAX
  ```
+ 
  ## info
+ 
  ```
 -------------------
 CARING CARIBOU v0.1
@@ -53,7 +57,9 @@ positional arguments:
 optional arguments:
  -h, --help            show this help message and exit
  ```
+ 
  ## dump
+ 
  ```
 -------------------
 CARING CARIBOU v0.1

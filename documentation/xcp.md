@@ -22,8 +22,7 @@ Example usage:
  cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex
  ```
  
- ## discovery
- 
+ ## Discovery
  ```
 -------------------
 CARING CARIBOU v0.1

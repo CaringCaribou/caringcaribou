@@ -26,7 +26,7 @@ Example usage:
 
 ## Discovery
 ```
->./cc.py dmc -h
+>./cc.py dmc discovery -h
 
 -------------------
 CARING CARIBOU v0.1
@@ -43,7 +43,7 @@ optional arguments:
 ```
 ## Services
 ````
->./cc.py dmc -h
+>./cc.py dmc services -h
 
 -------------------
 CARING CARIBOU v0.1
@@ -62,7 +62,7 @@ optional arguments:
 ```
 ## Subfunc
 ```
->./cc.py dmc -h
+>./cc.py dmc subfunc -h
 -------------------
 CARING CARIBOU v0.1
 -------------------

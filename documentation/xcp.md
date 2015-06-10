@@ -22,7 +22,7 @@ Example usage:
  cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex
  ```
  
- ## Discovery
+## Discovery
  ```
 -------------------
 CARING CARIBOU v0.1
@@ -38,7 +38,7 @@ optional arguments:
  -max MAX
  ```
  
- ## info
+## Info
  
  ```
 -------------------
@@ -57,7 +57,7 @@ optional arguments:
  -h, --help            show this help message and exit
  ```
  
- ## dump
+## Dump
  
  ```
 -------------------

@@ -46,7 +46,7 @@ def available_modules():
     """
     mod_str = "available modules:\n  "
     mod_str += ", ".join(sorted([m[:-3] for m in os.listdir(MODULES_DIR) if
-                          m.endswith(".py") and m != "can_actions.py"]))
+                         m.endswith(".py") and m != "can_actions.py"]))
     return mod_str
 
 

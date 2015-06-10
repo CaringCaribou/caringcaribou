@@ -16,11 +16,12 @@ def parse_messages(msgs):
         for msg in msgs:
             msg_parts = msg.split("#", 1)
             arb_id = int_from_str_base(msg_parts[0])
-
             msg_data = []
+            # Check data length
             byte_list = msg_parts[1].split(".")
             if not 0 < len(byte_list) <= 8:
                 raise ValueError("Invalid data length: {0}".format(len(byte_list)))
+            # Validate data bytes
             for byte in byte_list:
                 byte_int = int(byte, 16)
                 if not 0x00 <= byte_int <= 0xff:
@@ -35,7 +36,12 @@ def parse_messages(msgs):
 
 
 def send_messages(messages, delay_between_messages):
-    print("Sending messages")
+    """
+    Sends a list of messages separated by a given delay.
+
+    :param messages: List of messages, where a message has the format (arb_id, [data_byte])
+    :param delay_between_messages: Delay in seconds between each transmitted message
+    """
     with CanActions() as can_wrap:
         for arb_id, message_data in messages:
             print("  Arb_id: 0x{0:03x}, data: {1}".format(arb_id, ["{0:02x}".format(a) for a in message_data]))
@@ -63,7 +69,6 @@ def parse_args(args):
                                                "consists of 1-8 bytes, written in hex.")
     parser.add_argument("--delay", "-d", type=float, default=0, help="Delay between messages in seconds")
     args = parser.parse_args(args)
-    # TODO: Validate messages
     return args
 
 

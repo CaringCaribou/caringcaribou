@@ -5,7 +5,7 @@ import time
 
 
 # Dictionary of XCP error codes, mapping (code -> (error, description))
-XCP_ERROR_CODES = dict([
+XCP_ERROR_CODES = {
     (0x00, ("ERR_CMD_SYNC", "Command processor synchronisation.")),
     (0x10, ("ERR_CMD_BUSY", "Command was not executed.")),
     (0x11, ("ERR_DAQ_ACTIVE", "Command rejected because DAQ is running.")),
@@ -24,8 +24,67 @@ XCP_ERROR_CODES = dict([
     (0x30, ("ERR_MEMORY_OVERFLOW", "Memory overflow error.")),
     (0x31, ("ERR_GENERIC", "Generic error.")),
     (0x32, ("ERR_VERIFY", "The slave internal program verify routine detects an error."))
-    ])
+}
 
+# Dictionary of XCP Command codes
+XCP_COMMAND_CODES = [
+    (0xFF, "CONNECT"),
+    (0xFE, "DISCONNECT"),
+    (0xFD, "GET_STATUS"),
+    (0xFC, "SYNCH"),
+    (0xFB, "GET_COMM_MODE_INFO"),
+    (0xFA, "GET_ID"),
+    (0xF9, "SET_REQUEST"),
+    (0xF8, "GET_SEED"),
+    (0xF7, "UNLOCK"),
+    (0xF6, "SET_MTA"),
+    (0xF5, "UPLOAD"),
+    (0xF4, "SHORT_UPLOAD"),
+    (0xF3, "BUILD_CHECKSUM"),
+    (0xF2, "TRANSPORT_LAYER_CMD"),
+    (0xF1, "USER_CMD"),
+    (0xF0, "DOWNLOAD"),
+    (0xEF, "DOWNLOAD_NEXT"),
+    (0xEE, "DOWNLOAD_MAX"),
+    (0xED, "SHORT_DOWNLOAD"),
+    (0xEC, "MODIFY_BITS"),
+    (0xEB, "SET_CAL_PAGE"),
+    (0xEA, "GET_CAL_PAGE"),
+    (0xE9, "GET_PAG_PROCESSOR_INFO"),
+    (0xE8, "GET_SEGMENT_INFO"),
+    (0xE7, "GET_PAGE_INFO"),
+    (0xE6, "SET_SEGMENT_MODE"),
+    (0xE5, "GET_SEGMENT_MODE"),
+    (0xE4, "COPY_CAL_PAGE"),
+    (0xE3, "CLEAR_DAQ_LIST"),
+    (0xE2, "SET_DAQ_PTR"),
+    (0xE1, "WRITE_DAQ"),
+    (0xE0, "SET_DAQ_LIST_MODE"),
+    (0xDF, "GET_DAQ_LIST_MODE"),
+    (0xDE, "START_STOP_DAQ_LIST"),
+    (0xDD, "START_STOP_SYNCH"),
+    (0xDC, "GET_DAQ_CLOCK"),
+    (0xDB, "READ_DAQ"),
+    (0xDA, "GET_DAQ_PROCESSOR_INFO"),
+    (0xD9, "GET_DAQ_RESOLUTION_INFO"),
+    (0xD8, "GET_DAQ_LIST_INFO"),
+    (0xD7, "GET_DAQ_EVENT_INFO"),
+    (0xD6, "FREE_DAQ"),
+    (0xD5, "ALLOC_DAQ"),
+    (0xD4, "ALLOC_ODT"),
+    (0xD3, "ALLOC_ODT_ENTRY"),
+    (0xD2, "PROGRAM_START"),
+    (0xD1, "PROGRAM_CLEAR"),
+    (0xD0, "PROGRAM"),
+    (0xCF, "PROGRAM_RESET"),
+    (0xCE, "GET_PGM_PROCESSOR_INFO"),
+    (0xCD, "GET_SECTOR_INFO"),
+    (0xCC, "PROGRAM_PREPARE"),
+    (0xCB, "PROGRAM_FORMAT"),
+    (0xCA, "PROGRAM_NEXT"),
+    (0xC9, "PROGRAM_MAX"),
+    (0xC8, "PROGRAM_VERIFY")
+]
 
 def decode_xcp_error(error_message):
     """
@@ -153,6 +212,51 @@ def xcp_arbitration_id_discovery(args):
 
         can_wrap.bruteforce_arbitration_id([0xff], response_analyser_wrapper,
                                            min_id=min_id, max_id=max_id, callback_end=discovery_end)
+
+
+def xcp_command_discovery(args):
+    """Attempts to call all XCP commands and lists which ones are supported."""
+    global connect_reply, command_reply
+    send_arb_id = int_from_str_base(args.src)
+    rcv_arb_id = int_from_str_base(args.dst)
+    connect_message = [0xFF, 0, 0, 0, 0, 0, 0, 0]
+
+    def connect_callback_handler(msg):
+        global connect_reply
+        if msg.arbitration_id == rcv_arb_id:
+            connect_reply = True
+
+    print("XCP command discovery\n")
+    print("COMMAND{0}SUPPORTED".format(" " * 17))
+    print("-" * 33)
+    with CanActions(send_arb_id) as can_wrap:
+        # Bruteforce against list of commands (excluding connect)
+        for cmd_code, cmd_desc in XCP_COMMAND_CODES[1:]:
+            # Connect
+            connect_reply = False
+            can_wrap.send_single_message_with_callback(connect_message, connect_callback_handler)
+            while not connect_reply:
+                # TODO Timeout?
+                pass
+
+            # Build message for current command
+            cmd_msg = [cmd_code, 0, 0, 0, 0, 0, 0, 0]
+
+            # Callback handler for current command
+            def callback_handler(msg):
+                global command_reply
+                if msg.arbitration_id == rcv_arb_id:
+                    print("{0:<23} {1}".format(cmd_desc, msg.data[0] != 0xFE))
+                    command_reply = True
+
+            command_reply = False
+            # Send, wait for reply, clear listeners and move on
+            can_wrap.send_single_message_with_callback(cmd_msg, callback=callback_handler)
+            while not command_reply:
+                # TODO Timeout?
+                pass
+            can_wrap.clear_listeners()
+    print("\nDone!")
 
 
 def xcp_get_basic_information(args):
@@ -363,6 +467,12 @@ def parse_args(args):
     parser_disc.add_argument("-min", type=str, default=None)
     parser_disc.add_argument("-max", type=str, default=None)
     parser_disc.set_defaults(func=xcp_arbitration_id_discovery)
+
+    # Parser for XCP commands discovery
+    parser_comm = subparsers.add_parser("commands")
+    parser_comm.add_argument("src", type=str, help="arbitration ID to transmit from")
+    parser_comm.add_argument("dst", type=str, help="arbitration ID to listen to")
+    parser_comm.set_defaults(func=xcp_command_discovery)
 
     # Parser for XCP info
     parser_info = subparsers.add_parser("info")

@@ -54,7 +54,7 @@ def parse_args(args):
                                      epilog="""Example usage:
   cc.py dump
   cc.py dump -f output.txt
-  cc.py dump -c -f output.txt""")
+  cc.py dump -c -f output.txt 0x733 0x734""")
     parser.add_argument("-f", "--file",
                         type=str,
                         metavar="F",

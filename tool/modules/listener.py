@@ -28,6 +28,7 @@ def start_listener(handler, args):
     :param args: Argument namespace (reversed sorting applied if args.reverse)
     """
     try:
+        print("Starting listener (press Ctrl+C to exit)")
         with CanActions() as can_wrap:
             can_wrap.add_listener(handler)
             while True:

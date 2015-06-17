@@ -1,4 +1,5 @@
 from can_actions import CanActions, int_from_str_base
+from datetime import datetime, timedelta
 from sys import stdout
 import argparse
 import time
@@ -235,9 +236,12 @@ def xcp_command_discovery(args):
             # Connect
             connect_reply = False
             can_wrap.send_single_message_with_callback(connect_message, connect_callback_handler)
-            while not connect_reply:
-                # TODO Timeout?
+            connect_timestamp = datetime.now()
+            while not connect_reply and datetime.now() - connect_timestamp < timedelta(seconds=3):
                 pass
+            if not connect_reply:
+                print("ERROR: Connect timeout")
+                exit()
 
             # Build message for current command
             cmd_msg = [cmd_code, 0, 0, 0, 0, 0, 0, 0]
@@ -252,9 +256,12 @@ def xcp_command_discovery(args):
             command_reply = False
             # Send, wait for reply, clear listeners and move on
             can_wrap.send_single_message_with_callback(cmd_msg, callback=callback_handler)
-            while not command_reply:
-                # TODO Timeout?
+            command_timestamp = datetime.now()
+            while not command_reply and  datetime.now() - command_timestamp < timedelta(seconds=3):
                 pass
+            if not command_reply:
+                print("ERROR: Command timeout")
+                exit()
             can_wrap.clear_listeners()
     print("\nDone!")
 

@@ -16,6 +16,8 @@ def parse_messages(msgs):
         for msg in msgs:
             msg_parts = msg.split("#", 1)
             arb_id = int_from_str_base(msg_parts[0])
+            if arb_id is None:
+                raise ValueError("Invalid arbitration ID: '{0}'".format(msg_parts[0]))
             msg_data = []
             # Check data length
             byte_list = msg_parts[1].split(".")

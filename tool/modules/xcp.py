@@ -195,7 +195,6 @@ def xcp_arbitration_id_discovery(args):
                 # Handle positive response
                 if msg.data[0] == 0xff and any(msg.data[1:]):
                     hit_counter += 1
-                    # can_wrap.bruteforce_stop()  # FIXME Enable/disable through flag?
                     decode_connect_response(msg)
                     print("Found XCP at arb ID 0x{0:04x}, reply at 0x{1:04x}".format(arb_id, msg.arbitration_id))
                     print("#" * 20)
@@ -204,7 +203,6 @@ def xcp_arbitration_id_discovery(args):
                 elif msg.data[0] == 0xfe:
                     print("\nFound XCP (with a bad reply) at arbitration ID 0x{0:03x}, reply at 0x{1:04x}".format(
                         arb_id, msg.arbitration_id))
-                    # can_wrap.bruteforce_stop()  # FIXME Enable/disable through flag?
                     decode_xcp_error(msg)
             return response_analyser
 
@@ -338,16 +336,15 @@ def xcp_memory_dump(args):
     # FIXME max size is 0xfc for test board
     max_segment_size = 0x7
 
-    global byte_counter, bytes_left, dump_complete, segment_counter, idle_timeout
+    global byte_counter, bytes_left, dump_complete, segment_counter, timeout_start
     # Timeout timer
-    idle_timeout = 3.0
     dump_complete = False
     # Counters for data length
     byte_counter = 0
     segment_counter = 0
 
     def handle_upload_reply(msg):
-        global byte_counter, bytes_left, dump_complete, idle_timeout, segment_counter
+        global byte_counter, bytes_left, dump_complete, timeout_start, segment_counter
         if msg.arbitration_id != rcv_arb_id:
             return
         if msg.data[0] == 0xfe:
@@ -355,7 +352,7 @@ def xcp_memory_dump(args):
             return
         if msg.data[0] == 0xff:
             # Reset timeout timer
-            idle_timeout = 3.0
+            timeout_start = datetime.now()
             # Calculate end index of data to handle
             end_index = min(8, bytes_left + 1)
 
@@ -382,7 +379,6 @@ def xcp_memory_dump(args):
                     stdout.flush()
 
                 byte_counter = 0
-                time.sleep(0.005)  # FIXME sleep between delay?
                 can_wrap.send_single_message_with_callback([0xf5, min(max_segment_size, bytes_left)],
                                                            handle_upload_reply)
 
@@ -446,9 +442,9 @@ def xcp_memory_dump(args):
         # Connect and prepare for dump
         can_wrap.send_single_message_with_callback([0xff], handle_connect_reply)
         # Idle timeout handling
-        while idle_timeout > 0.0 and not dump_complete:
-            time.sleep(0.5)
-            idle_timeout -= 0.5
+        timeout_start = datetime.now()
+        while not dump_complete and datetime.now() - timeout_start < timedelta(seconds=3):
+            pass
         if not dump_complete:
             print("\nERROR: Dump ended due to idle timeout")
 

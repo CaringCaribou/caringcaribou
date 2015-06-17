@@ -83,15 +83,18 @@ def module_main(args):
         initiate_dump(print, args)
     # Print to file
     else:
-        with open(args.file, "w") as output_file:
-            global count
-            count = 0
-
-            def write_line_to_file(line):
+        try:
+            with open(args.file, "w") as output_file:
                 global count
-                count += 1
-                print("\rMessages printed to file: {0}".format(count), end="")
-                output_file.write("{0}\n".format(line))
-                stdout.flush()
+                count = 0
 
-            initiate_dump(write_line_to_file, args)
+                def write_line_to_file(line):
+                    global count
+                    count += 1
+                    print("\rMessages printed to file: {0}".format(count), end="")
+                    output_file.write("{0}\n".format(line))
+                    stdout.flush()
+
+                initiate_dump(write_line_to_file, args)
+        except IOError as e:
+            print("IOError: {0}".format(e))

@@ -60,7 +60,7 @@ The best way to understand how to use Caring Caribou is by envoking cc.py's help
     
     python cc.py -h
 
- 
+Detailed information on the [usage](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/howtouse.md). 
 ## Extending the project
 Create a python file with a ```module_main(args)``` function. Put it in the ```modules``` folder. CaringCaribou (cc.py) will automagically recognize it as a module and list it in the output of ```./cc.py -h```
 

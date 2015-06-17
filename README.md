@@ -36,6 +36,11 @@ Detailed information on the [listener-module](https://github.com/CaringCaribou/c
 
 Detailed information on the [send-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/send.md).
 
+### dump.py - Dump CAN traffic
+- Dump incoming traffic to stdout or file.
+
+Detailed information on the [dump-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/dump.md).
+
 ### can_actions.py
 This is the daddy of all shared module functionality. Imported by all modules. Provides abstraction for access to the CAN bus, CAN bruteforce engines etc.
 

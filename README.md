@@ -12,14 +12,14 @@ CaringCaribou is module based with a master command (cc.py) that runs the show. 
 ## List of Modules
 
 ### dcm.py - Diagnostics ISO 14229
-- discovery - ArbID Discovery. Tries to connect (02 10 01) to all possible ArbId (000-7FF) and collect valid responses (xx 7F or xx 50)
-- services - Service Discovery.Brute force all Service Id's (SID) and report any responses (anything that is not xx F7 11)
+- discovery - ArbID Discovery. Tries to connect (02 10 01) to all possible ArbId (0x000-0x7FF) and collect valid responses (xx 7F or xx 50)
+- services - Service Discovery. Brute force all Service Id's (SID) and report any responses (anything that is not xx F7 11)
 - subfunc - Sub-function Discovery. Brute force engine that takes SID and an index indicating which positions to brute force as input.
 
 Detailed information on the [dcm-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/dcm.md).
 
 ### xcp.py - Universal Measurement and Calibration Protocol (XCP)
-- discovery - ArbId Discovery. Tries to connect (FF) to all possible ArbId (000-7FF) and collect all valid responses (FF or FE)
+- discovery - ArbId Discovery. Tries to connect (FF) to all possible ArbId (0x000-0x7FF) and collect all valid responses (FF or FE)
 - info - XCP Get Basic Information. Connects and gets information about XCP abilities in the target environment
 - dump - XCP Upload. Used to dump ECU memory (SRAM, flash and bootloader) to file 
 
@@ -36,8 +36,8 @@ Detailed information on the [listener-module](https://github.com/CaringCaribou/c
 
 Detailed information on the [send-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/send.md).
 
-### CAN.Action.py
-This is the daddy of all classes. Imported by all other modules. Abstraction for all access to the CAN bus
+### can_actions.py
+This is the daddy of all shared module functionality. Imported by all modules. Provides abstraction for access to the CAN bus, CAN bruteforce engines etc.
 
 ## Hardware requirements
 Some sort of interface towards an automotive bus that is compatible with socketCAN (http://elinux.org/CAN_Bus#CAN_Support_in_Linux).

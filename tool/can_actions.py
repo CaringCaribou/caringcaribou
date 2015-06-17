@@ -84,15 +84,15 @@ class CanActions():
         self.bus.send(msg)
 
     def bruteforce_arbitration_id(self, data, callback, min_id, max_id,
-                                  callback_not_found=None):
+                                  callback_end=None):
         # Sanity checks
         if min_id is None:
             min_id = ARBITRATION_ID_MIN
         if max_id is None:
             max_id = ARBITRATION_ID_MAX
         if min_id > max_id:
-            if callback_not_found:
-                callback_not_found("Invalid range: min > max")
+            if callback_end:
+                callback_end("Invalid range: min > max")
             return
         # Start bruteforce
         self.bruteforce_running = True
@@ -106,12 +106,12 @@ class CanActions():
                 self.clear_listeners()
                 return
         # Callback if bruteforce finished without being stopped
-        if callback_not_found:
+        if callback_end:
             self.clear_listeners()
-            callback_not_found("Bruteforce of range 0x{0:x}-0x{1:x} completed".format(min_id, max_id))
+            callback_end("Bruteforce of range 0x{0:x}-0x{1:x} completed".format(min_id, max_id))
 
     def bruteforce_data(self, data, bruteforce_index, callback, min_value=BYTE_MIN, max_value=BYTE_MAX,
-                        callback_not_found=None):
+                        callback_end=None):
         # TODO: Add reason to callback_not_found?
         self.bruteforce_running = True
         for value in range(min_value, max_value+1):
@@ -122,9 +122,9 @@ class CanActions():
             if not self.bruteforce_running:
                 self.notifier.listeners = []
                 return
-        if callback_not_found:
+        if callback_end:
             self.notifier.listeners = []
-            callback_not_found()
+            callback_end()
 
     def bruteforce_data_new(self, data, bruteforce_indices, callback,
                             min_value=BYTE_MIN, max_value=BYTE_MAX,

@@ -118,8 +118,10 @@ def decode_get_status_response(response_message):
 
 def xcp_arbitration_id_discovery(args):
     """Scans for XCP support by brute forcing XCP connect messages against different arbitration IDs."""
+    global hit_counter
     min_id = int_from_str_base(args.min)
     max_id = int_from_str_base(args.max)
+    hit_counter = 0
 
     with CanActions() as can_wrap:
         print("Starting XCP discovery")
@@ -129,8 +131,10 @@ def xcp_arbitration_id_discovery(args):
             stdout.flush()
 
             def response_analyser(msg):
+                global hit_counter
                 # Handle positive response
                 if msg.data[0] == 0xff and any(msg.data[1:]):
+                    hit_counter += 1
                     # can_wrap.bruteforce_stop()  # FIXME Enable/disable through flag?
                     decode_connect_response(msg)
                     print("Found XCP at arb ID 0x{0:04x}, reply at 0x{1:04x}".format(arb_id, msg.arbitration_id))
@@ -144,11 +148,11 @@ def xcp_arbitration_id_discovery(args):
                     decode_xcp_error(msg)
             return response_analyser
 
-        def none_found(s):
-            print("\nXCP could not be found: {0}".format(s))
+        def discovery_end(s):
+            print("\r{0}: Found {1} possible matches.".format(s, hit_counter))
 
         can_wrap.bruteforce_arbitration_id([0xff], response_analyser_wrapper,
-                                           min_id=min_id, max_id=max_id, callback_not_found=none_found)
+                                           min_id=min_id, max_id=max_id, callback_end=discovery_end)
 
 
 def xcp_get_basic_information(args):

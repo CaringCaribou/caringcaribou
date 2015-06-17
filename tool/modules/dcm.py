@@ -77,7 +77,7 @@ def dcm_discovery(args):
         # Message to bruteforce - [length, session control, default session]
         message = insert_message_length([0x10, 0x01])
         can_wrap.bruteforce_arbitration_id(message, response_analyser_wrapper,
-                                           min_id=min_id, max_id=max_id, callback_not_found=none_found)
+                                           min_id=min_id, max_id=max_id, callback_done=none_found)
 
 
 def service_discovery(args):
@@ -117,7 +117,7 @@ def service_discovery(args):
         service_index = 1
         try:
             # Initiate bruteforce
-            can_wrap.bruteforce_data(msg, service_index, response_analyser_wrapper, callback_not_found=done)
+            can_wrap.bruteforce_data(msg, service_index, response_analyser_wrapper, callback_end=done)
         finally:
             # Clear listeners
             can_wrap.notifier.listeners = []
@@ -158,7 +158,8 @@ def subfunc_discovery(args):
                     can_wrap.current_delay = 1.0
                     return
                 # Catch ok status
-                elif msg.data[1]-0x40 == service_id or (msg.data[1] == 0x7F and msg.data[3] not in [0x11, 0x12, 0x31, 0x78]): # TODO - more?
+                elif msg.data[1]-0x40 == service_id or\
+                        (msg.data[1] == 0x7F and msg.data[3] not in [0x11, 0x12, 0x31, 0x78]): # TODO - more?
                     found_sub_functions.append((data, [msg]))
                 elif msg.data[0] == 0x10:
                     # If response takes up multiple frames
@@ -186,7 +187,7 @@ def subfunc_discovery(args):
             # Message to bruteforce - [length, session control, default session]
             message = insert_message_length([service_id, 0x00, 0x00])
             can_wrap.bruteforce_data_new(message, bruteforce_indices=bruteforce_indices, callback=response_analyser_wrapper,
-                                     callback_done=finished)
+                                     callback_end=finished)
             can_wrap.notifier.listeners = []
         finally:
             # Print found functions

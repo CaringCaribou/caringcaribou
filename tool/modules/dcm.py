@@ -77,7 +77,7 @@ def dcm_discovery(args):
         # Message to bruteforce - [length, session control, default session]
         message = insert_message_length([0x10, 0x01])
         can_wrap.bruteforce_arbitration_id(message, response_analyser_wrapper,
-                                           min_id=min_id, max_id=max_id, callback_done=none_found)
+                                           min_id=min_id, max_id=max_id, callback_end=none_found)
 
 
 def service_discovery(args):

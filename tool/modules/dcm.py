@@ -1,6 +1,7 @@
 from can_actions import CanActions, insert_message_length, int_from_str_base
 from sys import stdout
 import argparse
+import time
 
 
 DCM_SERVICE_NAMES = {
@@ -47,6 +48,42 @@ NRC = {
     0x7F: 'serviceNotSupportedInActiveSession'
 }
 
+def dcm_dtc(args):
+    """
+    Fetches the Diagnostic Trouble Codes from a supported service (Mode $03)
+
+    :param args: A namespace containing src, dst and clear
+    """
+    send_arb_id = int_from_str_base(args.src)
+    rcv_arb_id = int_from_str_base(args.dst)
+    clear = args.clear
+
+    def decode_dtc(msg):
+        if msg.arbitration_id != rcv_arb_id:
+            return
+        if msg.data[1] != 0x43:
+            return
+
+        def dtc_type(x):
+          return {
+            0: 'P',
+            1: 'B',
+            2: 'C',
+            3: 'U',
+          }[x]
+
+        dtc_msg = dtc_type(msg.data[3] & 0xF0 >> 4) + format(msg.data[3] & 0x0F, '01x') + format(msg.data[4], '02x')
+        print("DTC: {0}\n".format(dtc_msg))
+        return decode_dtc
+
+    with CanActions(arb_id=send_arb_id) as can_wrap:
+        if clear:
+          can_wrap.send([0x01, 0x04])
+          print("Cleared DTCs and reset MIL")
+        else:
+          print("Fetching Diagnostic Trouble Codes")
+          can_wrap.send_single_message_with_callback([0x01, 0x03], decode_dtc)
+          time.sleep(1)
 
 def dcm_discovery(args):
     """
@@ -216,7 +253,8 @@ def parse_args(args):
                                      epilog="""Example usage:
   cc.py dcm discovery
   cc.py dcm services 0x733 0x633
-  cc.py dcm subfunc 0x733 0x633 0x22 2 3""")
+  cc.py dcm subfunc 0x733 0x633 0x22 2 3
+  cc.py dcm dtc 0x7df 0x7e8""")
     subparsers = parser.add_subparsers()
 
     # Parser for diagnostics discovery
@@ -239,6 +277,13 @@ def parse_args(args):
     parser_dump.add_argument("-show", action="store_true", help="show data in terminal")
     parser_dump.add_argument("i", type=int, nargs="+", help="sub-function indices")
     parser_dump.set_defaults(func=subfunc_discovery)
+
+    # Parser for DTC
+    parser_dtc = subparsers.add_parser("dtc")
+    parser_dtc.add_argument("src", type=str, help="arbitration ID to transmit from")
+    parser_dtc.add_argument("dst", type=str, help="arbitration ID to listen to")
+    parser_dtc.add_argument("-clear", action="store_true", help="Clear DTC / MIL")
+    parser_dtc.set_defaults(func=dcm_dtc)
 
     args = parser.parse_args(args)
     return args

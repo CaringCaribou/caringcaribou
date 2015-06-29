@@ -15,6 +15,7 @@ CaringCaribou is module based with a master command (cc.py) that runs the show. 
 - discovery - ArbID Discovery. Tries to connect (02 10 01) to all possible ArbId (0x000-0x7FF) and collect valid responses (xx 7F or xx 50)
 - services - Service Discovery. Brute force all Service Id's (SID) and report any responses (anything that is not xx F7 11)
 - subfunc - Sub-function Discovery. Brute force engine that takes SID and an index indicating which positions to brute force as input.
+- dtc - Diagnostic Trouble Codes.  Fetches DTCs.  Can clear DTCs and MIL (Engine Light) as well.
 
 Detailed information on the [dcm-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/dcm.md).
 
@@ -76,3 +77,4 @@ We used a devboard from ArcCore, called Arctic EVK-M3 - an STM32F107 based devic
 * Mattias Jidhage
 * Johannes Weschke
 * Filip Hesslund
+* Craig Smith (OpenGarages.org)

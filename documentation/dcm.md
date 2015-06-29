@@ -8,7 +8,7 @@ CARING CARIBOU v0.1
 
 Loaded module 'dcm'
 
-usage: cc.py dcm [-h] {discovery,services,subfunc} ...
+usage: cc.py dcm [-h] {discovery,services,subfunc,dtc} ...
 
 Diagnostics module for CaringCaribou
 
@@ -22,6 +22,7 @@ Example usage:
  cc.py dcm discovery
  cc.py dcm services 0x733 0x633
  cc.py dcm subfunc 0x733 0x633 0x22 2 3
+ cc.py dcm dtc 0x7df 0x7e8
  ```
 
 ## Discovery
@@ -80,4 +81,22 @@ positional arguments:
 optional arguments:
  -h, --help            show this help message and exit
  -show                 show data in terminal
+```
+## Dtc
+```
+-------------------
+CARING CARIBOU v0.1
+-------------------
+
+Loaded module 'dcm'
+
+usage: cc.py dcm dtc [-h] [-clear] src dst
+
+positional arguments:
+  src         arbitration ID to transmit from
+  dst         arbitration ID to listen to
+
+optional arguments:
+  -h, --help  show this help message and exit
+  -clear      Clear DTC / MIL
 ```

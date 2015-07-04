@@ -93,7 +93,7 @@ def dcm_dtc(args):
             3: 'U',
           }[x]
 
-        dtc_msg = dtc_type(msg.data[3] & 0xF0 >> 4) + format(msg.data[3] & 0x0F, '01x') + format(msg.data[4], '02x')
+        dtc_msg = dtc_type(msg.data[3] & 0xC0 >> 6) + format(msg.data[3] & 0x30 >> 4) + format(msg.data[3] & 0x0F, '01x') + format(msg.data[4], '02x')
         print("DTC: {0}\n".format(dtc_msg))
         return decode_dtc
 

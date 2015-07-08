@@ -78,11 +78,24 @@ def dcm_dtc(args):
     send_arb_id = int_from_str_base(args.src)
     rcv_arb_id = int_from_str_base(args.dst)
     clear = args.clear
+    global big_data
+    global big_data_size
+    big_data = []
+    big_data_size = 0
 
-    def decode_dtc(msg):
+    def decode_dtc_pkt(msg):
         if msg.arbitration_id != rcv_arb_id:
             return
-        if msg.data[1] != 0x43:
+        return_packet = False
+        if msg.data[0] == 0x10 and (msg.data[2] == 0x43 or msg.data[2] == 0x47):
+            return_packet = True
+        if (msg.data[0] & 0xF0) == 0x20: # We should probably set a state for this
+            return_packet = True
+        if msg.data[1] == 0x43:
+            return_packet = True
+        if msg.data[2] == 0x47:
+            return_packet = True
+        if not return_packet:
             return
 
         def dtc_type(x):
@@ -93,8 +106,41 @@ def dcm_dtc(args):
             3: 'U',
           }[x]
 
-        dtc_msg = dtc_type((msg.data[3] & 0xC0) >> 6) + format((msg.data[3] & 0x30) >> 4) + format(msg.data[3] & 0x0F, '01x') + format(msg.data[4], '02x')
-        print("DTC: {0}\n".format(dtc_msg))
+        def decode_dtc(data):  # Expects 2 bytes
+            if len(data) != 2:
+              return
+            return dtc_type((data[0] & 0xC0) >> 6) + format((data[0] & 0x30) >> 4) + format(data[0] & 0x0F, '01x') + format(data[1], '02x')
+
+        global big_data
+        global big_data_size
+
+        if msg.data[1] == 0x43 or msg.data[1] == 0x47:  # Single frame
+            print "There are {0} DTCs".format(msg.data[2])
+            if msg.data[0] > 2:
+                print("DTC: {0}".format(decode_dtc(msg.data[3:5])))
+            if msg.data[0] > 4:
+                print("DTC: {0}".format(decode_dtc(msg.data[5:6])))
+            if msg.data[0] > 6:
+                print("DTC: {0}".format(decode_dtc(msg.data[7:9])))
+        if msg.data[0] == 0x10: # Multi Frame (First Frame)
+            full_dlc = (msg.data[0] & 0x0F) + msg.data[1]
+            print("There are {0} DTCs".format(msg.data[3]))
+            print("DTC: {0}".format(decode_dtc(msg.data[4:6])))
+            print("DTC: {0}".format(decode_dtc(msg.data[6:8])))
+            can_wrap.send([0x30,0x0,0x0])
+            big_data_size = full_dlc - 6
+        if (msg.data[0] & 0xF0) == 0x20: # Consecutive
+            index = msg.data[0] & 0xF
+            if big_data_size > 8:
+              big_data += msg.data[1:]
+              big_data_size -= 7
+            else:
+              big_data += msg.data[1:big_data_size+1]
+              big_data_size = 0
+            if big_data_size == 0:
+              for i in range(0,len(big_data),2):
+                print("DTC: {0}".format(decode_dtc(big_data[i:i+2])))
+
         return decode_dtc
 
     with CanActions(arb_id=send_arb_id) as can_wrap:
@@ -103,7 +149,10 @@ def dcm_dtc(args):
           print("Cleared DTCs and reset MIL")
         else:
           print("Fetching Diagnostic Trouble Codes")
-          can_wrap.send_single_message_with_callback([0x01, 0x03], decode_dtc)
+          can_wrap.send_single_message_with_callback([0x01, 0x03], decode_dtc_pkt)
+          time.sleep(0.5)
+          print("Fetching Pending Diagnostic Trouble Codes")
+          can_wrap.send_single_message_with_callback([0x01, 0x07], decode_dtc_pkt)
           time.sleep(1)
 
 def dcm_discovery(args):

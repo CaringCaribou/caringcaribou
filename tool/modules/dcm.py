@@ -102,8 +102,8 @@ def dcm_dtc(args):
         def dtc_type(x):
             return {
                 0: 'P',
-                1: 'B',
-                2: 'C',
+                1: 'C',
+                2: 'B',
                 3: 'U',
             }.get(x, "?")
 
@@ -115,8 +115,10 @@ def dcm_dtc(args):
         global big_data
         global big_data_size
 
-        if msg.data[1] == 0x43 or msg.data[1] == 0x47:  # Single frame
+        if big_data_size == 0 and (msg.data[1] == 0x43 or msg.data[1] == 0x47):  # Single frame
             print "There are {0} DTCs".format(msg.data[2])
+            if msg.data[2] == 0:
+               return
             if msg.data[0] > 2:
                 print("DTC: {0}".format(decode_dtc(msg.data[3:5])))
             if msg.data[0] > 4:

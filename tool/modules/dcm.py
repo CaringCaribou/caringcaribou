@@ -107,7 +107,6 @@ def dcm_dtc(args):
                 3: 'U',
             }.get(x, "?")
 
-<<<<<<< HEAD
         def decode_dtc(data):  # Expects 2 bytes
             if len(data) != 2:
               return
@@ -144,29 +143,18 @@ def dcm_dtc(args):
                 print("DTC: {0}".format(decode_dtc(big_data[i:i+2])))
 
         return decode_dtc
-=======
-        dtc_type_char = dtc_type(msg.data[3] & 0xF0 >> 4)
-        print("DTC: {0}{1:01x}{2:02x}\n".format(dtc_type_char, msg.data[3] & 0x0F, msg.data[4]))
->>>>>>> master
 
     with CanActions(arb_id=send_arb_id) as can_wrap:
         if clear:
             can_wrap.send([0x01, 0x04])
             print("Cleared DTCs and reset MIL")
         else:
-<<<<<<< HEAD
-          print("Fetching Diagnostic Trouble Codes")
-          can_wrap.send_single_message_with_callback([0x01, 0x03], decode_dtc_pkt)
-          time.sleep(0.5)
-          print("Fetching Pending Diagnostic Trouble Codes")
-          can_wrap.send_single_message_with_callback([0x01, 0x07], decode_dtc_pkt)
-          time.sleep(1)
-=======
             print("Fetching Diagnostic Trouble Codes")
-            can_wrap.send_single_message_with_callback([0x01, 0x03], decode_dtc)
+            can_wrap.send_single_message_with_callback([0x01, 0x03], decode_dtc_pkt)
+            time.sleep(0.5)
+            print("Fetching Pending Diagnostic Trouble Codes")
+            can_wrap.send_single_message_with_callback([0x01, 0x07], decode_dtc_pkt)
             time.sleep(1)
-
->>>>>>> master
 
 def dcm_discovery(args):
     """

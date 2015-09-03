@@ -293,7 +293,7 @@ def xcp_get_basic_information(args):
             self.callback = callback_wrapper(callback)
 
         def __str__(self):
-            return "{0}: {1}".format(self.name, ["{0:02x}".format(a) for a in self.message_data])
+            return "{0}".format(["{0:02x}".format(a) for a in self.message_data])
 
     # Callback handler for GetId messages
     def print_msg_as_text(msg):

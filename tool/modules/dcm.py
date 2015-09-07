@@ -79,18 +79,30 @@ def dcm_dtc(args):
     send_arb_id = int_from_str_base(args.src)
     rcv_arb_id = int_from_str_base(args.dst)
     clear = args.clear
-    global big_data
-    global big_data_size
     big_data = []
     big_data_size = 0
+
+    def dtc_type(x):
+        return {
+            0: 'P',
+            1: 'C',
+            2: 'B',
+            3: 'U',
+        }.get(x, "?")
+
+    def decode_dtc(data):  # Expects 2 bytes
+        if len(data) != 2:
+            return
+        return dtc_type((data[0] & 0xC0) >> 6) + format((data[0] & 0x30) >> 4) + format(data[0] & 0x0F, '01x') + format(data[1], '02x')
 
     def decode_dtc_pkt(msg):
         if msg.arbitration_id != rcv_arb_id:
             return
         return_packet = False
+        # TODO: Are we sure that data byte 0 is 0x10, or should the check be against data[0] & 0x10 instead?
         if msg.data[0] == 0x10 and (msg.data[2] == 0x43 or msg.data[2] == 0x47):
             return_packet = True
-        if (msg.data[0] & 0xF0) == 0x20: # We should probably set a state for this
+        if (msg.data[0] & 0xF0) == 0x20:  # We should probably set a state for this
             return_packet = True
         if msg.data[1] == 0x43:
             return_packet = True
@@ -99,24 +111,11 @@ def dcm_dtc(args):
         if not return_packet:
             return
 
-        def dtc_type(x):
-            return {
-                0: 'P',
-                1: 'C',
-                2: 'B',
-                3: 'U',
-            }.get(x, "?")
-
-        def decode_dtc(data):  # Expects 2 bytes
-            if len(data) != 2:
-              return
-            return dtc_type((data[0] & 0xC0) >> 6) + format((data[0] & 0x30) >> 4) + format(data[0] & 0x0F, '01x') + format(data[1], '02x')
-
         global big_data
         global big_data_size
 
         if big_data_size == 0 and (msg.data[1] == 0x43 or msg.data[1] == 0x47):  # Single frame
-            print "There are {0} DTCs".format(msg.data[2])
+            print("There are {0} DTCs".format(msg.data[2]))
             if msg.data[2] == 0:
                return
             if msg.data[0] > 2:
@@ -135,16 +134,16 @@ def dcm_dtc(args):
         if (msg.data[0] & 0xF0) == 0x20: # Consecutive
             index = msg.data[0] & 0xF
             if big_data_size > 8:
-              big_data += msg.data[1:]
-              big_data_size -= 7
+                # big_data += msg.data[1:]
+                big_data.extend(msg.data[1:])
+                big_data_size -= 7
             else:
-              big_data += msg.data[1:big_data_size+1]
-              big_data_size = 0
+                # big_data += msg.data[1:big_data_size+1]
+                big_data.extend(msg.data[1:big_data_size+1])
+                big_data_size = 0
             if big_data_size == 0:
-              for i in range(0,len(big_data),2):
-                print("DTC: {0}".format(decode_dtc(big_data[i:i+2])))
-
-        return decode_dtc
+                for i in range(0,len(big_data), 2):
+                    print("DTC: {0}".format(decode_dtc(big_data[i:i+2])))
 
     with CanActions(arb_id=send_arb_id) as can_wrap:
         if clear:

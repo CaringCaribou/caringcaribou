@@ -296,7 +296,7 @@ def subfunc_discovery(args):
             # Message to bruteforce - [length, session control, default session]
             message = insert_message_length([service_id, 0x00, 0x00])
             can_wrap.bruteforce_data_new(message, bruteforce_indices=bruteforce_indices, callback=response_analyser_wrapper,
-                                     callback_end=finished)
+                                     callback_done=finished)
             can_wrap.notifier.listeners = []
         finally:
             # Print found functions

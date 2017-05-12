@@ -177,19 +177,23 @@ def dcm_discovery(args):
             def response_analyser(msg):
                 # Catch both ok and negative response
                 if len(msg.data) >= 2 and msg.data[1] in [0x50, 0x7F]:
+                    can_wrap.found_diagnostics = True
                     print("\nFound diagnostics at arbitration ID 0x{0:04x}, "
                           "reply at 0x{1:04x}".format(arb_id, msg.arbitration_id))
-                    if not no_stop and arb_id < max_id:
+                    if no_stop == False:
                         can_wrap.bruteforce_stop()
             return response_analyser
 
-        def none_found(s):
-            print("\nDiagnostics service could not be found: {0}".format(s))
+        def discovery_finished(s):
+            if can_wrap.found_diagnostics:
+                print("\n{0}".format(s))
+            else:
+                print("\nDiagnostics service could not be found: {0}".format(s))
 
         # Message to bruteforce - [length, session control, default session]
         message = insert_message_length([0x10, 0x01])
         can_wrap.bruteforce_arbitration_id(message, response_analyser_wrapper,
-                                           min_id=min_id, max_id=max_id, callback_end=none_found)
+                                           min_id=min_id, max_id=max_id, callback_end=discovery_finished)
 
 
 def service_discovery(args):
@@ -314,16 +318,6 @@ def subfunc_discovery(args):
             else:
                 print("\n\nNo sub-functions were found")
 
-def str2bool(v):
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    if v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
-                        
-                
-
 def parse_args(args):
     """
     Parser for diagnostics module arguments.
@@ -345,9 +339,8 @@ def parse_args(args):
     parser_disc = subparsers.add_parser("discovery")
     parser_disc.add_argument("-min", type=str, default=None)
     parser_disc.add_argument("-max", type=str, default=None)
-    parser_disc.add_argument("-nostop", type=str2bool, nargs='?',
-                             const=True, default=True,
-                             help="scan until end of range")
+    parser_disc.add_argument('-nostop', default=False, action='store_true',
+                            help='scan until end of range')
     parser_disc.set_defaults(func=dcm_discovery)
 
     # Parser for diagnostics service discovery

@@ -169,7 +169,7 @@ def dcm_discovery(args):
         print("Starting diagnostics service discovery")
 
         def response_analyser_wrapper(arb_id):
-            print "\rSending diagnostics Tester Present to 0x{0:04x}".format(arb_id),
+            print "\rSending Diagnostic Session Control to 0x{0:04x}".format(arb_id),
             stdout.flush()
 
             def response_analyser(msg):

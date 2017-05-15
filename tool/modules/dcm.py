@@ -177,7 +177,7 @@ def dcm_discovery(args):
             def response_analyser(msg):
                 # Catch both ok and negative response
                 if len(msg.data) >= 2 and msg.data[1] in [0x50, 0x7F]:
-                    can_wrap.found_diagnostics = True
+                    can_wrap.opaque_data['diagnostics_found'] = True
                     print("\nFound diagnostics at arbitration ID 0x{0:04x}, "
                           "reply at 0x{1:04x}".format(arb_id, msg.arbitration_id))
                     if no_stop == False:
@@ -185,7 +185,7 @@ def dcm_discovery(args):
             return response_analyser
 
         def discovery_finished(s):
-            if can_wrap.found_diagnostics:
+            if can_wrap.opaque_data.get('diagnostics_found', None) == True:
                 print("\n{0}".format(s))
             else:
                 print("\nDiagnostics service could not be found: {0}".format(s))

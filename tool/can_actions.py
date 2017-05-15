@@ -52,7 +52,7 @@ class CanActions():
         self.notifier = can.Notifier(self.bus, listeners=[])
         self.arb_id = arb_id
         self.bruteforce_running = False
-        self.found_diagnostics = False
+        self.opaque_data = {}
 
     def __enter__(self):
         return self

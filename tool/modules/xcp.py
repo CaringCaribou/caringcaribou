@@ -4,7 +4,6 @@ from sys import stdout
 import argparse
 import time
 
-
 # Dictionary of XCP error codes, mapping (code -> (error, description))
 XCP_ERROR_CODES = {
     (0x00, ("ERR_CMD_SYNC", "Command processor synchronisation.")),
@@ -87,6 +86,7 @@ XCP_COMMAND_CODES = [
     (0xC8, "PROGRAM_VERIFY")
 ]
 
+
 def decode_xcp_error(error_message):
     """
     Decodes an XCP error message and prints a short description.
@@ -118,13 +118,13 @@ def decode_connect_response(response_message):
     print("Resource protection status\n")  # Note: sometimes referred to as RESSOURCE (sic) in specification
     resource_bits = ["CAL/PAG", "X (bit 1)", "DAQ", "STIM", "PGM", "X (bit 5)", "X (bit 6)", "X (bit 7)"]
     for i in range(8):
-        print("{0:<12}{1}".format(resource_bits[i], bool(data[1] & 2**i)))
+        print("{0:<12}{1}".format(resource_bits[i], bool(data[1] & 2 ** i)))
     print("-" * 20)
     print("COMM_MODE_BASIC\n")
     comm_mode_bits = ["BYTE_ORDER", "ADDRESS_GRANULARITY_0", "ADDRESS_GRANULARITY_1", "X (bit 3)",
-                       "X (bit 4)", "X (bit 5)", "SLAVE_BLOCK_MODE", "OPTIONAL"]
+                      "X (bit 4)", "X (bit 5)", "SLAVE_BLOCK_MODE", "OPTIONAL"]
     for i in range(8):
-        print("{0:<24}{1}".format(comm_mode_bits[i], int(bool(data[2] & 2**i))))
+        print("{0:<24}{1}".format(comm_mode_bits[i], int(bool(data[2] & 2 ** i))))
     print("\nAddress granularity: {0} byte(s) per address".format(2 ** ((data[2] & 4) * 2 + data[2] & 2)))
     print("-" * 20)
     print("Max CTO message length: {0} bytes".format(data[3]))
@@ -137,7 +137,7 @@ def decode_get_comm_mode_info_response(response_message):
     """
     Decodes an XCP GET_COMM_MODE_INFO response and prints the response information.
 
-    :param data: The response message
+    :param response_message: The response message
     """
     print("> DECODE GET COMM MODE INFO")
     print(response_message)
@@ -145,9 +145,9 @@ def decode_get_comm_mode_info_response(response_message):
     print("Reserved: 0x{0:02x}".format(data[1]))
     print("-" * 20)
     print("COMM_MODE_OPTIONAL")
-    comm_mode_optional_bits = ["MASTER_BLOCK_MODE", "INTERLEAVED_MODE"] + ["X (bit {0})".format(i) for i in range(2,8)]
+    comm_mode_optional_bits = ["MASTER_BLOCK_MODE", "INTERLEAVED_MODE"] + ["X (bit {0})".format(i) for i in range(2, 8)]
     for i in range(8):
-        print("{0:<20}{1}".format(comm_mode_optional_bits[i], bool(data[2] & 2**i)))
+        print("{0:<20}{1}".format(comm_mode_optional_bits[i], bool(data[2] & 2 ** i)))
     print("-" * 20)
     print("Reserved: 0x{0:02x}".format(data[3]))
     print("MAX_BS (master block mode): {0} command packets".format(data[4]))
@@ -165,12 +165,12 @@ def decode_get_status_response(response_message):
     current_session_status_bits = ["STORE_CAL_REQ", "X (bit 1)", "STORE_DAQ_REQ", "CLEAR_DAQ_REQ",
                                    "X (bit 4)", "X (bit 5)", "DAQ_RUNNING", "RESUME"]
     for i in range(8):
-        print("{0:<16}{1}".format(current_session_status_bits[i], int(bool(data[1] & 2**i))))
+        print("{0:<16}{1}".format(current_session_status_bits[i], int(bool(data[1] & 2 ** i))))
     print("-" * 20)
     print("RESOURCE PROTECTION STATUS | Seed/key required")
     resource_protection_bits = ["CAL/PAG", "X (bit 1)", "DAQ", "STIM", "PGM", "X (bit 5)", "X (bit 6)", "X (bit 7)"]
     for i in range(8):
-        print("{0:<27}| {1}".format(resource_protection_bits[i], bool(data[2] & 2**i)))
+        print("{0:<27}| {1}".format(resource_protection_bits[i], bool(data[2] & 2 ** i)))
     print("-" * 20)
     print("Reserved: 0x{0:02x}".format(data[3]))
     print("Session configuration ID: {0}".format(2 ** ((data[5] & 4) * 2 + data[4] & 2)))
@@ -204,6 +204,7 @@ def xcp_arbitration_id_discovery(args):
                     print("\nFound XCP (with a bad reply) at arbitration ID 0x{0:03x}, reply at 0x{1:04x}".format(
                         arb_id, msg.arbitration_id))
                     decode_xcp_error(msg)
+
             return response_analyser
 
         def discovery_end(s):
@@ -255,7 +256,7 @@ def xcp_command_discovery(args):
             # Send, wait for reply, clear listeners and move on
             can_wrap.send_single_message_with_callback(cmd_msg, callback=callback_handler)
             command_timestamp = datetime.now()
-            while not command_reply and  datetime.now() - command_timestamp < timedelta(seconds=3):
+            while not command_reply and datetime.now() - command_timestamp < timedelta(seconds=3):
                 pass
             if not command_reply:
                 print("ERROR: Command timeout")
@@ -275,6 +276,7 @@ def xcp_get_basic_information(args):
         :param callback: The callback function to run on successful messages
         :return: A callback function with extended message handling
         """
+
         def c(msg):
             if msg.arbitration_id != rcv_arb_id:
                 return
@@ -284,10 +286,12 @@ def xcp_get_basic_information(args):
                 callback(msg)
             else:
                 print("Unexpected reply:\n{0}\n".format(msg))
+
         return c
 
-    class ProbeMessage():
+    class ProbeMessage:
         """Wrapper class for probe messages"""
+
         def __init__(self, message_data, callback):
             self.message_data = message_data
             self.callback = callback_wrapper(callback)
@@ -360,7 +364,7 @@ def xcp_memory_dump(args):
                 with open(dump_file, "ab") as outfile:
                     outfile.write(bytearray(msg.data[1:end_index]))
             else:
-                print(" ".join(["{0:02x}".format(i) for i in msg.data[1:end_index]]))
+                print(" ".join(["{0:02x}".format(j) for j in msg.data[1:end_index]]))
             # Update counters
             byte_counter += 7
             bytes_left -= 7  # FIXME Hmm
@@ -369,13 +373,13 @@ def xcp_memory_dump(args):
                     print "\rDumping segment {0} ({1} b, 0 b left)".format(segment_counter, length)
                 print("Dump complete!")
                 dump_complete = True
-            elif byte_counter > max_segment_size-1:
+            elif byte_counter > max_segment_size - 1:
                 # Dump another segment
                 segment_counter += 1
                 if dump_file:
                     # Print progress
                     print "\rDumping segment {0} ({1} b, {2} b left)".format(
-                        segment_counter, ((segment_counter+1)*max_segment_size + byte_counter), bytes_left),
+                        segment_counter, ((segment_counter + 1) * max_segment_size + byte_counter), bytes_left),
                     stdout.flush()
 
                 byte_counter = 0
@@ -431,7 +435,7 @@ def xcp_memory_dump(args):
     # Make sure dump_file can be opened if specified (clearing it if it already exists)
     if dump_file:
         try:
-            with open(dump_file, "w") as tmp:
+            with open(dump_file, "w") as _:
                 pass
         except IOError as e:
             print("Error when opening dump file:\n\n{0}".format(e))

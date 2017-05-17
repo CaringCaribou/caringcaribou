@@ -13,7 +13,7 @@ BYTE_MAX = 0xFF
 
 
 def pad_data(data):
-    return list(data) + [0] * ( 8 - len(data))
+    return list(data) + [0] * (8 - len(data))
 
 
 def int_from_str_base(s):
@@ -46,7 +46,7 @@ def insert_message_length(data):
     return full_data
 
 
-class CanActions():
+class CanActions:
     def __init__(self, arb_id=None):
         self.bus = can.interface.Bus()
         self.notifier = can.Notifier(self.bus, listeners=[])
@@ -130,7 +130,6 @@ class CanActions():
                             min_value=BYTE_MIN, max_value=BYTE_MAX,
                             callback_done=None):
         def send(data, idxs):
-            #global current_delay
             self.notifier.listeners = [callback(["{0:02x}".format(data[a]) for a in idxs])]
             self.send(data)
             self.current_delay = 0.2
@@ -149,18 +148,15 @@ class CanActions():
                 data[bruteforce_indices[idx]] = i
                 bruteforce(idx + 1)
         # Make sure that the data array is correctly initialized for the bruteforce
-        for idx in bruteforce_indices:
-            data[idx] = 0
+        for idx_i in bruteforce_indices:
+            data[idx_i] = 0
         bruteforce(0)
         if callback_done:
             callback_done("Scan finished")
 
-
-
     def send_single_message_with_callback(self, data, callback):
         self.notifier.listeners = [callback]
         self.send(data)
-
 
     def bruteforce_stop(self):
         self.bruteforce_running = False

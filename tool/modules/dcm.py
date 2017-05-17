@@ -165,6 +165,10 @@ def dcm_discovery(args):
     """
     min_id = int_from_str_base(args.min)
     max_id = int_from_str_base(args.max)
+    no_stop = args.nostop
+    class Diagnostics:
+        found = False
+
     with CanActions() as can_wrap:
         print("Starting diagnostics service discovery")
 
@@ -174,19 +178,24 @@ def dcm_discovery(args):
 
             def response_analyser(msg):
                 # Catch both ok and negative response
-                if msg.data[1] in [0x50, 0x7F]:
+                if len(msg.data) >= 2 and msg.data[1] in [0x50, 0x7F]:
+                    Diagnostics.found = True
                     print("\nFound diagnostics at arbitration ID 0x{0:04x}, "
                           "reply at 0x{1:04x}".format(arb_id, msg.arbitration_id))
-                    can_wrap.bruteforce_stop()
+                    if no_stop == False:
+                        can_wrap.bruteforce_stop()
             return response_analyser
 
-        def none_found(s):
-            print("\nDiagnostics service could not be found: {0}".format(s))
+        def discovery_finished(s):
+            if Diagnostics.found:
+                print("\n{0}".format(s))
+            else:
+                print("\nDiagnostics service could not be found: {0}".format(s))
 
         # Message to bruteforce - [length, session control, default session]
         message = insert_message_length([0x10, 0x01])
         can_wrap.bruteforce_arbitration_id(message, response_analyser_wrapper,
-                                           min_id=min_id, max_id=max_id, callback_end=none_found)
+                                           min_id=min_id, max_id=max_id, callback_end=discovery_finished)
 
 
 def service_discovery(args):
@@ -296,7 +305,7 @@ def subfunc_discovery(args):
             # Message to bruteforce - [length, session control, default session]
             message = insert_message_length([service_id, 0x00, 0x00])
             can_wrap.bruteforce_data_new(message, bruteforce_indices=bruteforce_indices, callback=response_analyser_wrapper,
-                                     callback_done=finished)
+                                         callback_done=finished)
             can_wrap.notifier.listeners = []
         finally:
             # Print found functions
@@ -310,7 +319,6 @@ def subfunc_discovery(args):
                             print("  {0}".format(msg))
             else:
                 print("\n\nNo sub-functions were found")
-
 
 def parse_args(args):
     """
@@ -333,6 +341,8 @@ def parse_args(args):
     parser_disc = subparsers.add_parser("discovery")
     parser_disc.add_argument("-min", type=str, default=None)
     parser_disc.add_argument("-max", type=str, default=None)
+    parser_disc.add_argument('-nostop', default=False, action='store_true',
+                            help='scan until end of range')
     parser_disc.set_defaults(func=dcm_discovery)
 
     # Parser for diagnostics service discovery

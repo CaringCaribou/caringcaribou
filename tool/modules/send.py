@@ -12,6 +12,7 @@ def parse_messages(msgs):
     :return: List of (arb_id, [data_byte]) tuples
     """
     message_list = []
+    msg = None
     try:
         for msg in msgs:
             msg_parts = msg.split("#", 1)
@@ -49,7 +50,6 @@ def send_messages(messages, delay_between_messages):
             print("  Arb_id: 0x{0:03x}, data: {1}".format(arb_id, ["{0:02x}".format(a) for a in message_data]))
             can_wrap.send(message_data, arb_id)
             sleep(delay_between_messages)
-
 
 
 def parse_args(args):

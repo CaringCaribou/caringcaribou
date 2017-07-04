@@ -38,7 +38,6 @@ Tested with python-can 1.5.2 and 2.0.0a2.
     Type "help", "copyright", "credits" or "license" for more information.
     >>> import can
     >>> 
-
     ```
 
 ##### Configure
@@ -53,7 +52,7 @@ The contents of this file should be:
 `socketcan_ctypes` instead.
 
 ##### Test it
-Go to the directory where Caring Caribou inun the following command:
+Go to the Caring Caribou directory and run the following command:
 
 ``` python cc.py dump```
 

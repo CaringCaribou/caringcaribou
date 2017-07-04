@@ -60,9 +60,9 @@ positional arguments:
 
 optional arguments:
  -h, --help            show this help message and exit
-```
+````
 ## Subfunc
-```
+````
 >./cc.py dmc subfunc -h
 -------------------
 CARING CARIBOU v0.1
@@ -81,9 +81,10 @@ positional arguments:
 optional arguments:
  -h, --help            show this help message and exit
  -show                 show data in terminal
-```
+````
 ## Dtc
-```
+````
+>./cc.py dmc dtc -h
 -------------------
 CARING CARIBOU v0.1
 -------------------
@@ -99,4 +100,4 @@ positional arguments:
 optional arguments:
   -h, --help  show this help message and exit
   -clear      Clear DTC / MIL
-```
+````

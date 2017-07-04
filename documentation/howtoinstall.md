@@ -1,62 +1,69 @@
 ## How to install
 
 ### Linux
-The setup consists of two steps. First we need to get the USB-to-Can device working and secondly configure Python-Can for the device.
+The setup consists of two steps. First we need to get the USB-to-Can device working and secondly configure Python-Can
+for the device.
+
 #### USB-to-Can Setup
-1. Install a Linux dist with a kernel >= 3.4 e.g. latest Ubuntu (we used Ubuntu 14.04 LTS)
-2. Plug in the USB-to-Can device (we used [PEAK PCAN-USB](http://www.peak-system.com/PCAN-USB.199.0.html))
-3. Load the CAN module:
+1. Install a reasonably modern Linux dist (with a kernel >= 3.4) e.g. latest Ubuntu.
+Tested with Ubuntu 14.04 LTS, Ubuntu 16.04 LTS and Ubuntu 17.04.
+2. Plug in the USB-to-Can device (we use [PEAK PCAN-USB](http://www.peak-system.com/PCAN-USB.199.0.html))
+3. Load the CAN module (needs to be done after each reboot):
 
    ```
    sudo modprobe can
    ```
-4. Set up the can device (bitrate may differ between different CAN buses):
+4. Set up the can device (needs to be done after each reboot). 
 
    ```
    sudo ip link set can0 up type can bitrate 500000 
    ```
+   *Note:* The bit rate may differ between different CAN buses.
 5. ```can0``` will now display as a normal network interface
 
-
 #### Python-Can
-Download Python-Can from [bitbucket.org/hardbyte/python-can commit 77eea796362b](https://bitbucket.org/hardbyte/python-can/get/77eea796362b.zip). 
+Tested with python-can 1.5.2 and 2.0.0a2.
 
-Use other commits at your own peril.
-
-##### Install
-1. Install [pip](https://pypi.python.org/pypi/pip)
+1. Install [pip](https://pypi.python.org/pypi/pip) (package management system for python - often installed by default)
 2. Install python-can by running:
 
-        sudo python setup.py install
+        pip install python-can
 
 3. Verify that the installation worked by running python from the terminal and load the can module. 
 
     ```
-    Python 2.7.6 (default, Mar 22 2014, 22:59:56) 
-    [GCC 4.8.2] on linux2
+    $ python
+    Python 2.7.13 (default, Jan 19 2017, 14:48:08) 
+    [GCC 6.3.0 20170118] on linux2
     Type "help", "copyright", "credits" or "license" for more information.
     >>> import can
     >>> 
-    ```
 
+    ```
 
 ##### Configure
 Python-Can uses a configuration file ```~/.canrc``` to specify a CAN interface.
 The contents of this file should be:
 
     [default]
-    interface = socketcan_ctypes
+    interface = socketcan
     channel = can0
 
+*Note:* In case you are running an ancient version of python-can (from 2015-ish), you may need to set the interface to
+`socketcan_ctypes` instead.
+
 ##### Test it
-Connect the USB-to-CAN device to an actual CAN-bus and run the following: 
+Go to the directory where Caring Caribou inun the following command:
 
-``` python bin/canlogger.py ```
+``` python cc.py dump```
 
-If packets are received everything is good to go!
+If packets are received, everything is good to go!
 
 ### Windows 7 
-The simplest solution is to download [VMPlayer](https://my.vmware.com/web/vmware/free#desktop_end_user_computing/vmware_player/7_0), install a Linux distribution and to follow the Linux guide above.
+The simplest solution is to download
+[VMware Player](https://my.vmware.com/en/web/vmware/free#desktop_end_user_computing/vmware_workstation_player/12_0)
+, install a Linux distribution and to follow the Linux guide above.
+
 ### Raspberry Pi
 #### Parts list
 - Raspberry Pi model B 

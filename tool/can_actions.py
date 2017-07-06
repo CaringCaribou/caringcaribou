@@ -33,6 +33,19 @@ def int_from_str_base(s):
         return None
 
 
+def str_to_int_list(s):
+    """
+    Converts a string representing CAN message data into a list of ints.
+
+    E.g. "0102c0ffee" -> [01, 02, 0xc0, 0xff, 0xee]
+
+    :param s: str representing hex data
+    :return: list of ints
+    :rtype: list
+    """
+    return [int(s[i*2:i*2+2], 16) for i in range(len(s)/2)]
+
+
 def insert_message_length(data):
     """
     Inserts a message length byte before data

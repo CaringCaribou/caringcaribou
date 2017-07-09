@@ -51,7 +51,6 @@ def parse_messages(msgs, delay):
             fixed_msg = CanMessage(arb_id, msg_data, delay)
             message_list.append(fixed_msg)
         # No delay before sending first message
-        message_list[0].delay = 0.0
         return message_list
     except ValueError as e:
         print("Invalid message at position {0}: '{1}'\nFailure reason: {2}".format(len(message_list), msg, e))
@@ -137,17 +136,25 @@ def parse_file(filename, force_delay):
         return None
 
 
-def send_messages(messages):
+def send_messages(messages, loop):
     """
     Sends a list of messages separated by a given delay.
 
+    :param loop: bool indicating whether the message sequence should be looped (re-sent over and over)
     :param messages: List of messages, where a message has the format (arb_id, [data_byte])
     """
     with CanActions() as can_wrap:
-        for msg in messages:
-            sleep(msg.delay)
-            print("  Arb_id: 0x{0:03x}, data: {1}".format(msg.arb_id, ["{0:02x}".format(a) for a in msg.data]))
-            can_wrap.send(msg.data, msg.arb_id)
+        loop_counter = 0
+        while True:
+            for i in range(len(messages)):
+                msg = messages[i]
+                if i != 0 or loop_counter != 0:
+                    sleep(msg.delay)
+                print("  Arb_id: 0x{0:03x}, data: {1}".format(msg.arb_id, ["{0:02x}".format(a) for a in msg.data]))
+                can_wrap.send(msg.data, msg.arb_id)
+            if not loop:
+                break
+            loop_counter += 1
 
 
 def parse_args(args):
@@ -177,6 +184,7 @@ def parse_args(args):
                                "consists of 1-8 bytes written in hex and separated by dots.")
     cmd_msgs.add_argument("--delay", "-d", metavar="D", type=float, default=0,
                           help="delay between messages in seconds")
+    cmd_msgs.add_argument("--loop", "-l", action="store_true", help="loop message sequence (re-send over and over)")
     cmd_msgs.set_defaults(func=parse_messages)
 
     # Parser for sending messages from file
@@ -184,6 +192,7 @@ def parse_args(args):
     file_msg.add_argument("data", metavar="filename", type=str, help="path to file")
     file_msg.add_argument("--delay", "-d", metavar="D", type=float, default=None,
                           help="delay between messages in seconds (overrides timestamps in file)")
+    file_msg.add_argument("--loop", "-l", action="store_true", help="loop message sequence (re-send over and over)")
     file_msg.set_defaults(func=parse_file)
 
     args = parser.parse_args(args)
@@ -203,4 +212,4 @@ def module_main(args):
         print("No messages parsed")
     else:
         print("Sending messages")
-        send_messages(messages)
+        send_messages(messages, args.loop)

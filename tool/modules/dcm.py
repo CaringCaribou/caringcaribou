@@ -166,6 +166,33 @@ def dcm_discovery(args):
     no_stop = args.nostop
     blacklist = [int_from_str_base(b) for b in args.blacklist]
 
+    valid_responses = [0x50, 0x7F]
+
+    def scan_arbitration_ids_to_blacklist(scan_duration):
+        print "Scanning for arbitration IDs to blacklist (-autoblacklist)"
+        ids_to_blacklist = set()
+
+        def response_handler(msg):
+            if msg.data[1] in valid_responses:
+                ids_to_blacklist.add(msg.arbitration_id)
+
+        with CanActions() as can_actions:
+            # Listen for matches
+            can_actions.add_listener(response_handler)
+            for i in range(scan_duration, 0, -1):
+                print "\r  Scanning... {0} seconds left, {1} found".format(i-1, len(ids_to_blacklist)),
+                stdout.flush()
+                time.sleep(1)
+            print("")
+            can_actions.clear_listeners()
+        # Add found matches to blacklist
+        for arb_id in ids_to_blacklist:
+            blacklist.append(arb_id)
+
+    # Perform automatic blacklist scanning
+    if args.autoblacklist > 0:
+        scan_arbitration_ids_to_blacklist(args.autoblacklist)
+
     class Diagnostics:
         found = False
 
@@ -181,7 +208,7 @@ def dcm_discovery(args):
                 if msg.arbitration_id in blacklist:
                     return
                 # Catch both ok and negative response
-                if len(msg.data) >= 2 and msg.data[1] in [0x50, 0x7F]:
+                if len(msg.data) >= 2 and msg.data[1] in valid_responses:
                     Diagnostics.found = True
                     print("\nFound diagnostics at arbitration ID 0x{0:04x}, "
                           "reply at 0x{1:04x}".format(arb_id, msg.arbitration_id))
@@ -352,6 +379,8 @@ def parse_args(args):
                              help="scan until end of range")
     parser_disc.add_argument("-blacklist", metavar="B", type=str, default=[], nargs="+",
                              help="arbitration IDs to ignore")
+    parser_disc.add_argument("-autoblacklist", metavar="N", type=int, default=0,
+                             help="scan for interfering signals for N seconds and blacklist matching arbitration IDs")
     parser_disc.set_defaults(func=dcm_discovery)
 
     # Parser for diagnostics service discovery

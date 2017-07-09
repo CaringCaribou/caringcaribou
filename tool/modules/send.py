@@ -2,11 +2,20 @@ from can_actions import CanActions, int_from_str_base, str_to_int_list
 from time import sleep
 from sys import exit
 import argparse
+import re
 
 
 class CanMessage:
+    """
+    Message wrapper class used by file parsers.
+    """
 
     def __init__(self, arb_id, data, delay):
+        """
+        :param arb_id: int - arbitration ID
+        :param data: list of ints - data bytes
+        :param delay: float - delay in seconds
+        """
         self.arb_id = arb_id
         self.data = data
         self.delay = delay
@@ -41,6 +50,8 @@ def parse_messages(msgs, delay):
                 msg_data.append(byte_int)
             fixed_msg = CanMessage(arb_id, msg_data, delay)
             message_list.append(fixed_msg)
+        # No delay before sending first message
+        message_list[0].delay = 0.0
         return message_list
     except ValueError as e:
         print("Invalid message at position {0}: '{1}'\nFailure reason: {2}".format(len(message_list), msg, e))
@@ -70,26 +81,38 @@ def parse_file(filename, force_delay):
         msg_segs = segments[2].split("#")
         arb_id = int(msg_segs[0])
         data = str_to_int_list(msg_segs[1])
-        if force_delay is not None:
-            delay = force_delay
-        elif prev_timestamp is None:
+        if prev_timestamp is None:
             delay = 0
+        elif force_delay is not None:
+            delay = force_delay
         else:
             delay = time_stamp - prev_timestamp
         message = CanMessage(arb_id, data, delay)
         return message, time_stamp
 
-    def parse_pythoncan_line(curr_line, prev_timestamp):
+    def parse_pythoncan_line(curr_line, prev_timestamp=None):
         """
         Parses a line on python-can log format, e.g.
-        Timestamp:        0.000000    ID: 00000123    010    DLC: 3    c0 ff ee
+        Timestamp:        0.000000        ID: 017a    000    DLC: 3    c0 ff ee
 
         :param curr_line: str to parse
         :param prev_timestamp: datetime object containing timestamp of previous message (to calculate delay)
         :return: CanMessage representing 'curr_line', datetime.datetime timestamp of 'curr_line'
         """
-        # TODO
-        raise NotImplemented("pythoncan line parser not implemented yet")
+        line_regex = re.compile(r"Timestamp: (?P<timestamp>\d+\.\d+) +ID: (?P<arb_id>[0-9a-fA-F]+) + \d+ +"
+                                r"DLC: [0-8] +(?P<data>(?:[0-9a-fA-F]{2} ?){0,8})")
+        parsed_msg = line_regex.match(curr_line)
+        arb_id = int(parsed_msg.group("arb_id"), 16)
+        time_stamp = float(parsed_msg.group("timestamp"))
+        data = list(int(a, 16) for a in parsed_msg.group("data").split(" "))
+        if prev_timestamp is None:
+            delay = 0
+        elif force_delay is not None:
+            delay = force_delay
+        else:
+            delay = time_stamp - prev_timestamp
+        message = CanMessage(arb_id, data, delay)
+        return message, time_stamp
 
     try:
         messages = []
@@ -122,9 +145,9 @@ def send_messages(messages):
     """
     with CanActions() as can_wrap:
         for msg in messages:
+            sleep(msg.delay)
             print("  Arb_id: 0x{0:03x}, data: {1}".format(msg.arb_id, ["{0:02x}".format(a) for a in msg.data]))
             can_wrap.send(msg.data, msg.arb_id)
-            sleep(msg.delay)
 
 
 def parse_args(args):

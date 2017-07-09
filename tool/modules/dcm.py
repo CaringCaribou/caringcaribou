@@ -3,7 +3,6 @@ from sys import stdout
 import argparse
 import time
 
-
 DCM_SERVICE_NAMES = {
     0x10: 'DIAGNOSTIC_SESSION_CONTROL',
     0x11: 'ECU_RESET',
@@ -117,33 +116,30 @@ def dcm_dtc(args):
         if big_data_size == 0 and (msg.data[1] == 0x43 or msg.data[1] == 0x47):  # Single frame
             print("There are {0} DTCs".format(msg.data[2]))
             if msg.data[2] == 0:
-               return
+                return
             if msg.data[0] > 2:
                 print("DTC: {0}".format(decode_dtc(msg.data[3:5])))
             if msg.data[0] > 4:
                 print("DTC: {0}".format(decode_dtc(msg.data[5:6])))
             if msg.data[0] > 6:
                 print("DTC: {0}".format(decode_dtc(msg.data[7:9])))
-        if msg.data[0] == 0x10: # Multi Frame (First Frame)
+        if msg.data[0] == 0x10:  # Multi Frame (First Frame)
             full_dlc = (msg.data[0] & 0x0F) + msg.data[1]
             print("There are {0} DTCs".format(msg.data[3]))
             print("DTC: {0}".format(decode_dtc(msg.data[4:6])))
             print("DTC: {0}".format(decode_dtc(msg.data[6:8])))
-            can_wrap.send([0x30,0x0,0x0])
+            can_wrap.send([0x30, 0x0, 0x0])
             big_data_size = full_dlc - 6
-        if (msg.data[0] & 0xF0) == 0x20: # Consecutive
-            index = msg.data[0] & 0xF
+        if (msg.data[0] & 0xF0) == 0x20:  # Consecutive
             if big_data_size > 8:
-                # big_data += msg.data[1:]
                 big_data.extend(msg.data[1:])
                 big_data_size -= 7
             else:
-                # big_data += msg.data[1:big_data_size+1]
-                big_data.extend(msg.data[1:big_data_size+1])
+                big_data.extend(msg.data[1:big_data_size + 1])
                 big_data_size = 0
             if big_data_size == 0:
-                for i in range(0,len(big_data), 2):
-                    print("DTC: {0}".format(decode_dtc(big_data[i:i+2])))
+                for i in range(0, len(big_data), 2):
+                    print("DTC: {0}".format(decode_dtc(big_data[i:i + 2])))
 
     with CanActions(arb_id=send_arb_id) as can_wrap:
         if clear:
@@ -157,6 +153,7 @@ def dcm_dtc(args):
             can_wrap.send_single_message_with_callback([0x01, 0x07], decode_dtc_pkt)
             time.sleep(1)
 
+
 def dcm_discovery(args):
     """
     Scans for diagnostics support by sending session control against different arbitration IDs.
@@ -166,6 +163,7 @@ def dcm_discovery(args):
     min_id = int_from_str_base(args.min)
     max_id = int_from_str_base(args.max)
     no_stop = args.nostop
+
     class Diagnostics:
         found = False
 
@@ -182,8 +180,9 @@ def dcm_discovery(args):
                     Diagnostics.found = True
                     print("\nFound diagnostics at arbitration ID 0x{0:04x}, "
                           "reply at 0x{1:04x}".format(arb_id, msg.arbitration_id))
-                    if no_stop == False:
+                    if not no_stop:
                         can_wrap.bruteforce_stop()
+
             return response_analyser
 
         def discovery_finished(s):
@@ -224,6 +223,7 @@ def service_discovery(args):
                     return
                 # Service supported - add to list
                 supported_services.append(m.data[2])
+
             return response_analyser
 
         def done():
@@ -267,7 +267,6 @@ def subfunc_discovery(args):
                 service_id, data, len(found_sub_functions)),
             stdout.flush()
 
-
             def response_analyser(msg):
                 if msg.arbitration_id != rcv_arb_id:
                     return
@@ -276,8 +275,8 @@ def subfunc_discovery(args):
                     can_wrap.current_delay = 1.0
                     return
                 # Catch ok status
-                elif msg.data[1]-0x40 == service_id or\
-                        (msg.data[1] == 0x7F and msg.data[3] not in [0x11, 0x12, 0x31, 0x78]): # TODO - more?
+                elif msg.data[1] - 0x40 == service_id or \
+                        (msg.data[1] == 0x7F and msg.data[3] not in [0x11, 0x12, 0x31, 0x78]):  # TODO - more?
                     found_sub_functions.append((data, [msg]))
                 elif msg.data[0] == 0x10:
                     # If response takes up multiple frames
@@ -296,6 +295,7 @@ def subfunc_discovery(args):
                 else:
                     # We've got an answer - no reason to keep waiting
                     can_wrap.current_delay = 0.0
+
             return response_analyser
 
         def finished(s):
@@ -304,7 +304,8 @@ def subfunc_discovery(args):
         try:
             # Message to bruteforce - [length, session control, default session]
             message = insert_message_length([service_id, 0x00, 0x00])
-            can_wrap.bruteforce_data_new(message, bruteforce_indices=bruteforce_indices, callback=response_analyser_wrapper,
+            can_wrap.bruteforce_data_new(message, bruteforce_indices=bruteforce_indices,
+                                         callback=response_analyser_wrapper,
                                          callback_done=finished)
             can_wrap.notifier.listeners = []
         finally:
@@ -315,10 +316,11 @@ def subfunc_discovery(args):
                 for (sub_function, msgs) in found_sub_functions:
                     print("Sub-function {0}".format(" ".join(sub_function)))
                     if show_data:
-                        for msg in msgs:
-                            print("  {0}".format(msg))
+                        for message in msgs:
+                            print("  {0}".format(message))
             else:
                 print("\n\nNo sub-functions were found")
+
 
 def parse_args(args):
     """
@@ -342,7 +344,7 @@ def parse_args(args):
     parser_disc.add_argument("-min", type=str, default=None)
     parser_disc.add_argument("-max", type=str, default=None)
     parser_disc.add_argument('-nostop', default=False, action='store_true',
-                            help='scan until end of range')
+                             help='scan until end of range')
     parser_disc.set_defaults(func=dcm_discovery)
 
     # Parser for diagnostics service discovery

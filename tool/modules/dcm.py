@@ -164,6 +164,7 @@ def dcm_discovery(args):
     min_id = int_from_str_base(args.min)
     max_id = int_from_str_base(args.max)
     no_stop = args.nostop
+    blacklist = [int_from_str_base(b) for b in args.blacklist]
 
     class Diagnostics:
         found = False
@@ -176,6 +177,9 @@ def dcm_discovery(args):
             stdout.flush()
 
             def response_analyser(msg):
+                # Ignore blacklisted arbitration IDs
+                if msg.arbitration_id in blacklist:
+                    return
                 # Catch both ok and negative response
                 if len(msg.data) >= 2 and msg.data[1] in [0x50, 0x7F]:
                     Diagnostics.found = True
@@ -346,6 +350,8 @@ def parse_args(args):
     parser_disc.add_argument("-max", type=str, default=None)
     parser_disc.add_argument("-nostop", default=False, action="store_true",
                              help="scan until end of range")
+    parser_disc.add_argument("-blacklist", metavar="B", type=str, default=[], nargs="+",
+                             help="arbitration IDs to ignore")
     parser_disc.set_defaults(func=dcm_discovery)
 
     # Parser for diagnostics service discovery

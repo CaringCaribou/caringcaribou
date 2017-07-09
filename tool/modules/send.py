@@ -79,7 +79,7 @@ def parse_file(filename, force_delay):
         segments = curr_line.strip().split(" ")
         time_stamp = float(segments[0][1:-1])
         msg_segs = segments[2].split("#")
-        arb_id = int(msg_segs[0])
+        arb_id = int(msg_segs[0], 16)
         data = str_to_int_list(msg_segs[1])
         if prev_timestamp is None:
             delay = 0

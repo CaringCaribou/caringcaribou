@@ -1,6 +1,6 @@
 # DCM
 ```
->./cc.py dmc -h
+> ./cc.py dcm -h
 
 -------------------
 CARING CARIBOU v0.1
@@ -13,21 +13,21 @@ usage: cc.py dcm [-h] {discovery,services,subfunc,dtc} ...
 Diagnostics module for CaringCaribou
 
 positional arguments:
- {discovery,services,subfunc}
+  {discovery,services,subfunc,dtc}
 
 optional arguments:
- -h, --help            show this help message and exit
+  -h, --help            show this help message and exit
 
 Example usage:
- cc.py dcm discovery
- cc.py dcm services 0x733 0x633
- cc.py dcm subfunc 0x733 0x633 0x22 2 3
- cc.py dcm dtc 0x7df 0x7e8
+  cc.py dcm discovery
+  cc.py dcm services 0x733 0x633
+  cc.py dcm subfunc 0x733 0x633 0x22 2 3
+  cc.py dcm dtc 0x7df 0x7e8
  ```
 
 ## Discovery
 ```
-./cc.py dcm discovery -h
+> ./cc.py dcm discovery -h
 
 -------------------
 CARING CARIBOU v0.1
@@ -50,7 +50,7 @@ optional arguments:
 
 ## Services
 ````
->./cc.py dmc services -h
+> ./cc.py dcm services -h
 
 -------------------
 CARING CARIBOU v0.1
@@ -61,16 +61,17 @@ Loaded module 'dcm'
 usage: cc.py dcm services [-h] src dst
 
 positional arguments:
-  src                  arbitration ID to transmit from
-  dst                  arbitration ID to listen to
+  src         arbitration ID to transmit from
+  dst         arbitration ID to listen to
 
 optional arguments:
- -h, --help            show this help message and exit
+  -h, --help  show this help message and exit
 ````
 
 ## Subfunc
 ````
->./cc.py dmc subfunc -h
+> ./cc.py dcm subfunc -h
+
 -------------------
 CARING CARIBOU v0.1
 -------------------
@@ -80,19 +81,20 @@ Loaded module 'dcm'
 usage: cc.py dcm subfunc [-h] [-show] src dst service i [i ...]
 
 positional arguments:
-  src                  arbitration ID to transmit from
-  dst                  arbitration ID to listen to
-  service              service ID (e.g. 0x22 for Read DID)
-  i                    sub-function indicies
+  src         arbitration ID to transmit from
+  dst         arbitration ID to listen to
+  service     service ID (e.g. 0x22 for Read DID)
+  i           sub-function indices
 
 optional arguments:
- -h, --help            show this help message and exit
- -show                 show data in terminal
+  -h, --help  show this help message and exit
+  -show       show data in terminal
 ````
 
 ## DTC
 ````
->./cc.py dmc dtc -h
+> ./cc.py dcm dtc -h
+
 -------------------
 CARING CARIBOU v0.1
 -------------------

@@ -27,7 +27,7 @@ Example usage:
 
 ## Discovery
 ```
->./cc.py dmc discovery -h
+./cc.py dcm discovery -h
 
 -------------------
 CARING CARIBOU v0.1
@@ -35,13 +35,19 @@ CARING CARIBOU v0.1
 
 Loaded module 'dcm'
 
-usage: cc.py dcm discovery [-h] [-min MIN] [-max MAX]
+usage: cc.py dcm discovery [-h] [-min MIN] [-max MAX] [-nostop]
+                           [-blacklist B [B ...]] [-autoblacklist N]
 
 optional arguments:
- -h, --help            show this help message and exit
- -min MIN
- -max MAX
+  -h, --help            show this help message and exit
+  -min MIN
+  -max MAX
+  -nostop               scan until end of range
+  -blacklist B [B ...]  arbitration IDs to ignore
+  -autoblacklist N      scan for interfering signals for N seconds and
+                        blacklist matching arbitration IDs
 ```
+
 ## Services
 ````
 >./cc.py dmc services -h
@@ -61,6 +67,7 @@ positional arguments:
 optional arguments:
  -h, --help            show this help message and exit
 ````
+
 ## Subfunc
 ````
 >./cc.py dmc subfunc -h
@@ -82,7 +89,8 @@ optional arguments:
  -h, --help            show this help message and exit
  -show                 show data in terminal
 ````
-## Dtc
+
+## DTC
 ````
 >./cc.py dmc dtc -h
 -------------------

@@ -12,7 +12,7 @@ CaringCaribou is module based with a master command (cc.py) that runs the show. 
 ## List of Modules
 
 ### dcm.py - Diagnostics ISO 14229
-- discovery - ArbID Discovery. Tries to connect (02 10 01) to all possible ArbId (0x000-0x7FF) and collect valid responses (xx 7F or xx 50)
+- discovery - ArbID Discovery. Tries to connect (02 10 01) to all possible ArbId (0x000-0x7FF) and collect valid responses (xx 7F or xx 50). Supports both manual and automatic blacklisting of arbitration IDs, in order to remove false positives.
 - services - Service Discovery. Brute force all Service Id's (SID) and report any responses (anything that is not xx F7 11)
 - subfunc - Sub-function Discovery. Brute force engine that takes SID and an index indicating which positions to brute force as input.
 - dtc - Diagnostic Trouble Codes.  Fetches DTCs.  Can clear DTCs and MIL (Engine Light) as well.

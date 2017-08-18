@@ -366,6 +366,8 @@ def parse_args(args):
                                      description="""Diagnostics module for CaringCaribou""",
                                      epilog="""Example usage:
   cc.py dcm discovery
+  cc.py dcm discovery -blacklist 0x123 0x456
+  cc.py dcm discovery -autoblacklist 10
   cc.py dcm services 0x733 0x633
   cc.py dcm subfunc 0x733 0x633 0x22 2 3
   cc.py dcm dtc 0x7df 0x7e8""")

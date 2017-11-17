@@ -90,9 +90,12 @@ class CanActions:
             raise IndexError("Invalid CAN message length: {0}".format(len(data)))
         if arb_id is None:
             arb_id = self.arb_id
+	extended = False
+	if arb_id > 0xffff:
+            extended = True
         full_data = pad_data(data)
         msg = can.Message(arbitration_id=arb_id,
-                          data=full_data, extended_id=False)
+                          data=full_data, extended_id=extended)
         # print("--- SENDING ---\n{0}\n".format(msg))   # TODO Remove
         self.bus.send(msg)
 
@@ -111,7 +114,10 @@ class CanActions:
         self.bruteforce_running = True
         for arb_id in range(min_id, max_id+1):
             self.notifier.listeners = [callback(arb_id)]
-            msg = can.Message(arbitration_id=arb_id, data=pad_data(data), extended_id=False)
+            extended = False
+            if arb_id > 0xffff:
+                extended = True
+            msg = can.Message(arbitration_id=arb_id, data=pad_data(data), extended_id=extended)
             self.bus.send(msg)
             time.sleep(MESSAGE_DELAY)
             # Return if stopped by calling module

@@ -3,6 +3,7 @@ from time import sleep
 from sys import exit
 import argparse
 import re
+import string
 
 
 class CanMessage:
@@ -38,10 +39,19 @@ def parse_messages(msgs, delay):
             if arb_id is None:
                 raise ValueError("Invalid arbitration ID: '{0}'".format(msg_parts[0]))
             msg_data = []
+            # Check which delimiter is used, if no delimiter is used don't split
+            if msg_parts[1][2] in (string.punctuation):
+                delim = msg_parts[1][2]
+                byte_list = msg_parts[1].split(delim)
+            else:
+                byte_list = [msg_parts[1][i:i+2] for i in range(0, len(msg_parts[1]), 2)]
+                if len("".join(byte_list))%2 != 0:
+                    raise ValueError("Something is wrong with your message, check it: " + msg_parts[1])
+            
             # Check data length
-            byte_list = msg_parts[1].split(".")
             if not 0 < len(byte_list) <= 8:
-                raise ValueError("Invalid data length: {0}".format(len(byte_list)))
+                # Padd if message is less than 8 bytes
+                byte_list = padding(byte_list, 8)
             # Validate data bytes
             for byte in byte_list:
                 byte_int = int(byte, 16)
@@ -135,7 +145,19 @@ def parse_file(filename, force_delay):
         print("IOError: {0}".format(e))
         return None
 
+def padding(msgList, msg_len):
+    """ 
+    Padding message with ZEROS
+    """
 
+    while len(msgList) != msg_len:
+        if type(msgList[0]) == int:
+            msgList.append(0)
+        else:
+            msgList.append("00")
+
+    return msgList
+    
 def send_messages(messages, loop):
     """
     Sends a list of messages separated by a given delay.
@@ -150,7 +172,7 @@ def send_messages(messages, loop):
                 msg = messages[i]
                 if i != 0 or loop_counter != 0:
                     sleep(msg.delay)
-                print("  Arb_id: 0x{0:03x}, data: {1}".format(msg.arb_id, ["{0:02x}".format(a) for a in msg.data]))
+                print("  Arb_id: 0x{0:03x}, data: {1}".format(msg.arb_id, ["{0:02x}".format(a) for a in padding(msg.data,8)]))
                 can_wrap.send(msg.data, msg.arb_id)
             if not loop:
                 break

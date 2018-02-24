@@ -1,12 +1,12 @@
 import can
 import time
 
-
 MESSAGE_DELAY = 0.1
 DELAY_STEP = 0.02
 
 ARBITRATION_ID_MIN = 0x0
 ARBITRATION_ID_MAX = 0x7FF
+ARBITRATION_ID_MAX_EXTENDED = 0x1FFFFFFF
 
 BYTE_MIN = 0x0
 BYTE_MAX = 0xFF
@@ -90,8 +90,8 @@ class CanActions:
             raise IndexError("Invalid CAN message length: {0}".format(len(data)))
         if arb_id is None:
             arb_id = self.arb_id
-	extended = False
-	if arb_id > 0xffff:
+        extended = False
+        if arb_id > 0xffff:
             extended = True
         full_data = pad_data(data)
         msg = can.Message(arbitration_id=arb_id,
@@ -105,14 +105,18 @@ class CanActions:
         if min_id is None:
             min_id = ARBITRATION_ID_MIN
         if max_id is None:
-            max_id = ARBITRATION_ID_MAX
+            if min_id <= ARBITRATION_ID_MAX:
+                max_id = ARBITRATION_ID_MAX
+            else:
+                # If min_id is extended, use an extended default max_id as well
+                max_id = ARBITRATION_ID_MAX_EXTENDED
         if min_id > max_id:
             if callback_end:
                 callback_end("Invalid range: min > max")
             return
         # Start bruteforce
         self.bruteforce_running = True
-        for arb_id in range(min_id, max_id+1):
+        for arb_id in xrange(min_id, max_id + 1):
             self.notifier.listeners = [callback(arb_id)]
             extended = False
             if arb_id > 0xffff:
@@ -166,6 +170,7 @@ class CanActions:
             for i in range(min_value, max_value + 1):
                 data[bruteforce_indices[idx]] = i
                 bruteforce(idx + 1)
+
         # Make sure that the data array is correctly initialized for the bruteforce
         for idx_i in bruteforce_indices:
             data[idx_i] = 0

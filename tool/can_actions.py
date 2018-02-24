@@ -135,7 +135,7 @@ class CanActions:
     def bruteforce_data(self, data, bruteforce_index, callback, min_value=BYTE_MIN, max_value=BYTE_MAX,
                         callback_end=None):
         self.bruteforce_running = True
-        for value in range(min_value, max_value + 1):
+        for value in xrange(min_value, max_value + 1):
             self.notifier.listeners = [callback(value)]
             data[bruteforce_index] = value
             self.send(data)
@@ -165,7 +165,7 @@ class CanActions:
             if idx >= len(bruteforce_indices):
                 send(data, bruteforce_indices)
                 return
-            for i in range(min_value, max_value + 1):
+            for i in xrange(min_value, max_value + 1):
                 data[bruteforce_indices[idx]] = i
                 bruteforce(idx + 1)
 

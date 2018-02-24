@@ -43,7 +43,7 @@ def str_to_int_list(s):
     :return: list of ints
     :rtype: list
     """
-    return [int(s[i*2:i*2+2], 16) for i in range(len(s)/2)]
+    return [int(s[i * 2:i * 2 + 2], 16) for i in range(len(s) / 2)]
 
 
 def insert_message_length(data):
@@ -96,7 +96,6 @@ class CanActions:
         full_data = pad_data(data)
         msg = can.Message(arbitration_id=arb_id,
                           data=full_data, extended_id=extended)
-        # print("--- SENDING ---\n{0}\n".format(msg))   # TODO Remove
         self.bus.send(msg)
 
     def bruteforce_arbitration_id(self, data, callback, min_id, max_id,
@@ -135,9 +134,8 @@ class CanActions:
 
     def bruteforce_data(self, data, bruteforce_index, callback, min_value=BYTE_MIN, max_value=BYTE_MAX,
                         callback_end=None):
-        # TODO: Add reason to callback_not_found?
         self.bruteforce_running = True
-        for value in range(min_value, max_value+1):
+        for value in range(min_value, max_value + 1):
             self.notifier.listeners = [callback(value)]
             data[bruteforce_index] = value
             self.send(data)

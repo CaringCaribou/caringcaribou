@@ -100,7 +100,7 @@ class CanActions:
 
     def bruteforce_arbitration_id(self, data, callback, min_id, max_id,
                                   callback_end=None):
-        # Sanity checks
+        # Set limits
         if min_id is None:
             min_id = ARBITRATION_ID_MIN
         if max_id is None:
@@ -109,6 +109,7 @@ class CanActions:
             else:
                 # If min_id is extended, use an extended default max_id as well
                 max_id = ARBITRATION_ID_MAX_EXTENDED
+        # Sanity checks
         if min_id > max_id:
             if callback_end:
                 callback_end("Invalid range: min > max")

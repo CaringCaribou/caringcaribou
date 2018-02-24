@@ -1,10 +1,10 @@
-# caringcaribou
+# Caring Caribou
 A friendly car security exploration tool
 
 ## Rationale
 We are lacking a security testing tool for automotive. A zero-knowledge tool that can be dropped onto any automotive network and collect information regarding what services exist and what vulnerabilities exist. This is a start.
 
-This work was done as part of the HeavenS research project.
+This work was initially done as part of the HeavenS research project.
 
 ## Features and Architecture
 CaringCaribou is module based with a master command (cc.py) that runs the show. The reason for this is to enable an easy drop-in architecture for new modules.
@@ -23,7 +23,6 @@ Detailed information on the [dcm-module](https://github.com/CaringCaribou/caring
 - discovery - ArbId Discovery. Tries to connect (FF) to all possible ArbId (0x000-0x7FF) and collect all valid responses (FF or FE)
 - info - XCP Get Basic Information. Connects and gets information about XCP abilities in the target environment
 - dump - XCP Upload. Used to dump ECU memory (SRAM, flash and bootloader) to file 
-
 
 Detailed information on the [xcp-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/xcp.md).
 
@@ -63,14 +62,15 @@ The best way to understand how to use Caring Caribou is by envoking cc.py's help
 
 Detailed information on the [usage](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/howtouse.md). 
 ## Extending the project
-Create a python file with a ```module_main(args)``` function. Put it in the ```modules``` folder. CaringCaribou (cc.py) will automagically recognize it as a module and list it in the output of ```./cc.py -h```
+Create a python file with a `module_main(args)` function and put it in the ```tool/modules``` folder. CaringCaribou (cc.py) will automagically recognize it as a module and list it in the output of ```./cc.py -h```
+
+A template for this is available in `tool/template`
 
 ## The target
-We used an open source implementation of Autosar from ArcCore available here: http://www.arccore.com/hg **FIXME**
-We used a devboard from ArcCore, called Arctic EVK-M3 - an STM32F107 based device
+The target ECU used for the development setup is an STM32F107 based dev-board from ArcCore called Arctic EVK-M3.
 
 ## Contributors
-* The HeavenS project, funded by VINNOVA - http://www.vinnova.se/sv/Resultat/Projekt/Effekta/HEAVENS-HEAling-Vulnerabilities-to-ENhance-Software-Security-and-Safety/
+* The [HeavenS](http://www.vinnova.se/sv/Resultat/Projekt/Effekta/HEAVENS-HEAling-Vulnerabilities-to-ENhance-Software-Security-and-Safety/) project, funded by VINNOVA
 * Christian Sandberg
 * Kasper Karlsson
 * Tobias Lans
@@ -78,3 +78,4 @@ We used a devboard from ArcCore, called Arctic EVK-M3 - an STM32F107 based devic
 * Johannes Weschke
 * Filip Hesslund
 * Craig Smith (OpenGarages.org)
+* internot

@@ -290,6 +290,15 @@ def subfunc_discovery(args):
     show_data = args.show
     bruteforce_indices = args.i
 
+    # Sanity checks
+    all_valid = True
+    for i in bruteforce_indices:
+        if not 2 <= i <= 7:
+            print "Invalid bruteforce index '{0}' - must be in range 2-7".format(i)
+            all_valid = False
+    if not all_valid:
+        return
+
     with CanActions(arb_id=send_arb_id) as can_wrap:
         found_sub_functions = []
         print("Starting DCM sub-function discovery")

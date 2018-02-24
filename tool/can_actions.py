@@ -151,9 +151,9 @@ class CanActions:
     def bruteforce_data_new(self, data, bruteforce_indices, callback,
                             min_value=BYTE_MIN, max_value=BYTE_MAX,
                             callback_done=None):
-        def send(data, idxs):
-            self.notifier.listeners = [callback(["{0:02x}".format(data[a]) for a in idxs])]
-            self.send(data)
+        def send(msg_data, idxs):
+            self.notifier.listeners = [callback(["{0:02x}".format(msg_data[a]) for a in idxs])]
+            self.send(msg_data)
             self.current_delay = 0.2
             while self.current_delay > 0.0:
                 time.sleep(DELAY_STEP)

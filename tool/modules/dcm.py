@@ -317,7 +317,7 @@ def subfunc_discovery(args):
                     return
                 # Catch ok status
                 elif msg.data[1] - 0x40 == service_id or \
-                        (msg.data[1] == 0x7F and msg.data[3] not in [0x11, 0x12, 0x31, 0x78]):  # TODO - more?
+                        (msg.data[1] == 0x7F and msg.data[3] not in [0x11, 0x12, 0x31, 0x78]):
                     found_sub_functions.append((data, [msg]))
                 elif msg.data[0] == 0x10:
                     # If response takes up multiple frames

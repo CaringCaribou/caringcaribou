@@ -337,7 +337,7 @@ def xcp_memory_dump(args):
     start_address = int_from_str_base(args.start)
     length = int_from_str_base(args.length)
     dump_file = args.f
-    # FIXME max size is 0xfc for test board
+    # TODO Implement support for larger segments against ECUs which support this (e.g. 0xfc for test board)
     max_segment_size = 0x7
 
     global byte_counter, bytes_left, dump_complete, segment_counter, timeout_start
@@ -366,8 +366,8 @@ def xcp_memory_dump(args):
             else:
                 print(" ".join(["{0:02x}".format(j) for j in msg.data[1:end_index]]))
             # Update counters
-            byte_counter += 7
-            bytes_left -= 7  # FIXME Hmm
+            byte_counter += max_segment_size
+            bytes_left -= max_segment_size
             if bytes_left < 1:
                 if dump_file:
                     print "\rDumping segment {0} ({1} b, 0 b left)".format(segment_counter, length)

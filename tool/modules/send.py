@@ -98,7 +98,7 @@ def parse_file(filename, force_delay):
         :param prev_timestamp: datetime object containing timestamp of previous message (to calculate delay)
         :return: CanMessage representing 'curr_line', datetime.datetime timestamp of 'curr_line'
         """
-        line_regex = re.compile(r"Timestamp: (?P<timestamp>\d+\.\d+) +ID: (?P<arb_id>[0-9a-fA-F]+) + \d+ +"
+        line_regex = re.compile(r"Timestamp: (?P<timestamp>\d+\.\d+) +ID: (?P<arb_id>[0-9a-fA-F]+) + \w+ +"
                                 r"DLC: [0-8] +(?P<data>(?:[0-9a-fA-F]{2} ?){0,8})")
         parsed_msg = line_regex.match(curr_line)
         arb_id = int(parsed_msg.group("arb_id"), 16)

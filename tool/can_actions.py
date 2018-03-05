@@ -85,17 +85,19 @@ class CanActions:
         self.clear_listeners()
         self.add_listener(listener)
 
-    def send(self, data, arb_id=None):
+    def send(self, data, arb_id=None, is_extended=None, is_error=False, is_remote=False):
         if len(data) > 8:
             raise IndexError("Invalid CAN message length: {0}".format(len(data)))
         if arb_id is None:
             arb_id = self.arb_id
-        extended = False
-        if arb_id > 0xffff:
-            extended = True
+        if not is_extended:
+            is_extended = arb_id > 0xffff
         full_data = pad_data(data)
         msg = can.Message(arbitration_id=arb_id,
-                          data=full_data, extended_id=extended)
+                          data=full_data,
+                          extended_id=is_extended,
+                          is_error_frame=is_error,
+                          is_remote_frame=is_remote)
         self.bus.send(msg)
 
     def bruteforce_arbitration_id(self, data, callback, min_id, max_id,

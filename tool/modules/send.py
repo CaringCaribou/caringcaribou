@@ -10,7 +10,7 @@ class CanMessage:
     Message wrapper class used by file parsers.
     """
 
-    def __init__(self, arb_id, data, delay):
+    def __init__(self, arb_id, data, delay, is_extended=False, is_error=False, is_remote=False):
         """
         :param arb_id: int - arbitration ID
         :param data: list of ints - data bytes
@@ -19,6 +19,9 @@ class CanMessage:
         self.arb_id = arb_id
         self.data = data
         self.delay = delay
+        self.is_extended = is_extended
+        self.is_error = is_error
+        self.is_remote = is_remote
 
 
 def parse_messages(msgs, delay):
@@ -91,14 +94,20 @@ def parse_file(filename, force_delay):
 
     def parse_pythoncan_line(curr_line, prev_timestamp=None):
         """
-        Parses a line on python-can log format, e.g.
+        Parses a line on python-can log format.
+
+        Example on format used by older python-can versions:
         Timestamp:        0.000000        ID: 017a    000    DLC: 3    c0 ff ee
+        Examples on format used by python-can 2.1.0+:
+        Timestamp:        0.000000        ID: 0000    S          DLC: 3    c0 ff ee
+        Timestamp:        0.000000    ID: 00000000    X E R      DLC: 4    de ad ca fe
 
         :param curr_line: str to parse
         :param prev_timestamp: datetime object containing timestamp of previous message (to calculate delay)
         :return: CanMessage representing 'curr_line', datetime.datetime timestamp of 'curr_line'
         """
-        line_regex = re.compile(r"Timestamp: (?P<timestamp>\d+\.\d+) +ID: (?P<arb_id>[0-9a-fA-F]+) + \w+ +"
+        line_regex = re.compile(r"Timestamp: (?P<timestamp>\d+\.\d+) +ID: (?P<arb_id>[0-9a-fA-F]+) +"
+                                r"((\d+)|(?P<is_extended>[SX]) (?P<is_error>[E ]) (?P<is_remote>[R ])) +"
                                 r"DLC: [0-8] +(?P<data>(?:[0-9a-fA-F]{2} ?){0,8})")
         parsed_msg = line_regex.match(curr_line)
         arb_id = int(parsed_msg.group("arb_id"), 16)
@@ -110,7 +119,11 @@ def parse_file(filename, force_delay):
             delay = force_delay
         else:
             delay = time_stamp - prev_timestamp
-        message = CanMessage(arb_id, data, delay)
+        # TODO Parse flags for old format as well
+        is_extended = parsed_msg.group("is_extended") == "X"
+        is_error = parsed_msg.group("is_error") == "E"
+        is_remote = parsed_msg.group("is_remote") == "R"
+        message = CanMessage(arb_id, data, delay, is_extended, is_error, is_remote)
         return message, time_stamp
 
     try:
@@ -151,7 +164,7 @@ def send_messages(messages, loop):
                 if i != 0 or loop_counter != 0:
                     sleep(msg.delay)
                 print("  Arb_id: 0x{0:03x}, data: {1}".format(msg.arb_id, ["{0:02x}".format(a) for a in msg.data]))
-                can_wrap.send(msg.data, msg.arb_id)
+                can_wrap.send(msg.data, msg.arb_id, msg.is_extended, msg.is_error, msg.is_remote)
             if not loop:
                 break
             loop_counter += 1

@@ -90,8 +90,9 @@ class CanActions:
             raise IndexError("Invalid CAN message length: {0}".format(len(data)))
         if arb_id is None:
             arb_id = self.arb_id
+        # Force extended flag if it is unspecified and arbitration ID is larger than the standard format allows
         if not is_extended:
-            is_extended = arb_id > 0xffff
+            is_extended = arb_id > ARBITRATION_ID_MAX
         full_data = pad_data(data)
         msg = can.Message(arbitration_id=arb_id,
                           data=full_data,

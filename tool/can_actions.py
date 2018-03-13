@@ -1,5 +1,11 @@
 import can
 import time
+from sys import version_info
+
+# Handle large ranges efficiently in both python 2 and 3
+if version_info[0] == 2:
+    range = xrange
+
 
 MESSAGE_DELAY = 0.1
 DELAY_STEP = 0.02
@@ -119,7 +125,7 @@ class CanActions:
             return
         # Start bruteforce
         self.bruteforce_running = True
-        for arb_id in xrange(min_id, max_id + 1):
+        for arb_id in range(min_id, max_id + 1):
             self.notifier.listeners = [callback(arb_id)]
             extended = False
             if arb_id > 0xffff:
@@ -139,7 +145,7 @@ class CanActions:
     def bruteforce_data(self, data, bruteforce_index, callback, min_value=BYTE_MIN, max_value=BYTE_MAX,
                         callback_end=None):
         self.bruteforce_running = True
-        for value in xrange(min_value, max_value + 1):
+        for value in range(min_value, max_value + 1):
             self.notifier.listeners = [callback(value)]
             data[bruteforce_index] = value
             self.send(data)
@@ -169,7 +175,7 @@ class CanActions:
             if idx >= len(bruteforce_indices):
                 send(data, bruteforce_indices)
                 return
-            for i in xrange(min_value, max_value + 1):
+            for i in range(min_value, max_value + 1):
                 data[bruteforce_indices[idx]] = i
                 bruteforce(idx + 1)
 

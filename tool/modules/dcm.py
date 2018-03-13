@@ -1,3 +1,4 @@
+from __future__ import print_function
 from can_actions import CanActions, insert_message_length, int_from_str_base
 from sys import stdout
 import argparse
@@ -169,7 +170,7 @@ def dcm_discovery(args):
     valid_responses = [0x50, 0x7F]
 
     def scan_arbitration_ids_to_blacklist(scan_duration):
-        print "Scanning for arbitration IDs to blacklist (-autoblacklist)"
+        print("Scanning for arbitration IDs to blacklist (-autoblacklist)")
         ids_to_blacklist = set()
 
         def response_handler(msg):
@@ -180,7 +181,7 @@ def dcm_discovery(args):
             # Listen for matches
             can_actions.add_listener(response_handler)
             for i in range(scan_duration, 0, -1):
-                print "\r  Scanning... {0} seconds left, {1} found".format(i-1, len(ids_to_blacklist)),
+                print("\r  Scanning... {0} seconds left, {1} found".format(i-1, len(ids_to_blacklist)), end="")
                 stdout.flush()
                 time.sleep(1)
             print("")
@@ -200,7 +201,7 @@ def dcm_discovery(args):
         print("Starting diagnostics service discovery")
 
         def response_analyser_wrapper(arb_id):
-            print "\rSending Diagnostic Session Control to 0x{0:04x}".format(arb_id),
+            print("\rSending Diagnostic Session Control to 0x{0:04x}".format(arb_id), end="")
             stdout.flush()
 
             def response_analyser(msg):
@@ -243,7 +244,7 @@ def service_discovery(args):
         supported_services = []
 
         def response_analyser_wrapper(service_id):
-            print "\rProbing service 0x{0:02x} ({1} found)".format(service_id, len(supported_services)),
+            print("\rProbing service 0x{0:02x} ({1} found)".format(service_id, len(supported_services)), end="")
             stdout.flush()
 
             def response_analyser(m):
@@ -294,7 +295,7 @@ def subfunc_discovery(args):
     all_valid = True
     for i in bruteforce_indices:
         if not 2 <= i <= 7:
-            print "Invalid bruteforce index '{0}' - must be in range 2-7".format(i)
+            print("Invalid bruteforce index '{0}' - must be in range 2-7".format(i))
             all_valid = False
     if not all_valid:
         return
@@ -304,8 +305,8 @@ def subfunc_discovery(args):
         print("Starting DCM sub-function discovery")
 
         def response_analyser_wrapper(data):
-            print "\rProbing sub-function 0x{0:02x} data {1} (found: {2})".format(
-                service_id, data, len(found_sub_functions)),
+            print("\rProbing sub-function 0x{0:02x} data {1} (found: {2})".format(
+                service_id, data, len(found_sub_functions)), end="")
             stdout.flush()
 
             def response_analyser(msg):

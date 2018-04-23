@@ -1,3 +1,4 @@
+from __future__ import print_function
 from can_actions import CanActions
 from sys import stdout
 from collections import Counter
@@ -13,8 +14,8 @@ def message_handler(msg):
     :param msg: Can message
     """
     if msg.arbitration_id not in found_arb_ids:
-        print "\rLast ID: 0x{0:03x} (total found: {1})".format(
-            msg.arbitration_id, len(found_arb_ids) + 1),
+        print("\rLast ID: 0x{0:03x} ({1} unique arbitration IDs found)".format(
+            msg.arbitration_id, len(found_arb_ids) + 1), end="")
         stdout.flush()
     found_arb_ids[msg.arbitration_id] += 1
 

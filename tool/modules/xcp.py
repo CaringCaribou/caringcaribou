@@ -1,32 +1,33 @@
+from __future__ import print_function
 from can_actions import CanActions, int_from_str_base
 from datetime import datetime, timedelta
 from sys import stdout
 import argparse
 import time
 
-# Dictionary of XCP error codes, mapping (code -> (error, description))
+# Dictionary of XCP error codes
 XCP_ERROR_CODES = {
-    (0x00, ("ERR_CMD_SYNC", "Command processor synchronisation.")),
-    (0x10, ("ERR_CMD_BUSY", "Command was not executed.")),
-    (0x11, ("ERR_DAQ_ACTIVE", "Command rejected because DAQ is running.")),
-    (0x12, ("ERR_PGM_ACTIVE", "Command rejected because PGM is running.")),
-    (0x20, ("ERR_CMD_UNKNOWN", "Unknown command or not implemented optional command.")),
-    (0x21, ("ERR_CMD_SYNTAX", "Command syntax invalid.")),
-    (0x22, ("ERR_OUT_OF_RANGE", "Command syntax valid but command parameter(s) out of range.")),
-    (0x23, ("ERR_WRITE_PROTECTED", "The memory location is write protected.")),
-    (0x24, ("ERR_ACCESS_DENIED", "The memory location is not accessible.")),
-    (0x25, ("ERR_ACCESS_LOCKED", "Access denied, Seed & Key is required.")),
-    (0x26, ("ERR_PAGE_NOT_VALID", "Selected page not available.")),
-    (0x27, ("ERR_MODE_NOT_VALID", "Selected page mode not available.")),
-    (0x28, ("ERR_SEGMENT_NOT_VALID", "Selected segment not valid.")),
-    (0x29, ("ERR_SEQUENCE", "Sequence error.")),
-    (0x2A, ("ERR_DAQ_CONFIG", "DAQ configuration not valid.")),
-    (0x30, ("ERR_MEMORY_OVERFLOW", "Memory overflow error.")),
-    (0x31, ("ERR_GENERIC", "Generic error.")),
-    (0x32, ("ERR_VERIFY", "The slave internal program verify routine detects an error."))
+    0x00: ("ERR_CMD_SYNC", "Command processor synchronisation."),
+    0x10: ("ERR_CMD_BUSY", "Command was not executed."),
+    0x11: ("ERR_DAQ_ACTIVE", "Command rejected because DAQ is running."),
+    0x12: ("ERR_PGM_ACTIVE", "Command rejected because PGM is running."),
+    0x20: ("ERR_CMD_UNKNOWN", "Unknown command or not implemented optional command."),
+    0x21: ("ERR_CMD_SYNTAX", "Command syntax invalid."),
+    0x22: ("ERR_OUT_OF_RANGE", "Command syntax valid but command parameter(s) out of range."),
+    0x23: ("ERR_WRITE_PROTECTED", "The memory location is write protected."),
+    0x24: ("ERR_ACCESS_DENIED", "The memory location is not accessible."),
+    0x25: ("ERR_ACCESS_LOCKED", "Access denied, Seed & Key is required."),
+    0x26: ("ERR_PAGE_NOT_VALID", "Selected page not available."),
+    0x27: ("ERR_MODE_NOT_VALID", "Selected page mode not available."),
+    0x28: ("ERR_SEGMENT_NOT_VALID", "Selected segment not valid."),
+    0x29: ("ERR_SEQUENCE", "Sequence error."),
+    0x2A: ("ERR_DAQ_CONFIG", "DAQ configuration not valid."),
+    0x30: ("ERR_MEMORY_OVERFLOW", "Memory overflow error."),
+    0x31: ("ERR_GENERIC", "Generic error."),
+    0x32: ("ERR_VERIFY", "The slave internal program verify routine detects an error.")
 }
 
-# Dictionary of XCP Command codes
+# List of XCP Command codes
 XCP_COMMAND_CODES = [
     (0xFF, "CONNECT"),
     (0xFE, "DISCONNECT"),
@@ -187,7 +188,7 @@ def xcp_arbitration_id_discovery(args):
         print("Starting XCP discovery")
 
         def response_analyser_wrapper(arb_id):
-            print "\rSending XCP connect to 0x{0:04x}".format(arb_id),
+            print("\rSending XCP connect to 0x{0:04x}".format(arb_id), end="")
             stdout.flush()
 
             def response_analyser(msg):
@@ -370,7 +371,7 @@ def xcp_memory_dump(args):
             bytes_left -= max_segment_size
             if bytes_left < 1:
                 if dump_file:
-                    print "\rDumping segment {0} ({1} b, 0 b left)".format(segment_counter, length)
+                    print("\rDumping segment {0} ({1} b, 0 b left)".format(segment_counter, length), end="")
                 print("Dump complete!")
                 dump_complete = True
             elif byte_counter > max_segment_size - 1:
@@ -378,8 +379,8 @@ def xcp_memory_dump(args):
                 segment_counter += 1
                 if dump_file:
                     # Print progress
-                    print "\rDumping segment {0} ({1} b, {2} b left)".format(
-                        segment_counter, ((segment_counter + 1) * max_segment_size + byte_counter), bytes_left),
+                    print("\rDumping segment {0} ({1} b, {2} b left)".format(
+                        segment_counter, ((segment_counter + 1) * max_segment_size + byte_counter), bytes_left), end="")
                     stdout.flush()
 
                 byte_counter = 0
@@ -397,7 +398,7 @@ def xcp_memory_dump(args):
             print("Dumping data:")
             # Initiate dumping
             if dump_file:
-                print "\rDumping segment 0",
+                print("\rDumping segment 0", end="")
             can_wrap.send_single_message_with_callback([0xf5, min(max_segment_size, bytes_left)], handle_upload_reply)
         else:
             print("Unexpected reply: {0}\n".format(msg))
@@ -409,7 +410,7 @@ def xcp_memory_dump(args):
             decode_xcp_error(msg)
             return
         if msg.data[0] == 0xff:
-            print "Connected: Using",
+            print("Connected: Using", end=" ")
             # Check connect reply to see whether to reverse byte order for MTA
             msb_format = msg.data[2] & 1
             if msb_format:

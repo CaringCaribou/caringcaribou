@@ -381,7 +381,8 @@ def parse_args(args):
   cc.py dcm services 0x733 0x633
   cc.py dcm subfunc 0x733 0x633 0x22 2 3
   cc.py dcm dtc 0x7df 0x7e8""")
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(dest="module_function")
+    subparsers.required = True
 
     # Parser for diagnostics discovery
     parser_disc = subparsers.add_parser("discovery")

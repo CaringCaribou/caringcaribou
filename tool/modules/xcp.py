@@ -469,7 +469,8 @@ def parse_args(args):
   cc.py xcp commands 0x3e8 0x3e9
   cc.py xcp info 1000 1001
   cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex""")
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(dest="module_function")
+    subparsers.required = True
 
     # Parser for XCP discovery
     parser_disc = subparsers.add_parser("discovery")

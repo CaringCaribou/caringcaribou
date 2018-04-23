@@ -48,7 +48,7 @@ This is the daddy of all shared module functionality. Imported by all modules. P
 Some sort of interface towards an automotive bus that is compatible with socketCAN (http://elinux.org/CAN_Bus#CAN_Support_in_Linux).
 
 ## Software requirements
-- python2.7
+- Python 2.7 or 3.x
 - python-can
 - a pretty modern linux kernel
 

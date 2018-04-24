@@ -44,9 +44,10 @@ def available_modules():
     :return: A string listing available modules
     :rtype: str
     """
+    blacklisted_files = ["__init__.py"]
     mod_str = "available modules:\n  "
     mod_str += ", ".join(sorted([m[:-3] for m in os.listdir(MODULES_DIR) if
-                         m.endswith(".py") and m != "can_actions.py"]))
+                         m.endswith(".py") and m not in blacklisted_files]))
     return mod_str
 
 
@@ -107,6 +108,7 @@ def main():
         else:
             # Print error message if module_main is missing
             print("ERROR: Module '{0}' does not contain a '{1}' function.".format(args.module, func_name))
+
 
 # Main wrapper
 if __name__ == '__main__':

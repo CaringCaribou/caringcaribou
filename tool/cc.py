@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # Released under GNU General Public License v3
 # https://github.com/CaringCaribou/caringcaribou
+from sys import argv
 import argparse
 import imp
 import os
 
 VERSION = "0.1"
-MODULES_DIR = "modules"
+# Find the right "modules" directory, even if the script is run from another directory
+MODULES_DIR = os.path.join(os.path.dirname(argv[0]), "modules")
 
 
 def show_script_header():

@@ -39,6 +39,12 @@ class Iso14229_1(object):
     def __init__(self, tp):
         self.tp = tp
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
     def send_request(self, tmp):
         return self.tp.request(tmp)
 

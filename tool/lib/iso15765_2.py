@@ -25,8 +25,8 @@ class IsoTp:
 
     MAX_FRAME_LENGTH = 8
 
-    def __init__(self, arb_id_request, arb_id_response):
-        self.bus = can.interface.Bus()
+    def __init__(self, arb_id_request, arb_id_response, bus=can.interface.Bus()):
+        self.bus = bus
         self.arb_id_request = arb_id_request
         self.arb_id_response = arb_id_response
 

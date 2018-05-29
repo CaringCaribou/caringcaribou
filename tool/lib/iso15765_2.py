@@ -21,7 +21,7 @@ class IsoTp:
     FF_FRAME_ID = 1
     CF_FRAME_ID = 2
     FC_FRAME_ID = 3
-    N_BS_TIMEOUT = 1500
+    N_BS_TIMEOUT = 1.5
 
     MAX_FRAME_LENGTH = 8
 

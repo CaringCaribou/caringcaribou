@@ -34,7 +34,7 @@ class Iso14229_1_id(object):
 
 
 class Iso14229_1(object):
-    P3_CLIENT = 5000
+    P3_CLIENT = 5
 
     def __init__(self, tp):
         self.tp = tp
@@ -55,7 +55,7 @@ class Iso14229_1(object):
         start_time = time.clock()
         while True:
             stop_time = time.clock()
-            if (stop_time - start_time) * 1000 > wait_window:
+            if (stop_time - start_time) > wait_window:
                 return None
 
             response = self.tp.indication(wait_window)

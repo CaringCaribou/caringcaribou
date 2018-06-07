@@ -90,34 +90,33 @@ class IsoTp:
         while True:
 
             msg = self.bus.recv(self.N_BS_TIMEOUT)
-            if msg is None:
-                return None
-            frame = msg.data
+            if msg is not None and msg.arbitration_id == self.arb_id_response:
+                frame = msg.data
 
-            if len(frame) > 0:
-                frame_type = (frame[0] >> 4) & 0xF
-                if frame_type == self.SF_FRAME_ID:
-                    dl, message = self.decode_sf(frame)
-                    break
-                elif frame_type == self.FF_FRAME_ID:
-                    message_length, message = self.decode_ff(frame)
-                    fc_frame = self.encode_fc(self.FC_FS_CTS, 0, 0)
-                    sn = 0
-                    self.send_request(fc_frame)
-                elif frame_type == self.CF_FRAME_ID:
-                    new_sn, data = self.decode_cf(frame)
-                    if (sn + 1) % 16 == new_sn:
-                        sn = new_sn
-                        message += data
-                        if len(message) == message_length:
-                            break
-                        elif len(message) > message_length:
-                            message = message[:message_length]
-                            break
-                        else:
-                            pass
-                else:
-                    return None
+                if len(frame) > 0:
+                    frame_type = (frame[0] >> 4) & 0xF
+                    if frame_type == self.SF_FRAME_ID:
+                        dl, message = self.decode_sf(frame)
+                        break
+                    elif frame_type == self.FF_FRAME_ID:
+                        message_length, message = self.decode_ff(frame)
+                        fc_frame = self.encode_fc(self.FC_FS_CTS, 0, 0)
+                        sn = 0
+                        self.send_request(fc_frame)
+                    elif frame_type == self.CF_FRAME_ID:
+                        new_sn, data = self.decode_cf(frame)
+                        if (sn + 1) % 16 == new_sn:
+                            sn = new_sn
+                            message += data
+                            if len(message) == message_length:
+                                break
+                            elif len(message) > message_length:
+                                message = message[:message_length]
+                                break
+                            else:
+                                pass
+                    else:
+                        return None
 
             stop_time = datetime.datetime.now()
             passed_time = stop_time - start_time

@@ -2,7 +2,6 @@ from __future__ import print_function
 from .mock_ecu import MockEcuIsoTp
 from lib import iso15765_2
 import can
-import datetime  # TODO remove
 import unittest
 
 

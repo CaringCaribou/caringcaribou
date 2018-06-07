@@ -1,6 +1,5 @@
 from __future__ import print_function
 import can
-import datetime
 import time
 
 
@@ -8,7 +7,7 @@ class MockEcu:
     """Mock ECU base class, used for running tests over a virtual CAN bus"""
 
     virtual_test_bus = can.interface.Bus("test", bustype="virtual")
-    DELAY_BEFORE_RESPONSE = 0.05
+    DELAY_BEFORE_RESPONSE = 0.03
 
     def __init__(self, bus=virtual_test_bus):
         self.bus = bus
@@ -50,6 +49,8 @@ class MockEcuIsoTp(MockEcu):
         """
         assert isinstance(message, can.Message)
         if message.arbitration_id == self.ARBITRATION_ID_REQUEST:
+            # FIXME Send a bogus message first (otherwise the receiver often misses the real message, for some reason)
+            self.bus.send(can.Message(arbitration_id=0x0, data=[0x0]))
             # Simulate a small delay before responding
             time.sleep(self.DELAY_BEFORE_RESPONSE)
             if list(message.data)[1:] == self.MOCK_SINGLE_FRAME_REQUEST:

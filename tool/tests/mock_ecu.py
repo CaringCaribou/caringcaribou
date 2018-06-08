@@ -49,8 +49,6 @@ class MockEcuIsoTp(MockEcu):
         """
         assert isinstance(message, can.Message)
         if message.arbitration_id == self.ARBITRATION_ID_REQUEST:
-            # FIXME Send a bogus message first (otherwise the receiver often misses the real message, for some reason)
-            self.bus.send(can.Message(arbitration_id=0x0, data=[0x0]))
             # Simulate a small delay before responding
             time.sleep(self.DELAY_BEFORE_RESPONSE)
             if list(message.data)[1:] == self.MOCK_SINGLE_FRAME_REQUEST:

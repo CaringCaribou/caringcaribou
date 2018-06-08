@@ -10,13 +10,14 @@ class IsoTpTestCase(unittest.TestCase):
     ARB_ID_REQUEST = 0x100A
     ARB_ID_RESPONSE = 0x100B
 
-    TIMEOUT_SECONDS = 3
+    TIMEOUT_SECONDS = 1
 
     def setUp(self):
         # Initialize virtual CAN bus
         can_bus = can.interface.Bus("test", bustype="virtual")
+        mock_ecu_can_bus = can.interface.Bus("test", bustype="virtual")
         # Initialize mock ECU
-        self.ecu = MockEcuIsoTp(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE, bus=can_bus)
+        self.ecu = MockEcuIsoTp(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE, bus=mock_ecu_can_bus)
         self.ecu.add_listener(self.ecu.message_handler)
         # Setup ISO-TP layer
         self.tp = iso15765_2.IsoTp(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE, bus=can_bus)

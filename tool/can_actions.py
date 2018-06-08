@@ -80,6 +80,7 @@ class CanActions:
         # The following line prevents threading errors during shutdown
         self.notifier.running.clear()
         time.sleep(0.1)
+        self.bus.shutdown()
 
     def add_listener(self, listener):
         self.notifier.listeners.append(listener)

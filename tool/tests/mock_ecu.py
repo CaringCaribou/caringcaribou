@@ -92,7 +92,7 @@ class MockEcuIsoTp(MockEcu):
         return list(msg.data) == self.FLOW_CONTROL_FRAME
 
 
-class MockEcuIso14229(MockEcu, MockEcuIsoTp):
+class MockEcuIso14229(MockEcuIsoTp, MockEcu):
     """ISO-14229-1 (Unified Diagnostic Services) mock ECU handler"""
 
     def __init__(self, arb_id_request, arb_id_response, bus=MockEcu.virtual_test_bus):

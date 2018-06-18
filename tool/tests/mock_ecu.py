@@ -27,13 +27,23 @@ class MockEcu:
         # Prevent threading errors during shutdown
         self.notifier.running.clear()
         time.sleep(0.1)
+        self.bus.shutdown()
 
 
 class MockEcuIsoTp(MockEcu):
     """ISO-15765-2 (ISO-TP) mock ECU handler"""
 
-    MOCK_SINGLE_FRAME_REQUEST = [0x07, 0x01, 0x02, 0x03, 0x04, 0xAA, 0xAB]
-    MOCK_SINGLE_FRAME_RESPONSE = [0x01, 0x11, 0x22, 0x33, 0x44]
+    MOCK_SINGLE_FRAME_REQUEST = [0xC0, 0xFF, 0xEE, 0x01, 0xAA, 0xAB, 0xAC]
+    MOCK_SINGLE_FRAME_RESPONSE = [0x01, 0x00, 0x02, 0x03]
+
+    MOCK_MULTI_FRAME_TWO_MESSAGES_REQUEST = [0xC0, 0xFF, 0xEE, 0x00, 0x02, 0x00, 0x00]
+    MOCK_MULTI_FRAME_TWO_MESSAGES_RESPONSE = [
+        [0x10, 0x0d, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05],
+        [0x21, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c]
+    ]
+
+    FLOW_CONTROL_FRAME = [0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    MAX_WAIT_FLOW_CONTROL = 0.3
 
     def __init__(self, arb_id_request, arb_id_response, bus=MockEcu.virtual_test_bus):
         MockEcu.__init__(self, bus)
@@ -52,14 +62,37 @@ class MockEcuIsoTp(MockEcu):
             # Simulate a small delay before responding
             time.sleep(self.DELAY_BEFORE_RESPONSE)
             if list(message.data)[1:] == self.MOCK_SINGLE_FRAME_REQUEST:
-                msg = can.Message(arbitration_id=self.ARBITRATION_ID_RESPONSE, data=self.MOCK_SINGLE_FRAME_RESPONSE)
+                msg = can.Message(arbitration_id=self.ARBITRATION_ID_RESPONSE,
+                                  data=self.MOCK_SINGLE_FRAME_RESPONSE)
+                self.bus.send(msg)
+            elif list(message.data[1:]) == self.MOCK_MULTI_FRAME_TWO_MESSAGES_REQUEST:
+                msg = can.Message(arbitration_id=self.ARBITRATION_ID_RESPONSE,
+                                  data=self.MOCK_MULTI_FRAME_TWO_MESSAGES_RESPONSE[0])
+                self.bus.send(msg)
+                # Receive flow control message
+                flow_control = self.receive_flow_control()
+                if not flow_control:
+                    return
+                msg = can.Message(arbitration_id=self.ARBITRATION_ID_RESPONSE,
+                                  data=self.MOCK_MULTI_FRAME_TWO_MESSAGES_RESPONSE[1])
                 self.bus.send(msg)
             else:
                 # TODO Add more cases here
-                print("Unmapped")
+                print("Unmapped message:", message)
+
+    def receive_flow_control(self):
+        """
+        Listens for a flow control frame.
+
+        :return: True if flow control message was received and False otherwise
+        """
+        msg = self.bus.recv(self.MAX_WAIT_FLOW_CONTROL)
+        if msg is None:
+            return False
+        return list(msg.data) == self.FLOW_CONTROL_FRAME
 
 
-class MockEcuIso14229(MockEcu):
+class MockEcuIso14229(MockEcu, MockEcuIsoTp):
     """ISO-14229-1 (Unified Diagnostic Services) mock ECU handler"""
 
     def __init__(self, arb_id_request, arb_id_response, bus=MockEcu.virtual_test_bus):

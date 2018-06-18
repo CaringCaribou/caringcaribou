@@ -25,6 +25,8 @@ class IsoTpTestCase(unittest.TestCase):
     def tearDown(self):
         if isinstance(self.tp, iso15765_2.IsoTp):
             self.tp.__exit__(None, None, None)
+        if isinstance(self.ecu, MockEcuIsoTp):
+            self.ecu.__exit__(None, None, None)
 
     def test_create_iso_15765_2(self):
         self.assertIsInstance(self.tp, iso15765_2.IsoTp, "Failed to initialize ISO-TP")
@@ -37,3 +39,12 @@ class IsoTpTestCase(unittest.TestCase):
         # Validate response
         self.assertIsNotNone(response, "No SF response received")
         self.assertEqual(list(response), MockEcuIsoTp.MOCK_SINGLE_FRAME_RESPONSE[1:])
+
+    def test_multi_frame_two_frames(self):
+        # Send request
+        self.tp.request(MockEcuIsoTp.MOCK_MULTI_FRAME_TWO_MESSAGES_REQUEST)
+        # Receive response
+        response = self.tp.indication(self.TIMEOUT_SECONDS)
+        self.assertIsNotNone(response, "No multi-frame response received")
+        # TODO Compare to actual value from MockEcu class
+        self.assertEqual(list(response), list(range(13)))

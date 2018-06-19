@@ -46,7 +46,7 @@ class Iso14229_1(object):
         pass
 
     def send_request(self, tmp):
-        return self.tp.request(tmp)
+        return self.tp.send_request(tmp)
 
     def get_service_response_id(self, identifier):
         return identifier + 0x40
@@ -80,7 +80,7 @@ class Iso14229_1(object):
             for i in range(0, num_dids):
                 request[i * 2 + 1] = (identifier[i] >> 8) & 0xFF
                 request[i * 2 + 2] = identifier[i] & 0xFF
-            self.tp.request(request)
+            self.tp.send_request(request)
             response = self.receive_response(self.P3_CLIENT)
         return response
 
@@ -102,7 +102,7 @@ class Iso14229_1(object):
             request[data_size_format + offset - i - 1] = (memory_size & 0xFF)
             memory_size = (memory_size >> 8)
 
-        self.tp.request(request)
+        self.tp.send_request(request)
         response = self.receive_response(self.P3_CLIENT)
 
         return response
@@ -126,7 +126,7 @@ class Iso14229_1(object):
             memory_size = (memory_size >> 8)
 
         request += data
-        self.tp.request(request)
+        self.tp.send_request(request)
         response = self.receive_response(self.P3_CLIENT)
 
         return response
@@ -139,7 +139,7 @@ class Iso14229_1(object):
         request[2] = identifier & 0xFF
         request += data
 
-        self.tp.request(request)
+        self.tp.send_request(request)
         response = self.receive_response(self.P3_CLIENT)
 
         return response
@@ -152,7 +152,7 @@ class Iso14229_1(object):
         request[2] = identifier & 0xFF
         request += data
 
-        self.tp.request(request)
+        self.tp.send_request(request)
         response = self.receive_response(self.P3_CLIENT)
 
         return response
@@ -175,7 +175,7 @@ class Iso14229_1(object):
             request[offset + 3] = did.memorySize
             offset += 4
 
-        self.tp.request(request)
+        self.tp.send_request(request)
         response = self.receive_response(self.P3_CLIENT)
 
         return response
@@ -192,7 +192,7 @@ class Iso14229_1(object):
         request[0] = Iso14229_1_id.ECU_RESET
         request[1] = sub_function
 
-        self.tp.request(request)
+        self.tp.send_request(request)
         response = None
 
         if not suppress_positive_response:
@@ -211,7 +211,7 @@ class Iso14229_1(object):
         for i in range(0, len(identifier)):
             request[2 + i] = identifier[i]
 
-        self.tp.request(request)
+        self.tp.send_request(request)
         response = self.receive_response(self.P3_CLIENT)
 
         return response

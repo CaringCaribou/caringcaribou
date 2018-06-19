@@ -41,27 +41,55 @@ class IsoTp:
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
-    def send_request(self, data):
-        msg = can.Message(arbitration_id=self.arb_id_request, data=data)
+    def send_message(self, data, arbitration_id):
+        """
+        Transmits a message using 'arbitration_id' and 'data' on 'self.bus'
+
+        :param data: Data to send
+        :param arbitration_id: Arbitration ID to use
+        :return: None
+        """
+        msg = can.Message(arbitration_id=arbitration_id, data=data)
         self.bus.send(msg)
 
     def decode_sf(self, frame):
+        """
+        Decodes a singe frame (SF) message
+
+        :param frame: Frame to decode
+        :return: Tuple of single frame data length (SF_DL) and data if valid,
+                 Tuple of None, None otherwise
+        """
         if len(frame) >= self.SF_PCI_LENGTH:
-            dl = frame[0] & 0xF
+            sf_dl = frame[0] & 0xF
             data = frame[1:]
-            return dl, data
+            return sf_dl, data
         else:
             return None, None
 
     def decode_ff(self, frame):
+        """
+        Decodes a first frame (FF) message
+
+        :param frame: Frame to decode
+        :return: Tuple of first frame data length (FF_DL) and data if valid,
+                 Tuple of None, None otherwise
+        """
         if len(frame) >= self.FF_PCI_LENGTH:
-            ml = ((frame[0] & 0xF) << 8) | frame[1]
+            ff_dl = ((frame[0] & 0xF) << 8) | frame[1]
             data = frame[2:]
-            return ml, data
+            return ff_dl, data
         else:
             return None, None
 
     def decode_cf(self, frame):
+        """
+        Decodes a consecutive frame (CF) message
+
+        :param frame: Frame to decode
+        :return: Tuple of sequence number (SN) and data if valid,
+                 Tuple of None, None otherwise
+        """
         if len(frame) >= self.CF_PCI_LENGTH:
             sn = frame[0] & 0xF
             data = frame[1:]
@@ -70,6 +98,13 @@ class IsoTp:
             return None, None
 
     def decode_fc(self, frame):
+        """
+        Decodes a flow control (FC) frame
+
+        :param frame: Frame to decode
+        :return: Tuple of values flow status (FS), block size (BS) and separation time minimum (STmin) if valid,
+                 Tuple of None, None, None otherwise
+        """
         if len(frame) >= self.FC_PCI_LENGTH:
             fs = frame[0] & 0xF
             block_size = frame[1]
@@ -79,13 +114,43 @@ class IsoTp:
             return None, None, None
 
     def encode_fc(self, flow_status, block_size, st_min):
+        """
+        Encodes a flow control (FC) message
+
+        :param flow_status: Flow status (FS)
+        :param block_size: Block size (BS)
+        :param st_min: Separation time minimum (STmin)
+        :return: Encoded data for the flow control message
+        """
         return [(self.FC_FRAME_ID << 4) | flow_status, block_size, st_min, 0, 0, 0, 0, 0]
 
-    def request(self, message):
+    def send_request(self, message):
+        """
+        Wrapper for sending 'message' as a request
+
+        :param message: The message to send
+        :return: None
+        """
         frames = self.get_frames_from_message(message)
-        self.transmit(frames)
+        self.transmit(frames, self.arb_id_request, self.arb_id_response)
+
+    def send_response(self, message):
+        """
+        Wrapper for sending 'message' as a response
+
+        :param message: The message to send
+        :return: None
+        """
+        frames = self.get_frames_from_message(message)
+        self.transmit(frames, self.arb_id_response, self.arb_id_request)
 
     def indication(self, wait_window):
+        """
+        Receives an ISO-15765-2 message (one or more frames) and returns its content.
+
+        :param wait_window: Max time to wait before timeout
+        :return: A bytearray of received data if successful, None otherwise
+        """
         message = []
 
         start_time = datetime.datetime.now()
@@ -93,11 +158,12 @@ class IsoTp:
         message_length = 0
 
         while True:
-
             msg = self.bus.recv(self.N_BS_TIMEOUT)
-            if msg is not None and msg.arbitration_id == self.arb_id_response:
+            if msg is not None:
+                # Note: Would it make sens to also allow self.arb_id_request here?
+                if msg.arbitration_id != self.arb_id_response:
+                    continue
                 frame = msg.data
-
                 if len(frame) > 0:
                     frame_type = (frame[0] >> 4) & 0xF
                     if frame_type == self.SF_FRAME_ID:
@@ -107,7 +173,7 @@ class IsoTp:
                         message_length, message = self.decode_ff(frame)
                         fc_frame = self.encode_fc(self.FC_FS_CTS, 0, 0)
                         sn = 0
-                        self.send_request(fc_frame)
+                        self.send_message(fc_frame, self.arb_id_request)
                     elif frame_type == self.CF_FRAME_ID:
                         new_sn, data = self.decode_cf(frame)
                         if (sn + 1) % 16 == new_sn:
@@ -122,36 +188,45 @@ class IsoTp:
                                 pass
                     else:
                         return None
-
             stop_time = datetime.datetime.now()
             passed_time = stop_time - start_time
             if passed_time.total_seconds() > wait_window:
+                # Timeout
                 return None
-
         return message
 
-    def transmit(self, frames):
-        if len(frames) == 1:
-            self.send_request(frames[0])
+    def transmit(self, frames, arbitration_id, arbitration_id_flow_control):
+        """
+        Transmits 'frames' in order on self.bus according to ISO-15765-2
 
+        :param frames: List of frames (which are in turn lists of values) to send
+        :param arbitration_id: The arbitration ID used for sending
+        :param arbitration_id_flow_control: The arbitration ID used for receiving flow control (FC)
+        :return: None
+        """
+        if len(frames) == 0:
+            # No data to send
+            return None
+        elif len(frames) == 1:
+            # Single frame
+            self.send_message(frames[0], arbitration_id)
         elif len(frames) > 1:
-
+            # Multiple frames
             frame_index = 0
-            self.send_request(frames[frame_index])
+            self.send_message(frames[frame_index], arbitration_id)
             number_of_frames_left_to_send = len(frames) - 1
-
-            num_frames_left_to_send_in_block = 0
+            number_of_frames_left_to_send_in_block = 0
             frame_index += 1
             st_min = 0
             while number_of_frames_left_to_send > 0:
                 receiver_is_ready = False
                 while not receiver_is_ready:
-
+                    # Wait for receiver to send flow control (FC)
                     msg = self.bus.recv(self.N_BS_TIMEOUT)
                     if msg is None:
                         return None
-                    # TODO Keep check?
-                    elif msg.arbitration_id == self.arb_id_response:
+                    # Verify that msg uses the expected arbitration ID
+                    elif msg.arbitration_id != arbitration_id_flow_control:
                         continue
                     fc_frame = msg.data
 
@@ -160,71 +235,63 @@ class IsoTp:
                         continue
                     elif fs == self.FC_FS_CTS:
                         receiver_is_ready = True
-                        num_frames_left_to_send_in_block = block_size
+                        number_of_frames_left_to_send_in_block = block_size
 
-                        if number_of_frames_left_to_send < num_frames_left_to_send_in_block or block_size == 0:
-                            num_frames_left_to_send_in_block = number_of_frames_left_to_send
-
-                        # count microseconds as one millisecond
+                        if number_of_frames_left_to_send < number_of_frames_left_to_send_in_block or block_size == 0:
+                            number_of_frames_left_to_send_in_block = number_of_frames_left_to_send
+                        # If STmin is specified in microseconds (0x80-0xF0) or using reserved ranges (0x80-0xF0 and
+                        # 0xFA-0xFF), round up to one millisecond
                         if st_min > 0x7F:
                             st_min = 1
                     else:
                         return None
-
-                while num_frames_left_to_send_in_block > 0:
-                    self.send_request(frames[frame_index])
+                while number_of_frames_left_to_send_in_block > 0:
+                    # Send messages until it is time to wait for flow control (FC) again
+                    self.send_message(frames[frame_index], arbitration_id)
                     frame_index += 1
-                    num_frames_left_to_send_in_block -= 1
+                    number_of_frames_left_to_send_in_block -= 1
                     number_of_frames_left_to_send -= 1
-                    if num_frames_left_to_send_in_block > 0:
+                    if number_of_frames_left_to_send_in_block > 0:
                         time.sleep(st_min / 1000)
 
-        else:
-            # nothing to send
-            pass
-
     def get_frames_from_message(self, message):
-
+        """
+        Returns a copy of 'message' split into frames,
+        :param message: Message to split
+        :return: List of frames
+        """
         frame_list = []
         message_length = len(message)
-
         if message_length <= self.MAX_SF_LENGTH:
-            # Create single frame
+            # Single frame message
             frame = [0] * self.MAX_FRAME_LENGTH
             frame[0] = (self.SF_FRAME_ID << 4) | message_length
             for i in range(0, message_length):
                 frame[1 + i] = message[i]
             frame_list.append(frame)
-
         else:
-            # Create first frame
+            # Multiple frame message
             bytes_left_to_copy = message_length
             frame = [0] * self.MAX_FRAME_LENGTH
-
-            # create FF
+            # Create first frame (FF)
             frame[0] = (self.FF_FRAME_ID << 4) | (message_length >> 8)
             frame[1] = message_length & 0xFF
             for i in range(0, self.MAX_FF_LENGTH):
                 frame[2 + i] = message[i]
-
             frame_list.append(frame)
-
-            # create CF's
+            # Create consecutive frames (CF)
             bytes_copied = self.MAX_FF_LENGTH
             bytes_left_to_copy -= bytes_copied
-
             sn = 0
             while bytes_left_to_copy > 0:
                 sn = (sn + 1) % 16
                 frame = [0] * self.MAX_FRAME_LENGTH
                 frame[0] = (self.CF_FRAME_ID << 4) | sn
-
+                # Fill current consecutive frame
                 for i in range(0, self.MAX_CF_LENGTH):
                     if bytes_left_to_copy > 0:
                         frame[1 + i] = message[bytes_copied]
                         bytes_left_to_copy = bytes_left_to_copy - 1
                         bytes_copied = bytes_copied + 1
-
                 frame_list.append(frame)
-
         return frame_list

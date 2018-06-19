@@ -58,13 +58,16 @@ class MockEcuIsoTp(MockEcu):
         """
         assert isinstance(message, can.Message)
         if message.arbitration_id == self.ARBITRATION_ID_REQUEST:
+            # Hack to decode data without running full indication
+            _, data = self.iso_tp.decode_sf(message.data)
+            data = list(data)
             # Simulate a small delay before responding
             time.sleep(self.DELAY_BEFORE_RESPONSE)
-            if list(message.data)[1:] == self.MOCK_SINGLE_FRAME_REQUEST:
+            if data == self.MOCK_SINGLE_FRAME_REQUEST:
                 self.iso_tp.send_response(self.MOCK_SINGLE_FRAME_RESPONSE)
-            elif list(message.data[1:]) == self.MOCK_MULTI_FRAME_TWO_MESSAGES_REQUEST:
+            elif data == self.MOCK_MULTI_FRAME_TWO_MESSAGES_REQUEST:
                 self.iso_tp.send_response(self.MOCK_MULTI_FRAME_TWO_MESSAGES_RESPONSE)
-            elif list(message.data[1:]) == self.MOCK_MULTI_FRAME_LONG_MESSAGE_REQUEST:
+            elif data == self.MOCK_MULTI_FRAME_LONG_MESSAGE_REQUEST:
                 self.iso_tp.send_response(self.MOCK_MULTI_FRAME_LONG_MESSAGE_RESPONSE)
             else:
                 print("Unmapped message:", message)

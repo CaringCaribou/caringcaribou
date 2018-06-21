@@ -8,8 +8,8 @@ import unittest
 
 class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
 
-    ARB_ID_REQUEST = 0x100A
-    ARB_ID_RESPONSE = 0x100B
+    ARB_ID_REQUEST = 0x200C
+    ARB_ID_RESPONSE = 0x200D
 
     def setUp(self):
         # Initialize virtual CAN bus
@@ -31,11 +31,16 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
     def test_create_iso_14229_1(self):
         self.assertIsInstance(self.diagnostics, iso14229_1.Iso14229_1, "Failed to initialize ISO-14229-1")
 
-    #def test_read_data_by_identifier(self):
-    #    # TODO Check response
-    #    result = self.diagnostics.read_data_by_identifier([0x01])
-    #    self.assertIsInstance(result, bytearray, "Did not receive response")
-    #    print("Result:", list(map(hex, result)))
+    def test_read_data_by_identifier_success(self):
+        result = self.diagnostics.read_data_by_identifier([MockEcuIso14229.REQUEST_POSITIVE])  # Note list?
+        self.assertIsInstance(result, bytearray, "Did not receive response")
+        self.assertTrue(self.diagnostics.is_positive_response(result))
+
+    def test_read_data_by_identifier_failure(self):
+        result = self.diagnostics.read_data_by_identifier([MockEcuIso14229.REQUEST_NEGATIVE])  # Note list?
+        print(result)
+        self.assertIsInstance(result, bytearray, "Did not receive response")
+        self.assertFalse(self.diagnostics.is_positive_response(result))
 
     #def test_write_data_by_identifier(self):
     #    # TODO Check response

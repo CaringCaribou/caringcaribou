@@ -1,5 +1,5 @@
 from __future__ import print_function
-from lib import iso15765_2
+from lib import iso14229_1, iso15765_2
 import can
 import time
 
@@ -7,8 +7,9 @@ import time
 class MockEcu:
     """Mock ECU base class, used for running tests over a virtual CAN bus"""
 
+    # TODO Remove this and require it to be passed explicitly?
     virtual_test_bus = can.interface.Bus("test", bustype="virtual")
-    DELAY_BEFORE_RESPONSE = 0.001
+    DELAY_BEFORE_RESPONSE = 0.05
 
     def __init__(self, bus=virtual_test_bus):
         self.bus = bus
@@ -47,7 +48,9 @@ class MockEcuIsoTp(MockEcu):
         MockEcu.__init__(self, bus)
         self.ARBITRATION_ID_REQUEST = arb_id_request
         self.ARBITRATION_ID_RESPONSE = arb_id_response
-        self.iso_tp = iso15765_2.IsoTp(self.ARBITRATION_ID_REQUEST, self.ARBITRATION_ID_RESPONSE, bus=bus)
+        self.iso_tp = iso15765_2.IsoTp(arb_id_request=self.ARBITRATION_ID_REQUEST,
+                                       arb_id_response=self.ARBITRATION_ID_RESPONSE,
+                                       bus=bus)
 
     def message_handler(self, message):
         """
@@ -76,10 +79,17 @@ class MockEcuIsoTp(MockEcu):
 class MockEcuIso14229(MockEcuIsoTp, MockEcu):
     """ISO-14229-1 (Unified Diagnostic Services) mock ECU handler"""
 
+    REQUEST_POSITIVE = 0x01
+    REQUEST_NEGATIVE = 0x02
+
     def __init__(self, arb_id_request, arb_id_response, bus=MockEcu.virtual_test_bus):
         MockEcu.__init__(self, bus)
         self.ARBITRATION_ID_ISO_14229_REQUEST = arb_id_request
         self.ARBITRATION_ID_ISO_14229_RESPONSE = arb_id_response
+        self.iso_tp = iso15765_2.IsoTp(arb_id_request=self.ARBITRATION_ID_ISO_14229_REQUEST,
+                                       arb_id_response=self.ARBITRATION_ID_ISO_14229_RESPONSE,
+                                       bus=bus)
+        self.diagnostics = iso14229_1.Iso14229_1(tp=self.iso_tp)
 
     def message_handler(self, message):
         """
@@ -89,6 +99,26 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         :return: None
         """
         assert isinstance(message, can.Message)
-        # TODO Implement logic to actually respond to requests
         if message.arbitration_id == self.ARBITRATION_ID_ISO_14229_REQUEST:
-            print(message)
+            # Hack to decode data without running full indication
+            _, data = self.iso_tp.decode_sf(message.data)
+            iso14229_service = data[0]
+            # Simulate a small delay before responding
+            time.sleep(self.DELAY_BEFORE_RESPONSE)
+            # Handle different services
+            if iso14229_service == iso14229_1.Iso14229_1_id.READ_DATA_BY_IDENTIFIER:
+                # Read data by identifier
+                request = data[2]
+                if request == self.REQUEST_POSITIVE:
+                    # Request for positive response
+                    response_data = [iso14229_1.Iso14229_1_nrc.POSITIVE_RESPONSE]
+                elif request == self.REQUEST_NEGATIVE:
+                    # Request for negative response
+                    response_data = [iso14229_1.Iso14229_1_id.NEGATIVE_RESPONSE]
+                else:
+                    # Unmatched request - use a general reject response
+                    response_data = [iso14229_1.Iso14229_1_nrc.GENERAL_REJECT]
+                self.diagnostics.send_response(response_data)
+            # TODO Implement more services
+            else:
+                print("Unmapped message in {0}.message_handler:\n  {1}".format(self.__class__.__name__, message))

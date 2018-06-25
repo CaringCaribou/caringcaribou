@@ -21,6 +21,8 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
         # Setup diagnostics on top of ISO-TP layer
         self.tp = iso15765_2.IsoTp(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE, bus=can_bus)
         self.diagnostics = iso14229_1.Iso14229_1(self.tp)
+        # Reduce timeout value to speed up testing
+        self.diagnostics.P3_CLIENT = 0.5
 
     def tearDown(self):
         if isinstance(self.diagnostics, iso14229_1.Iso14229_1):
@@ -32,18 +34,23 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
         self.assertIsInstance(self.diagnostics, iso14229_1.Iso14229_1, "Failed to initialize ISO-14229-1")
 
     def test_read_data_by_identifier_success(self):
-        result = self.diagnostics.read_data_by_identifier([MockEcuIso14229.REQUEST_POSITIVE])  # Note list?
-        self.assertIsInstance(result, bytearray, "Did not receive response")
+        result = self.diagnostics.read_data_by_identifier([MockEcuIso14229.REQUEST_POSITIVE])
+        self.assertIsInstance(result, list, "Did not receive response")
         self.assertTrue(self.diagnostics.is_positive_response(result))
 
     def test_read_data_by_identifier_failure(self):
-        result = self.diagnostics.read_data_by_identifier([MockEcuIso14229.REQUEST_NEGATIVE])  # Note list?
-        print(result)
-        self.assertIsInstance(result, bytearray, "Did not receive response")
+        result = self.diagnostics.read_data_by_identifier([MockEcuIso14229.REQUEST_NEGATIVE])
+        self.assertIsInstance(result, list, "Did not receive response")
         self.assertFalse(self.diagnostics.is_positive_response(result))
 
-    #def test_write_data_by_identifier(self):
-    #    # TODO Check response
-    #    result = self.diagnostics.write_data_by_identifier(0x02, [0x11])
-    #    self.assertIsInstance(result, bytearray, "Did not receive response")
-    #    print("Result:", list(map(hex, result)))
+    def test_write_data_by_identifier_success(self):
+        result = self.diagnostics.write_data_by_identifier(MockEcuIso14229.REQUEST_IDENTIFIER_VALID,
+                                                           MockEcuIso14229.REQUEST_VALUE)
+        self.assertIsInstance(result, list, "Did not receive response")
+        self.assertTrue(self.diagnostics.is_positive_response(result))
+
+    def test_write_data_by_identifier_failure(self):
+        result = self.diagnostics.write_data_by_identifier(MockEcuIso14229.REQUEST_IDENTIFIER_INVALID,
+                                                           MockEcuIso14229.REQUEST_VALUE)
+        self.assertIsInstance(result, list, "Did not receive response")
+        self.assertFalse(self.diagnostics.is_positive_response(result))

@@ -63,7 +63,6 @@ class MockEcuIsoTp(MockEcu):
         if message.arbitration_id == self.ARBITRATION_ID_REQUEST:
             # Hack to decode data without running full indication
             _, data = self.iso_tp.decode_sf(message.data)
-            data = list(data)
             # Simulate a small delay before responding
             time.sleep(self.DELAY_BEFORE_RESPONSE)
             if data == self.MOCK_SINGLE_FRAME_REQUEST:
@@ -81,6 +80,10 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
 
     REQUEST_POSITIVE = 0x01
     REQUEST_NEGATIVE = 0x02
+
+    REQUEST_IDENTIFIER_VALID = 0xA001
+    REQUEST_IDENTIFIER_INVALID = 0xA002
+    REQUEST_VALUE = [0xC0, 0xFF, 0xEE]
 
     def __init__(self, arb_id_request, arb_id_response, bus=MockEcu.virtual_test_bus):
         MockEcu.__init__(self, bus)
@@ -106,6 +109,7 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             # Simulate a small delay before responding
             time.sleep(self.DELAY_BEFORE_RESPONSE)
             # Handle different services
+            response_data = None
             if iso14229_service == iso14229_1.Iso14229_1_id.READ_DATA_BY_IDENTIFIER:
                 # Read data by identifier
                 request = data[2]
@@ -118,7 +122,22 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
                 else:
                     # Unmatched request - use a general reject response
                     response_data = [iso14229_1.Iso14229_1_nrc.GENERAL_REJECT]
+            elif iso14229_service == iso14229_1.Iso14229_1_id.WRITE_DATA_BY_IDENTIFIER:
+                # Write data by identifier
+                # Identifier is stored in two bytes
+                identifier_data = data[1:3]
+                identifier = identifier_data[0] * 0x100 + identifier_data[1]
+                request_data = data[3:]
+                if identifier == self.REQUEST_IDENTIFIER_VALID:
+                    # Request for positive response
+                    response_data = [iso14229_1.Iso14229_1_nrc.POSITIVE_RESPONSE]
+                elif identifier == self.REQUEST_IDENTIFIER_INVALID:
+                    # Request for negative response
+                    response_data = [iso14229_1.Iso14229_1_id.NEGATIVE_RESPONSE]
+                else:
+                    # Unmatched request - use a general reject response
+                    response_data = [iso14229_1.Iso14229_1_nrc.GENERAL_REJECT]
+            if response_data:
                 self.diagnostics.send_response(response_data)
-            # TODO Implement more services
             else:
                 print("Unmapped message in {0}.message_handler:\n  {1}".format(self.__class__.__name__, message))

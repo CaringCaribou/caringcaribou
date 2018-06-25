@@ -63,7 +63,7 @@ class IsoTp:
         if len(frame) >= self.SF_PCI_LENGTH:
             sf_dl = frame[0] & 0xF
             data = frame[1:]
-            return sf_dl, data
+            return sf_dl, list(data)
         else:
             return None, None
 
@@ -78,7 +78,7 @@ class IsoTp:
         if len(frame) >= self.FF_PCI_LENGTH:
             ff_dl = ((frame[0] & 0xF) << 8) | frame[1]
             data = frame[2:]
-            return ff_dl, data
+            return ff_dl, list(data)
         else:
             return None, None
 
@@ -93,7 +93,7 @@ class IsoTp:
         if len(frame) >= self.CF_PCI_LENGTH:
             sn = frame[0] & 0xF
             data = frame[1:]
-            return sn, data
+            return sn, list(data)
         else:
             return None, None
 
@@ -149,7 +149,7 @@ class IsoTp:
         Receives an ISO-15765-2 message (one or more frames) and returns its content.
 
         :param wait_window: Max time to wait before timeout
-        :return: A bytearray of received data if successful, None otherwise
+        :return: A list of received data bytes if successful, None otherwise
         """
         message = []
 
@@ -160,7 +160,7 @@ class IsoTp:
         while True:
             msg = self.bus.recv(self.N_BS_TIMEOUT)
             if msg is not None:
-                # Note: Would it make sens to also allow self.arb_id_request here?
+                # Note: Would it make sense to also allow self.arb_id_request here?
                 if msg.arbitration_id != self.arb_id_response:
                     continue
                 frame = msg.data
@@ -193,7 +193,7 @@ class IsoTp:
             if passed_time.total_seconds() > wait_window:
                 # Timeout
                 return None
-        return message
+        return list(message)
 
     def transmit(self, frames, arbitration_id, arbitration_id_flow_control):
         """

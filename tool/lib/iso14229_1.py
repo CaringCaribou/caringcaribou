@@ -102,7 +102,7 @@ class Iso14229_1(object):
                         response[2] == Iso14229_1_nrc.REQUEST_CORRECTLY_RECEIVED_RESPONSE_PENDING:
                     continue
             break
-        return response
+        return list(response)
 
     @staticmethod
     def is_positive_response(response):

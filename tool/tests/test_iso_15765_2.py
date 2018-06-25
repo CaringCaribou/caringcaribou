@@ -37,8 +37,8 @@ class IsoTpTestCase(unittest.TestCase):
         # Receive response
         response = self.tp.indication(self.TIMEOUT_SECONDS)
         # Validate response
-        self.assertIsNotNone(response, "No SF response received")
-        self.assertEqual(list(response), MockEcuIsoTp.MOCK_SINGLE_FRAME_RESPONSE)
+        self.assertIsInstance(response, list, "No SF response received")
+        self.assertEqual(response, MockEcuIsoTp.MOCK_SINGLE_FRAME_RESPONSE)
 
     def test_multi_frame_two_frames(self):
         # Send request
@@ -46,8 +46,8 @@ class IsoTpTestCase(unittest.TestCase):
         # Receive response
         response = self.tp.indication(self.TIMEOUT_SECONDS)
         # Validate response
-        self.assertIsNotNone(response, "No multi-frame response received")
-        self.assertEqual(list(response), MockEcuIsoTp.MOCK_MULTI_FRAME_TWO_MESSAGES_RESPONSE)
+        self.assertIsInstance(response, list, "No multi-frame response received")
+        self.assertEqual(response, MockEcuIsoTp.MOCK_MULTI_FRAME_TWO_MESSAGES_RESPONSE)
 
     def test_multi_frame_long_message(self):
         # Send request
@@ -55,5 +55,5 @@ class IsoTpTestCase(unittest.TestCase):
         # Receive response
         response = self.tp.indication(self.TIMEOUT_SECONDS)
         # Validate response
-        self.assertIsNotNone(response, "No multi-frame response received")
-        self.assertEqual(list(response), MockEcuIsoTp.MOCK_MULTI_FRAME_LONG_MESSAGE_RESPONSE)
+        self.assertIsInstance(response, list, "No multi-frame response received")
+        self.assertEqual(response, MockEcuIsoTp.MOCK_MULTI_FRAME_LONG_MESSAGE_RESPONSE)

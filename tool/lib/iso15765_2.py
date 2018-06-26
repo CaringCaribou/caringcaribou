@@ -182,6 +182,7 @@ class IsoTp:
                             if len(message) == message_length:
                                 break
                             elif len(message) > message_length:
+                                # Trim padding if message length exceeds first frame data length (FF_DL)
                                 message = message[:message_length]
                                 break
                             else:

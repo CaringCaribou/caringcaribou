@@ -27,6 +27,7 @@ class IsoTpTestCase(unittest.TestCase):
             self.tp.__exit__(None, None, None)
         if isinstance(self.ecu, MockEcuIsoTp):
             self.ecu.__exit__(None, None, None)
+        self.ecu.clear_listeners()
 
     def test_create_iso_15765_2(self):
         self.assertIsInstance(self.tp, iso15765_2.IsoTp, "Failed to initialize ISO-TP")

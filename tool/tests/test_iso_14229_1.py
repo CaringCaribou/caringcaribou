@@ -29,6 +29,7 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
             self.diagnostics.__exit__(None, None, None)
         if isinstance(self.tp, iso15765_2.IsoTp):
             self.tp.__exit__(None, None, None)
+        self.ecu.clear_listeners()
 
     def test_create_iso_14229_1(self):
         self.assertIsInstance(self.diagnostics, iso14229_1.Iso14229_1, "Failed to initialize ISO-14229-1")

@@ -9,7 +9,7 @@ class MockEcu:
 
     # TODO Remove this and require it to be passed explicitly?
     virtual_test_bus = can.interface.Bus("test", bustype="virtual")
-    DELAY_BEFORE_RESPONSE = 0.05
+    DELAY_BEFORE_RESPONSE = 0.01
 
     def __init__(self, bus=virtual_test_bus):
         self.bus = bus

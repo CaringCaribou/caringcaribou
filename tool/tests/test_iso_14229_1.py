@@ -55,3 +55,30 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
                                                            MockEcuIso14229.REQUEST_VALUE)
         self.assertIsInstance(result, list, "Did not receive response")
         self.assertFalse(self.diagnostics.is_positive_response(result))
+
+    def test_read_memory_by_address_success(self):
+        address_length_and_format = MockEcuIso14229.REQUEST_ADDRESS_LENGTH_AND_FORMAT
+        start_address = MockEcuIso14229.REQUEST_ADDRESS
+        request_data_size = MockEcuIso14229.REQUEST_DATA_SIZE
+        end_address = start_address + request_data_size
+        result = self.diagnostics.read_memory_by_address(address_length_and_format,
+                                                         start_address,
+                                                         request_data_size)
+        self.assertIsInstance(result, list, "Did not receive response")
+        self.assertTrue(self.diagnostics.is_positive_response(result))
+        # Remove response code from data
+        response_data = result[1:]
+        # Compare to actual memory content from mock ECU
+        expected_response = MockEcuIso14229.DATA[start_address:end_address]
+        self.assertEqual(response_data, expected_response)
+
+    def test_read_memory_by_address_failure_on_invalid_length(self):
+        address_length_and_format = MockEcuIso14229.REQUEST_ADDRESS_LENGTH_AND_FORMAT
+        start_address = 0
+        # Request memory outside of the available address space, which should result in a failure
+        request_data_size = len(MockEcuIso14229.DATA) + 1
+        result = self.diagnostics.read_memory_by_address(address_length_and_format,
+                                                         start_address,
+                                                         request_data_size)
+        self.assertIsInstance(result, list, "Did not receive response")
+        self.assertFalse(self.diagnostics.is_positive_response(result))

@@ -85,6 +85,11 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
     REQUEST_IDENTIFIER_INVALID = 0xA002
     REQUEST_VALUE = [0xC0, 0xFF, 0xEE]
 
+    REQUEST_ADDRESS_LENGTH_AND_FORMAT = 0x22
+    REQUEST_ADDRESS = 0x0001
+    REQUEST_DATA_SIZE = 0x10
+    DATA = list(range(0x14))
+
     def __init__(self, arb_id_request, arb_id_response, bus=MockEcu.virtual_test_bus):
         MockEcu.__init__(self, bus)
         self.ARBITRATION_ID_ISO_14229_REQUEST = arb_id_request
@@ -124,9 +129,11 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
                     response_data = [iso14229_1.Iso14229_1_nrc.GENERAL_REJECT]
             elif iso14229_service == iso14229_1.Iso14229_1_id.WRITE_DATA_BY_IDENTIFIER:
                 # Write data by identifier
-                # Identifier is stored in two bytes
-                identifier_data = data[1:3]
-                identifier = identifier_data[0] * 0x100 + identifier_data[1]
+                identifier_start_position = 1
+                identifier_length = 2
+                identifier = iso14229_1.int_from_byte_list(data,
+                                                           identifier_start_position,
+                                                           identifier_length)
                 request_data = data[3:]
                 if identifier == self.REQUEST_IDENTIFIER_VALID:
                     # Request for positive response
@@ -136,6 +143,23 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
                     response_data = [iso14229_1.Iso14229_1_id.NEGATIVE_RESPONSE]
                 else:
                     # Unmatched request - use a general reject response
+                    response_data = [iso14229_1.Iso14229_1_nrc.GENERAL_REJECT]
+            elif iso14229_service == iso14229_1.Iso14229_1_id.READ_MEMORY_BY_ADDRESS:
+                address_field_size = (data[1] >> 4) & 0xF
+                data_length_field_size = (data[1] & 0xF)
+                address_start_position = 2
+                data_length_start_position = 4
+                start_address = iso14229_1.int_from_byte_list(data,
+                                                              address_start_position,
+                                                              address_field_size)
+                data_length = iso14229_1.int_from_byte_list(data,
+                                                            data_length_start_position,
+                                                            data_length_field_size)
+                end_address = start_address + data_length
+                if 0 <= start_address <= end_address <= len(self.DATA):
+                    memory_data = self.DATA[start_address:end_address]
+                    response_data = [iso14229_1.Iso14229_1_nrc.POSITIVE_RESPONSE] + memory_data
+                else:
                     response_data = [iso14229_1.Iso14229_1_nrc.GENERAL_REJECT]
             if response_data:
                 self.diagnostics.send_response(response_data)

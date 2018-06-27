@@ -40,6 +40,16 @@ class Iso14229_1_id(object):
     NEGATIVE_RESPONSE = 0x7F
 
 
+# TODO Use for parsing multi-byte values in all applicable functions
+# TODO Move to appropriate lib, since this is not ISO-14229-1 specific
+def int_from_byte_list(byte_values, start_index, length):
+    value = 0
+    for i in (range(start_index, start_index+length)):
+        value = value << 8
+        value += byte_values[i]
+    return value
+
+
 class Iso14229_1(object):
     P3_CLIENT = 5
 

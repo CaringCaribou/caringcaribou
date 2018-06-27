@@ -52,15 +52,9 @@ class MockEcuIsoTp(MockEcu):
                                        arb_id_response=self.ARBITRATION_ID_RESPONSE,
                                        bus=bus)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.clear_listeners()
-
     def message_handler(self, message):
         """
-        Logic for responding to incoming messages.
+        Logic for responding to incoming messages
 
         :param message: Incoming can.Message
         :return: None
@@ -107,7 +101,7 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
 
     def message_handler(self, message):
         """
-        Logic for responding to incoming messages.
+        Logic for responding to incoming messages
 
         :param message: Incoming can.Message
         :return: None
@@ -123,51 +117,82 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             response_data = None
             if iso14229_service == iso14229_1.Iso14229_1_id.READ_DATA_BY_IDENTIFIER:
                 # Read data by identifier
-                request = data[2]
-                if request == self.REQUEST_POSITIVE:
-                    # Request for positive response
-                    response_data = [iso14229_1.Iso14229_1_nrc.POSITIVE_RESPONSE]
-                elif request == self.REQUEST_NEGATIVE:
-                    # Request for negative response
-                    response_data = [iso14229_1.Iso14229_1_id.NEGATIVE_RESPONSE]
-                else:
-                    # Unmatched request - use a general reject response
-                    response_data = [iso14229_1.Iso14229_1_nrc.GENERAL_REJECT]
+                response_data = self.handle_read_data_by_identifier(data)
             elif iso14229_service == iso14229_1.Iso14229_1_id.WRITE_DATA_BY_IDENTIFIER:
                 # Write data by identifier
-                identifier_start_position = 1
-                identifier_length = 2
-                identifier = iso14229_1.int_from_byte_list(data,
-                                                           identifier_start_position,
-                                                           identifier_length)
-                request_data = data[3:]
-                if identifier == self.REQUEST_IDENTIFIER_VALID:
-                    # Request for positive response
-                    response_data = [iso14229_1.Iso14229_1_nrc.POSITIVE_RESPONSE]
-                elif identifier == self.REQUEST_IDENTIFIER_INVALID:
-                    # Request for negative response
-                    response_data = [iso14229_1.Iso14229_1_id.NEGATIVE_RESPONSE]
-                else:
-                    # Unmatched request - use a general reject response
-                    response_data = [iso14229_1.Iso14229_1_nrc.GENERAL_REJECT]
+                response_data = self.handle_write_data_by_identifier(data)
             elif iso14229_service == iso14229_1.Iso14229_1_id.READ_MEMORY_BY_ADDRESS:
-                address_field_size = (data[1] >> 4) & 0xF
-                data_length_field_size = (data[1] & 0xF)
-                address_start_position = 2
-                data_length_start_position = 4
-                start_address = iso14229_1.int_from_byte_list(data,
-                                                              address_start_position,
-                                                              address_field_size)
-                data_length = iso14229_1.int_from_byte_list(data,
-                                                            data_length_start_position,
-                                                            data_length_field_size)
-                end_address = start_address + data_length
-                if 0 <= start_address <= end_address <= len(self.DATA):
-                    memory_data = self.DATA[start_address:end_address]
-                    response_data = [iso14229_1.Iso14229_1_nrc.POSITIVE_RESPONSE] + memory_data
-                else:
-                    response_data = [iso14229_1.Iso14229_1_nrc.GENERAL_REJECT]
+                # Read memory by address
+                response_data = self.handle_read_memory_by_address(data)
             if response_data:
                 self.diagnostics.send_response(response_data)
             else:
                 print("Unmapped message in {0}.message_handler:\n  {1}".format(self.__class__.__name__, message))
+
+    def handle_read_data_by_identifier(self, data):
+        """
+        Evaluates a read data by identifier request and returns the appropriate response
+
+        :param data: Data from incoming request
+        :return: Response to be sent
+        """
+        request = data[2]
+        if request == self.REQUEST_POSITIVE:
+            # Request for positive response
+            response_data = [iso14229_1.Iso14229_1_nrc.POSITIVE_RESPONSE]
+        elif request == self.REQUEST_NEGATIVE:
+            # Request for negative response
+            response_data = [iso14229_1.Iso14229_1_id.NEGATIVE_RESPONSE]
+        else:
+            # Unmatched request - use a general reject response
+            response_data = [iso14229_1.Iso14229_1_nrc.GENERAL_REJECT]
+        return response_data
+
+    def handle_write_data_by_identifier(self, data):
+        """
+        Evaluates a write data by identifier request and returns the appropriate response
+
+        :param data: Data from incoming request
+        :return: Response to be sent
+        """
+        identifier_start_position = 1
+        identifier_length = 2
+        identifier = iso14229_1.int_from_byte_list(data,
+                                                   identifier_start_position,
+                                                   identifier_length)
+        request_data = data[3:]
+        if identifier == self.REQUEST_IDENTIFIER_VALID:
+            # Request for positive response
+            response_data = [iso14229_1.Iso14229_1_nrc.POSITIVE_RESPONSE]
+        elif identifier == self.REQUEST_IDENTIFIER_INVALID:
+            # Request for negative response
+            response_data = [iso14229_1.Iso14229_1_id.NEGATIVE_RESPONSE]
+        else:
+            # Unmatched request - use a general reject response
+            response_data = [iso14229_1.Iso14229_1_nrc.GENERAL_REJECT]
+        return response_data
+
+    def handle_read_memory_by_address(self, data):
+        """
+        Evaluates a read memory by address request and returns the appropriate response
+
+        :param data: Data from incoming request
+        :return: Response to be sent
+        """
+        address_field_size = (data[1] >> 4) & 0xF
+        data_length_field_size = (data[1] & 0xF)
+        address_start_position = 2
+        data_length_start_position = 4
+        start_address = iso14229_1.int_from_byte_list(data,
+                                                      address_start_position,
+                                                      address_field_size)
+        data_length = iso14229_1.int_from_byte_list(data,
+                                                    data_length_start_position,
+                                                    data_length_field_size)
+        end_address = start_address + data_length
+        if 0 <= start_address <= end_address <= len(self.DATA):
+            memory_data = self.DATA[start_address:end_address]
+            response_data = [iso14229_1.Iso14229_1_nrc.POSITIVE_RESPONSE] + memory_data
+        else:
+            response_data = [iso14229_1.Iso14229_1_nrc.GENERAL_REJECT]
+        return response_data

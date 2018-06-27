@@ -52,6 +52,12 @@ class MockEcuIsoTp(MockEcu):
                                        arb_id_response=self.ARBITRATION_ID_RESPONSE,
                                        bus=bus)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.clear_listeners()
+
     def message_handler(self, message):
         """
         Logic for responding to incoming messages.

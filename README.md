@@ -2,14 +2,17 @@
 A friendly car security exploration tool
 
 ## Rationale
-We are lacking a security testing tool for automotive. A zero-knowledge tool that can be dropped onto any automotive network and collect information regarding what services exist and what vulnerabilities exist. This is a start.
+We are lacking a security testing tool for automotive. A zero-knowledge tool that can be dropped onto any CAN network and collect information regarding what services and vulnerabilities exist. This is a start.
 
-This work was initially done as part of the HeavenS research project.
+This work was initiated as part of the HeavenS research project, but lives on as a stand-alone project.
 
 ## Features and Architecture
-CaringCaribou is module based with a master command (cc.py) that runs the show. The reason for this is to enable an easy drop-in architecture for new modules.
+Caring Caribou is based on a master script `cc.py`, which runs the show. This enables an easy drop-in architecture for new modules, which are located in the `/modules` folder.
+
+The tool also has a `/libs` folder. This contains various higher level CAN protocol implementations and useful functions, which can be used by the modules.
 
 ## List of Modules
+A clean installation of Caring Caribou includes the following modules:
 
 ### dcm.py - Diagnostics ISO 14229
 - discovery - ArbID Discovery. Tries to connect (02 10 01) to all possible ArbId (0x000-0x7FF) and collect valid responses (xx 7F or xx 50). Supports both manual and automatic blacklisting of arbitration IDs, in order to remove false positives.
@@ -41,11 +44,20 @@ Detailed information on the [send-module](https://github.com/CaringCaribou/carin
 
 Detailed information on the [dump-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/dump.md).
 
+## List of libraries
+The `/lib` folder contains the following libraries:
+
 ### can_actions.py
-This is the daddy of all shared module functionality. Imported by all modules. Provides abstraction for access to the CAN bus, CAN bruteforce engines etc.
+Contains various shared module functionality. Provides abstraction for access to the CAN bus, CAN bruteforce engines etc.
+
+### iso14229_1.py
+Implementation of the ISO-14229-1 standard for Unified Diagnostic Services (UDS).
+
+### iso15765_2.py
+Implementation of the ISO-15765-2 standard (ISO-TP). This is a transport protocol which enables sending of messages longer than 8 bytes over CAN by splitting them into multiple data frames.
 
 ## Hardware requirements
-Some sort of interface towards an automotive bus that is compatible with socketCAN (http://elinux.org/CAN_Bus#CAN_Support_in_Linux).
+Some sort of CAN bus interface compatible with socketCAN (http://elinux.org/CAN_Bus#CAN_Support_in_Linux)
 
 ## Software requirements
 - Python 2.7 or 3.x
@@ -56,18 +68,21 @@ Some sort of interface towards an automotive bus that is compatible with socketC
 Instructions available [here](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/howtoinstall.md)
 
 ## How to use
-The best way to understand how to use Caring Caribou is by envoking cc.py's help menu:
+The best way to understand how to use Caring Caribou is to look at cc.py's help menu:
     
     python cc.py -h
 
-Detailed information on the [usage](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/howtouse.md). 
-## Extending the project
-Create a python file with a `module_main(args)` function and put it in the ```tool/modules``` folder. CaringCaribou (cc.py) will automagically recognize it as a module and list it in the output of ```./cc.py -h```
+Detailed usage information is available [here](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/howtouse.md). 
 
-A template for this is available in `tool/template`
+## Extending the project
+Create a python file with a function `module_main(args)` and put it in the ```tool/modules``` folder. Caring Caribou will automagically recognize it as a module and list it in the output of `./cc.py -h`
+
+For example, if your new module is located in `modules/foo.py` you run it with the command `./cc.py foo`. Additional arguments (if any) are passed as arguments to the `module_main` function.
+
+A template for new modules is available in `tool/template`
 
 ## The target
-The target ECU used for the development setup is an STM32F107 based dev-board from ArcCore called Arctic EVK-M3.
+The target ECU used for the development setup is an STM32F107 based dev-board from ArcCore called Arctic EVK-M3, but the tool can be used against any ECU communicating over a CAN bus.
 
 ## Contributors
 * The [HeavenS](http://www.vinnova.se/sv/Resultat/Projekt/Effekta/HEAVENS-HEAling-Vulnerabilities-to-ENhance-Software-Security-and-Safety/) project, funded by VINNOVA

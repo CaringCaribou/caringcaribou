@@ -1,5 +1,6 @@
 from __future__ import print_function
 from lib import iso14229_1, iso15765_2
+from lib.can_actions import int_from_byte_list
 import can
 import time
 
@@ -7,12 +8,13 @@ import time
 class MockEcu:
     """Mock ECU base class, used for running tests over a virtual CAN bus"""
 
-    # TODO Remove this and require it to be passed explicitly?
-    virtual_test_bus = can.interface.Bus("test", bustype="virtual")
     DELAY_BEFORE_RESPONSE = 0.01
 
-    def __init__(self, bus=virtual_test_bus):
-        self.bus = bus
+    def __init__(self, bus=None):
+        if bus is None:
+            self.bus = can.interface.Bus("test", bustype="virtual")
+        else:
+            self.bus = bus
         self.notifier = can.Notifier(self.bus, listeners=[])
 
     def __enter__(self):
@@ -44,7 +46,7 @@ class MockEcuIsoTp(MockEcu):
     MOCK_MULTI_FRAME_LONG_MESSAGE_REQUEST = [0x02, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F]
     MOCK_MULTI_FRAME_LONG_MESSAGE_RESPONSE = list(range(0, 34))
 
-    def __init__(self, arb_id_request, arb_id_response, bus=MockEcu.virtual_test_bus):
+    def __init__(self, arb_id_request, arb_id_response, bus=None):
         MockEcu.__init__(self, bus)
         self.ARBITRATION_ID_REQUEST = arb_id_request
         self.ARBITRATION_ID_RESPONSE = arb_id_response
@@ -90,7 +92,7 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
     REQUEST_DATA_SIZE = 0x10
     DATA = list(range(0x14))
 
-    def __init__(self, arb_id_request, arb_id_response, bus=MockEcu.virtual_test_bus):
+    def __init__(self, arb_id_request, arb_id_response, bus=None):
         MockEcu.__init__(self, bus)
         self.ARBITRATION_ID_ISO_14229_REQUEST = arb_id_request
         self.ARBITRATION_ID_ISO_14229_RESPONSE = arb_id_response
@@ -157,9 +159,9 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         """
         identifier_start_position = 1
         identifier_length = 2
-        identifier = iso14229_1.int_from_byte_list(data,
-                                                   identifier_start_position,
-                                                   identifier_length)
+        identifier = int_from_byte_list(data,
+                                        identifier_start_position,
+                                        identifier_length)
         request_data = data[3:]
         if identifier == self.REQUEST_IDENTIFIER_VALID:
             # Request for positive response
@@ -183,12 +185,8 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         data_length_field_size = (data[1] & 0xF)
         address_start_position = 2
         data_length_start_position = 4
-        start_address = iso14229_1.int_from_byte_list(data,
-                                                      address_start_position,
-                                                      address_field_size)
-        data_length = iso14229_1.int_from_byte_list(data,
-                                                    data_length_start_position,
-                                                    data_length_field_size)
+        start_address = int_from_byte_list(data, address_start_position, address_field_size)
+        data_length = int_from_byte_list(data, data_length_start_position, data_length_field_size)
         end_address = start_address + data_length
         if 0 <= start_address <= end_address <= len(self.DATA):
             memory_data = self.DATA[start_address:end_address]

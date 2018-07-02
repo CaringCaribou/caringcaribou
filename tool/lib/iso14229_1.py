@@ -40,16 +40,6 @@ class Iso14229_1_id(object):
     NEGATIVE_RESPONSE = 0x7F
 
 
-# TODO Use for parsing multi-byte values in all applicable functions
-# TODO Move to appropriate lib, since this is not ISO-14229-1 specific
-def int_from_byte_list(byte_values, start_index, length):
-    value = 0
-    for i in (range(start_index, start_index+length)):
-        value = value << 8
-        value += byte_values[i]
-    return value
-
-
 class Iso14229_1(object):
     P3_CLIENT = 5
 
@@ -78,7 +68,6 @@ class Iso14229_1(object):
         :param data: The data to send
         :return: None
         """
-        # TODO Is this needed?
         return self.tp.send_response(data)
 
     @staticmethod
@@ -99,11 +88,10 @@ class Iso14229_1(object):
         :return: The received response if successful,
                  False otherwise
         """
-        # TODO Check arbitration ID
         start_time = time.clock()
         while True:
-            stop_time = time.clock()
-            if (stop_time - start_time) > wait_window:
+            current_time = time.clock()
+            if (current_time - start_time) > wait_window:
                 return None
 
             response = self.tp.indication(wait_window)

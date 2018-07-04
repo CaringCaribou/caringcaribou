@@ -168,6 +168,8 @@ class IsoTp:
                     frame_type = (frame[0] >> 4) & 0xF
                     if frame_type == self.SF_FRAME_ID:
                         dl, message = self.decode_sf(frame)
+                        # Trim padding if length exceeds single frame data length (SF_DL)
+                        message = message[:dl]
                         break
                     elif frame_type == self.FF_FRAME_ID:
                         message_length, message = self.decode_ff(frame)

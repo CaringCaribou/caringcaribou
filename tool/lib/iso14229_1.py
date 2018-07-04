@@ -111,7 +111,7 @@ class Iso14229_1(object):
         :return: False if response is a NEGATIVE_RESPONSE,
                  True otherwise
         """
-        if response is not None and len(response) > 0 and response[0] == Iso14229_1_nrc.POSITIVE_RESPONSE:
+        if response is not None and len(response) > 0 and response[0] != Iso14229_1_id.NEGATIVE_RESPONSE:
             return True
         return False
 
@@ -216,7 +216,6 @@ class Iso14229_1(object):
         request[1] = (identifier >> 8) & 0xFF
         request[2] = identifier & 0xFF
         request += data
-
         self.tp.send_request(request)
         response = self.receive_response(self.P3_CLIENT)
 

@@ -52,6 +52,16 @@ class Iso14229_1(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
+    @staticmethod
+    def get_service_response_id(identifier):
+        """
+        Returns the service response ID for 'identifier'
+
+        :param identifier: Identifier
+        :return: Service response ID for 'identifier'
+        """
+        return identifier + 0x40
+
     def send_request(self, data):
         """
         Sends a request message containing 'data' through the underlying TP layer
@@ -69,16 +79,6 @@ class Iso14229_1(object):
         :return: None
         """
         return self.tp.send_response(data)
-
-    @staticmethod
-    def get_service_response_id(identifier):
-        """
-        Returns the service response ID for 'identifier'
-
-        :param identifier: Identifier
-        :return: Service response ID for 'identifier'
-        """
-        return identifier + 0x40
 
     def receive_response(self, wait_window):
         """

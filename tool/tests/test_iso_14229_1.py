@@ -41,12 +41,13 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
         :return: None
         """
         self.assertIsInstance(response, list, "No response was received")
+        self.assertGreater(len(response), 1, "Expected positive response length >1, got {0}".format(response))
         response_sid = response[0]
         response_data = response[1:]
         expected_response_sid = self.diagnostics.get_service_response_id(service_id)
         self.assertEqual(response_sid, expected_response_sid, "Response SID (SIDPR) does not match expected value")
         self.assertTrue(self.diagnostics.is_positive_response(response))
-        self.assertEqual(response_data, expected_data)
+        self.assertListEqual(response_data, expected_data)
 
     def verify_negative_response(self, service_id, response, expected_nrc):
         """
@@ -58,6 +59,7 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
         :return: None
         """
         self.assertIsInstance(response, list, "No response was received")
+        self.assertEqual(len(response), 3, "Negative response should have length '3', got {0}".format(response))
         request_sid = response[1]
         self.assertEqual(request_sid, service_id, "Request SID (SIDRQ) of response does not match expected value")
         self.assertFalse(self.diagnostics.is_positive_response(response))

@@ -74,7 +74,7 @@ class MockEcuIsoTp(MockEcu):
             elif data == self.MOCK_MULTI_FRAME_LONG_MESSAGE_REQUEST:
                 self.iso_tp.send_response(self.MOCK_MULTI_FRAME_LONG_MESSAGE_RESPONSE)
             else:
-                print("Unmapped message:", message)
+                print("Unmapped message in {0}.message_handler:\n  {1}".format(self.__class__.__name__, message))
 
 
 class MockEcuIso14229(MockEcuIsoTp, MockEcu):

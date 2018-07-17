@@ -12,7 +12,7 @@ class MockEcu:
 
     def __init__(self, bus=None):
         if bus is None:
-            self.bus = can.interface.Bus("test", bustype="virtual")
+            self.bus = can.Bus("test", bustype="virtual")
         else:
             self.bus = bus
         self.notifier = can.Notifier(self.bus, listeners=[])
@@ -20,18 +20,32 @@ class MockEcu:
     def __enter__(self):
         return self
 
-    def add_listener(self, listener):
-        self.notifier.listeners.append(listener)
+    def add_listener(self, message_handler_function):
+        """
+        Wraps 'message_handler_function' in a Listener, used as callback on all incoming messages.
+
+        :param message_handler_function: Callback function
+        :return: None
+        """
+
+        class CallbackListener(can.Listener):
+            def on_message_received(self, message):
+                self.callback(message)
+
+            def __init__(self, callback):
+                self.callback = callback
+
+        # Create and add listener
+        wrapped_listener = CallbackListener(message_handler_function)
+        self.notifier.add_listener(wrapped_listener)
 
     def clear_listeners(self):
         self.notifier.listeners = []
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.clear_listeners()
         # Prevent threading errors during shutdown
-        self.notifier.running.clear()
-        time.sleep(0.1)
-        self.bus.shutdown()
+        self.notifier.stop()
+        self.clear_listeners()
 
 
 class MockEcuIsoTp(MockEcu):

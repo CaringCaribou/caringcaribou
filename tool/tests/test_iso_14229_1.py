@@ -13,8 +13,8 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
 
     def setUp(self):
         # Initialize virtual CAN bus
-        can_bus = can.interface.Bus("test", bustype="virtual")
-        mock_ecu_can_bus = can.interface.Bus("test", bustype="virtual")
+        can_bus = can.Bus("test", bustype="virtual")
+        mock_ecu_can_bus = can.Bus("test", bustype="virtual")
         # Initialize mock ECU
         self.ecu = MockEcuIso14229(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE, bus=mock_ecu_can_bus)
         self.ecu.add_listener(self.ecu.message_handler)
@@ -29,7 +29,8 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
             self.diagnostics.__exit__(None, None, None)
         if isinstance(self.tp, iso15765_2.IsoTp):
             self.tp.__exit__(None, None, None)
-        self.ecu.clear_listeners()
+        if isinstance(self.ecu, MockEcuIso14229):
+            self.ecu.__exit__(None, None, None)
 
     def verify_positive_response(self, service_id, response, expected_data):
         """
@@ -45,7 +46,9 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
         response_sid = response[0]
         response_data = response[1:]
         expected_response_sid = self.diagnostics.get_service_response_id(service_id)
-        self.assertEqual(response_sid, expected_response_sid, "Response SID (SIDPR) does not match expected value")
+        self.assertEqual(response_sid, expected_response_sid, "Response SID (SIDPR) '{0}' does not match expected "
+                                                              "value '{1}'".format(hex(response_sid),
+                                                                                   hex(expected_response_sid)))
         self.assertTrue(self.diagnostics.is_positive_response(response))
         self.assertListEqual(response_data, expected_data)
 

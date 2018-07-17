@@ -14,8 +14,8 @@ class IsoTpTestCase(unittest.TestCase):
 
     def setUp(self):
         # Initialize virtual CAN bus
-        can_bus = can.interface.Bus("test", bustype="virtual")
-        mock_ecu_can_bus = can.interface.Bus("test", bustype="virtual")
+        can_bus = can.Bus("test", bustype="virtual")
+        mock_ecu_can_bus = can.Bus("test", bustype="virtual")
         # Initialize mock ECU
         self.ecu = MockEcuIsoTp(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE, bus=mock_ecu_can_bus)
         self.ecu.add_listener(self.ecu.message_handler)
@@ -27,7 +27,6 @@ class IsoTpTestCase(unittest.TestCase):
             self.tp.__exit__(None, None, None)
         if isinstance(self.ecu, MockEcuIsoTp):
             self.ecu.__exit__(None, None, None)
-        self.ecu.clear_listeners()
 
     def test_create_iso_15765_2(self):
         self.assertIsInstance(self.tp, iso15765_2.IsoTp, "Failed to initialize ISO-TP")

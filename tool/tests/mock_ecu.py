@@ -2,6 +2,7 @@ from __future__ import print_function
 from lib import iso14229_1, iso15765_2
 from lib.can_actions import int_from_byte_list
 import can
+import multiprocessing
 import time
 
 
@@ -11,41 +12,14 @@ class MockEcu:
     DELAY_BEFORE_RESPONSE = 0.01
 
     def __init__(self, bus=None):
+        self.message_process = None
         if bus is None:
-            self.bus = can.Bus("test", bustype="virtual")
+            self.bus = can.Bus("vcan0", bustype="socketcan")
         else:
             self.bus = bus
-        self.notifier = can.Notifier(self.bus, listeners=[])
 
     def __enter__(self):
         return self
-
-    def add_listener(self, message_handler_function):
-        """
-        Wraps 'message_handler_function' in a Listener, used as callback on all incoming messages.
-
-        :param message_handler_function: Callback function
-        :return: None
-        """
-
-        class CallbackListener(can.Listener):
-            def on_message_received(self, message):
-                self.callback(message)
-
-            def __init__(self, callback):
-                self.callback = callback
-
-        # Create and add listener
-        wrapped_listener = CallbackListener(message_handler_function)
-        self.notifier.add_listener(wrapped_listener)
-
-    def clear_listeners(self):
-        self.notifier.listeners = []
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        # Prevent threading errors during shutdown
-        self.notifier.stop()
-        self.clear_listeners()
 
 
 class MockEcuIsoTp(MockEcu):
@@ -66,29 +40,80 @@ class MockEcuIsoTp(MockEcu):
         self.ARBITRATION_ID_RESPONSE = arb_id_response
         self.iso_tp = iso15765_2.IsoTp(arb_id_request=self.ARBITRATION_ID_REQUEST,
                                        arb_id_response=self.ARBITRATION_ID_RESPONSE,
-                                       bus=bus)
+                                       bus=self.bus)
 
-    def message_handler(self, message):
+    def __enter__(self):
+        """
+        Run server when entering a "with" statement.
+
+        :return: self
+        """
+        self.start_server()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Cleanup when leaving a "with" statement.
+
+        :param exc_type:
+        :param exc_val:
+        :param exc_tb:
+        :return: None
+        """
+        self.stop_server()
+
+    def start_server(self):
+        """
+        Starts a server process, listening for and responding to incoming ISO-TP messages.
+
+        Since the server runs in a separate process, this function is non-blocking.
+
+        :return: None
+        """
+        self.message_process = multiprocessing.Process(target=self._serve_forever)
+        self.message_process.start()
+
+    def stop_server(self):
+        """
+        Stops the server process.
+
+        :return: None
+        """
+        if isinstance(self.message_process, multiprocessing.Process):
+            self.message_process.terminate()
+            self.message_process.join()
+        else:
+            print("stop_server: No server was running")
+
+    def _serve_forever(self):
+        """
+        Listens for incoming ISO-TP messages and responds to them. This function is blocking.
+
+        :return: None
+        """
+        while True:
+            msg = self.iso_tp.indication()
+            if msg is not None:
+                # ISO-TP message received
+                self.message_handler(msg)
+
+    def message_handler(self, data):
         """
         Logic for responding to incoming messages
 
-        :param message: Incoming can.Message
+        :param data: list of data bytes in incoming message
         :return: None
         """
-        assert isinstance(message, can.Message)
-        if message.arbitration_id == self.ARBITRATION_ID_REQUEST:
-            # Hack to decode data without running full indication
-            _, data = self.iso_tp.decode_sf(message.data)
-            # Simulate a small delay before responding
-            time.sleep(self.DELAY_BEFORE_RESPONSE)
-            if data == self.MOCK_SINGLE_FRAME_REQUEST:
+        # Simulate a small delay before responding
+        time.sleep(self.DELAY_BEFORE_RESPONSE)
+        if data == self.MOCK_SINGLE_FRAME_REQUEST:
                 self.iso_tp.send_response(self.MOCK_SINGLE_FRAME_RESPONSE)
-            elif data == self.MOCK_MULTI_FRAME_TWO_MESSAGES_REQUEST:
+        elif data == self.MOCK_MULTI_FRAME_TWO_MESSAGES_REQUEST:
                 self.iso_tp.send_response(self.MOCK_MULTI_FRAME_TWO_MESSAGES_RESPONSE)
-            elif data == self.MOCK_MULTI_FRAME_LONG_MESSAGE_REQUEST:
+        elif data == self.MOCK_MULTI_FRAME_LONG_MESSAGE_REQUEST:
                 self.iso_tp.send_response(self.MOCK_MULTI_FRAME_LONG_MESSAGE_RESPONSE)
-            else:
-                print("Unmapped message in {0}.message_handler:\n  {1}".format(self.__class__.__name__, message))
+        else:
+            print("Unmapped message in {0}.message_handler:\n  {1}".format(self.__class__.__name__, data))
 
 
 class MockEcuIso14229(MockEcuIsoTp, MockEcu):
@@ -113,7 +138,7 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         self.ARBITRATION_ID_ISO_14229_RESPONSE = arb_id_response
         self.iso_tp = iso15765_2.IsoTp(arb_id_request=self.ARBITRATION_ID_ISO_14229_REQUEST,
                                        arb_id_response=self.ARBITRATION_ID_ISO_14229_RESPONSE,
-                                       bus=bus)
+                                       bus=self.bus)
         self.diagnostics = iso14229_1.Iso14229_1(tp=self.iso_tp)
 
     @staticmethod
@@ -147,35 +172,34 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
                     nrc]
         return response
 
-    def message_handler(self, message):
+    def message_handler(self, data):
         """
         Logic for responding to incoming messages
 
-        :param message: Incoming can.Message
+        :param data: list of data bytes in incoming message
         :return: None
         """
-        assert isinstance(message, can.Message)
-        if message.arbitration_id == self.ARBITRATION_ID_ISO_14229_REQUEST:
-            # Hack to decode data without running full indication
-            _, data = self.iso_tp.decode_sf(message.data)
-            iso14229_service = data[0]
-            # Simulate a small delay before responding
-            time.sleep(self.DELAY_BEFORE_RESPONSE)
-            # Handle different services
-            response_data = None
-            if iso14229_service == iso14229_1.Iso14229_1_id.READ_DATA_BY_IDENTIFIER:
-                # Read data by identifier
-                response_data = self.handle_read_data_by_identifier(data)
-            elif iso14229_service == iso14229_1.Iso14229_1_id.WRITE_DATA_BY_IDENTIFIER:
-                # Write data by identifier
-                response_data = self.handle_write_data_by_identifier(data)
-            elif iso14229_service == iso14229_1.Iso14229_1_id.READ_MEMORY_BY_ADDRESS:
-                # Read memory by address
-                response_data = self.handle_read_memory_by_address(data)
-            if response_data:
-                self.diagnostics.send_response(response_data)
-            else:
-                print("Unmapped message in {0}.message_handler:\n  {1}".format(self.__class__.__name__, message))
+        assert isinstance(data, list)
+        iso14229_service = data[0]
+        # Simulate a small delay before responding
+        time.sleep(self.DELAY_BEFORE_RESPONSE)
+        # Handle different services
+        response_data = None
+        if iso14229_service == iso14229_1.Iso14229_1_id.READ_DATA_BY_IDENTIFIER:
+            # Read data by identifier
+            response_data = self.handle_read_data_by_identifier(data)
+        elif iso14229_service == iso14229_1.Iso14229_1_id.WRITE_DATA_BY_IDENTIFIER:
+            # Write data by identifier
+            response_data = self.handle_write_data_by_identifier(data)
+        elif iso14229_service == iso14229_1.Iso14229_1_id.READ_MEMORY_BY_ADDRESS:
+            # Read memory by address
+            response_data = self.handle_read_memory_by_address(data)
+        else:
+            # Unmapped message
+            error_message = "Unmapped message in {0}.message_handler:\n  {1}".format(self.__class__.__name__, data)
+            raise NotImplementedError(error_message)
+        if response_data:
+            self.diagnostics.send_response(response_data)
 
     def handle_read_data_by_identifier(self, data):
         """

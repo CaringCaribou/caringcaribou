@@ -144,15 +144,17 @@ class IsoTp:
         frames = self.get_frames_from_message(message)
         self.transmit(frames, self.arb_id_response, self.arb_id_request)
 
-    def indication(self, wait_window):
+    def indication(self, wait_window=None):
         """
         Receives an ISO-15765-2 message (one or more frames) and returns its content.
 
-        :param wait_window: Max time to wait before timeout
+        :param wait_window: Max time (in seconds) to wait before timeout
         :return: A list of received data bytes if successful, None otherwise
         """
         message = []
 
+        if wait_window is None:
+            wait_window = self.N_BS_TIMEOUT
         start_time = datetime.datetime.now()
         sn = 0
         message_length = 0
@@ -160,23 +162,31 @@ class IsoTp:
         while True:
             msg = self.bus.recv(self.N_BS_TIMEOUT)
             if msg is not None:
-                # Note: Would it make sense to also allow self.arb_id_request here?
-                if msg.arbitration_id != self.arb_id_response:
+                if msg.arbitration_id == self.arb_id_request:
+                    flow_control_arbitration_id = self.arb_id_response
+                elif msg.arbitration_id == self.arb_id_response:
+                    flow_control_arbitration_id = self.arb_id_request
+                else:
+                    # Unknown arbitration ID - ignore message
                     continue
                 frame = msg.data
                 if len(frame) > 0:
                     frame_type = (frame[0] >> 4) & 0xF
                     if frame_type == self.SF_FRAME_ID:
+                        # Single frame (SF)
                         dl, message = self.decode_sf(frame)
                         # Trim padding if length exceeds single frame data length (SF_DL)
                         message = message[:dl]
                         break
                     elif frame_type == self.FF_FRAME_ID:
+                        # First frame (FF) of a multi-frame message
                         message_length, message = self.decode_ff(frame)
                         fc_frame = self.encode_fc(self.FC_FS_CTS, 0, 0)
                         sn = 0
-                        self.send_message(fc_frame, self.arb_id_request)
+                        # Respond with flow control (FC) message
+                        self.send_message(fc_frame, flow_control_arbitration_id)
                     elif frame_type == self.CF_FRAME_ID:
+                        # Consecutive frame (CF)
                         new_sn, data = self.decode_cf(frame)
                         if (sn + 1) % 16 == new_sn:
                             sn = new_sn
@@ -190,6 +200,7 @@ class IsoTp:
                             else:
                                 pass
                     else:
+                        # Invalid frame type
                         return None
             stop_time = datetime.datetime.now()
             passed_time = stop_time - start_time
@@ -216,6 +227,7 @@ class IsoTp:
         elif len(frames) > 1:
             # Multiple frames
             frame_index = 0
+            # Send first frame (FF)
             self.send_message(frames[frame_index], arbitration_id)
             number_of_frames_left_to_send = len(frames) - 1
             number_of_frames_left_to_send_in_block = 0
@@ -227,16 +239,20 @@ class IsoTp:
                     # Wait for receiver to send flow control (FC)
                     msg = self.bus.recv(self.N_BS_TIMEOUT)
                     if msg is None:
+                        # Quit on timeout
                         return None
                     # Verify that msg uses the expected arbitration ID
                     elif msg.arbitration_id != arbitration_id_flow_control:
                         continue
                     fc_frame = msg.data
 
+                    # Decode Flow Status (FS) from FC message
                     fs, block_size, st_min = self.decode_fc(fc_frame)
                     if fs == self.FC_FS_WAIT:
+                        # Flow status (FS) wait (WT)
                         continue
                     elif fs == self.FC_FS_CTS:
+                        # Continue to send (CTS)
                         receiver_is_ready = True
                         number_of_frames_left_to_send_in_block = block_size
 
@@ -247,9 +263,10 @@ class IsoTp:
                         if st_min > 0x7F:
                             st_min = 1
                     else:
+                        # Timeout - did not receive a CTS message in time
                         return None
                 while number_of_frames_left_to_send_in_block > 0:
-                    # Send messages until it is time to wait for flow control (FC) again
+                    # Send more frames, until it is time to wait for flow control (FC) again
                     self.send_message(frames[frame_index], arbitration_id)
                     frame_index += 1
                     number_of_frames_left_to_send_in_block -= 1

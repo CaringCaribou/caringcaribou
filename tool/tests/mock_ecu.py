@@ -192,7 +192,6 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         # Simulate a small delay before responding
         time.sleep(self.DELAY_BEFORE_RESPONSE)
         # Handle different services
-        response_data = None
         if iso14229_service == iso14229_1.Iso14229_1_id.READ_DATA_BY_IDENTIFIER:
             # Read data by identifier
             response_data = self.handle_read_data_by_identifier(data)
@@ -206,7 +205,8 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             # Unmapped message
             error_message = "Unmapped message in {0}.message_handler:\n  {1}".format(self.__class__.__name__, data)
             raise NotImplementedError(error_message)
-        if response_data:
+        # This check makes it possible to support services where a response should not be sent
+        if response_data is not None:
             self.diagnostics.send_response(response_data)
 
     def handle_read_data_by_identifier(self, data):

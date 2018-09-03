@@ -25,7 +25,6 @@ class IsoTpTestCase(unittest.TestCase):
         if isinstance(self.tp, iso15765_2.IsoTp):
             self.tp.__exit__(None, None, None)
 
-
     def test_create_iso_15765_2(self):
         self.assertIsInstance(self.tp, iso15765_2.IsoTp, "Failed to initialize ISO-TP")
 
@@ -55,3 +54,9 @@ class IsoTpTestCase(unittest.TestCase):
         # Validate response
         self.assertIsInstance(response, list, "No multi-frame response received")
         self.assertEqual(response, MockEcuIsoTp.MOCK_MULTI_FRAME_LONG_MESSAGE_RESPONSE)
+
+    def test_fail_too_long_message(self):
+        with self.assertRaises(ValueError):
+            max_allowed_length = iso15765_2.IsoTp.MAX_MESSAGE_LENGTH
+            too_long_message = [0x0] * (max_allowed_length + 1)
+            self.tp.send_request(too_long_message)

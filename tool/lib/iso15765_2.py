@@ -4,6 +4,10 @@ import time
 
 
 class IsoTp:
+    """
+    Implementation of ISO-15765-2, also known as ISO-TP. This is a multi-frame messaging protocol
+    over CAN which allows message payloads of up to 4095 bytes.
+    """
 
     MAX_SF_LENGTH = 7
     MAX_FF_LENGTH = 6
@@ -21,9 +25,11 @@ class IsoTp:
     FF_FRAME_ID = 1
     CF_FRAME_ID = 2
     FC_FRAME_ID = 3
+
     N_BS_TIMEOUT = 1.5
 
     MAX_FRAME_LENGTH = 8
+    MAX_MESSAGE_LENGTH = 4095
 
     def __init__(self, arb_id_request, arb_id_response, bus=None):
         # Setting default bus to None rather than the actual bus prevents a CanError when
@@ -282,6 +288,10 @@ class IsoTp:
         """
         frame_list = []
         message_length = len(message)
+        if message_length > self.MAX_MESSAGE_LENGTH:
+            error_msg = "Message too long for ISO-TP. Max allowed length is {0} bytes, received {1} bytes".format(
+                self.MAX_MESSAGE_LENGTH, message_length)
+            raise ValueError(error_msg)
         if message_length <= self.MAX_SF_LENGTH:
             # Single frame message
             frame = [0] * self.MAX_FRAME_LENGTH

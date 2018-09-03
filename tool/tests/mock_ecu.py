@@ -21,6 +21,9 @@ class MockEcu:
     def __enter__(self):
         return self
 
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.bus.shutdown()
+
 
 class MockEcuIsoTp(MockEcu):
     """ISO-15765-2 (ISO-TP) mock ECU handler"""
@@ -60,6 +63,7 @@ class MockEcuIsoTp(MockEcu):
         :param exc_tb:
         :return: None
         """
+        MockEcu.__exit__(self, None, None, None)
         self.stop_server()
 
     def start_server(self):
@@ -79,6 +83,7 @@ class MockEcuIsoTp(MockEcu):
 
         :return: None
         """
+        MockEcu.__exit__(self, None, None, None)
         if isinstance(self.message_process, multiprocessing.Process):
             self.message_process.terminate()
             self.message_process.join()
@@ -140,6 +145,9 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
                                        arb_id_response=self.ARBITRATION_ID_ISO_14229_RESPONSE,
                                        bus=self.bus)
         self.diagnostics = iso14229_1.Iso14229_1(tp=self.iso_tp)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        MockEcuIsoTp.__exit__(self, None, None, None)
 
     @staticmethod
     def create_positive_response(request_service_id, response_data=None):

@@ -6,7 +6,7 @@ import argparse
 import imp
 import os
 
-VERSION = "0.1"
+VERSION = "0.2"
 # Find the right "modules" directory, even if the script is run from another directory
 MODULES_DIR = os.path.join(os.path.dirname(argv[0]), "modules")
 

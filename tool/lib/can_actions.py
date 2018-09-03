@@ -52,6 +52,24 @@ def str_to_int_list(s):
     return [int(s[i * 2:i * 2 + 2], 16) for i in range(len(s) / 2)]
 
 
+def int_from_byte_list(byte_values, start_index, length):
+    """
+    Parses a range of unsigned-up-to-8-bit-ints (bytes) from a list into a single int
+
+    E.g. int_from_byte_list([0x11, 0x22, 0x33, 0x44], 1, 2) = 0x2233 = 8755
+
+    :param byte_values: List of ints
+    :param start_index: Index of first byte in 'byte_values' to parse
+    :param length: Number of bytes to parse
+    :return: int of parsed bytes
+    """
+    value = 0
+    for i in (range(start_index, start_index+length)):
+        value = value << 8
+        value += byte_values[i]
+    return value
+
+
 def insert_message_length(data):
     """
     Inserts a message length byte before data
@@ -80,6 +98,7 @@ class CanActions:
         # The following line prevents threading errors during shutdown
         self.notifier.running.clear()
         time.sleep(0.1)
+        self.bus.shutdown()
 
     def add_listener(self, listener):
         self.notifier.listeners.append(listener)

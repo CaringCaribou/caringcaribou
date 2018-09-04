@@ -17,6 +17,10 @@ ARBITRATION_ID_MAX_EXTENDED = 0x1FFFFFFF
 BYTE_MIN = 0x0
 BYTE_MAX = 0xFF
 
+# Global CAN interface setting, which can be set through the -i flag to cc.py
+# The value None corresponds to the default CAN interface (typically can0)
+DEFAULT_INTERFACE = None
+
 
 def pad_data(data):
     return list(data) + [0] * (8 - len(data))
@@ -84,8 +88,9 @@ def insert_message_length(data):
 
 
 class CanActions:
+
     def __init__(self, arb_id=None):
-        self.bus = can.interface.Bus()
+        self.bus = can.Bus(DEFAULT_INTERFACE, "socketcan")
         self.notifier = can.Notifier(self.bus, listeners=[])
         self.arb_id = arb_id
         self.bruteforce_running = False
@@ -96,8 +101,7 @@ class CanActions:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.clear_listeners()
         # The following line prevents threading errors during shutdown
-        self.notifier.running.clear()
-        time.sleep(0.1)
+        self.notifier.stop(0.5)
         self.bus.shutdown()
 
     def add_listener(self, listener):

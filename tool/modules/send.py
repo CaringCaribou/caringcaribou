@@ -1,4 +1,4 @@
-from can_actions import CanActions, int_from_str_base, str_to_int_list
+from lib.can_actions import CanActions, int_from_str_base, str_to_int_list
 from time import sleep
 from sys import exit
 import argparse

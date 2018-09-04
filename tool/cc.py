@@ -3,10 +3,12 @@
 # https://github.com/CaringCaribou/caringcaribou
 from sys import argv
 import argparse
+import lib.can_actions
 import imp
 import os
 
 VERSION = "0.2"
+
 # Find the right "modules" directory, even if the script is run from another directory
 MODULES_DIR = os.path.join(os.path.dirname(argv[0]), "modules")
 
@@ -55,7 +57,7 @@ def available_modules():
 
 def parse_arguments():
     """
-    Argument parser for module name and module arguments.
+    Argument parser for interface, module name and module arguments.
 
     :return: Namespace containing module name and arguments
     :rtype: argparse.Namespace
@@ -63,7 +65,9 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="{0}A friendly car security exploration tool".format(fancy_header()),
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=available_modules())
-    parser.add_argument("module", type=str,
+    parser.add_argument("-i", dest="interface", default=None,
+                        help="force interface, e.g. 'can1' or 'vcan0'")
+    parser.add_argument("module",
                         help="Name of the module to run")
     parser.add_argument("module_args", metavar="...", nargs=argparse.REMAINDER,
                         help="Arguments to module")
@@ -99,6 +103,9 @@ def main():
     args = parse_arguments()
     # Show header
     show_script_header()
+    # Save interface to can_actions, for use in modules
+    if args.interface:
+        lib.can_actions.DEFAULT_INTERFACE = args.interface
     # Dynamically load module
     mod = load_module(args.module)
     if mod is not None:

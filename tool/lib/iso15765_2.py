@@ -1,3 +1,4 @@
+from lib.can_actions import DEFAULT_INTERFACE
 import can
 import datetime
 import time
@@ -35,7 +36,7 @@ class IsoTp:
         # Setting default bus to None rather than the actual bus prevents a CanError when
         # called with a virtual CAN bus, while the OS is lacking a working CAN interface
         if bus is None:
-            self.bus = can.Bus()
+            self.bus = can.Bus(DEFAULT_INTERFACE, "socketcan")
         else:
             self.bus = bus
         self.arb_id_request = arb_id_request

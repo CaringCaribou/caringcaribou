@@ -1,5 +1,5 @@
 from __future__ import print_function
-from can_actions import CanActions, insert_message_length, int_from_str_base
+from lib.can_actions import CanActions, insert_message_length, int_from_str_base
 from sys import stdout
 import argparse
 import time

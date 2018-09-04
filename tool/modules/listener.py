@@ -1,5 +1,5 @@
 from __future__ import print_function
-from can_actions import CanActions
+from lib.can_actions import CanActions
 from sys import stdout
 from collections import Counter
 import argparse

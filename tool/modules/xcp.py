@@ -1,5 +1,5 @@
 from __future__ import print_function
-from can_actions import CanActions, int_from_str_base
+from lib.can_actions import CanActions, int_from_str_base
 from datetime import datetime, timedelta
 from sys import stdout
 import argparse

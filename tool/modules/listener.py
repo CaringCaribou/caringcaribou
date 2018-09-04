@@ -14,8 +14,8 @@ def message_handler(msg):
     :param msg: Can message
     """
     if msg.arbitration_id not in found_arb_ids:
-        print("\rLast ID: 0x{0:03x} ({1} unique arbitration IDs found)".format(
-            msg.arbitration_id, len(found_arb_ids) + 1), end="")
+        print("\rLast ID: 0x{0:08x} ({1} unique arbitration IDs found)".format(
+            msg.arbitration_id, len(found_arb_ids) + 1), end=" ")
         stdout.flush()
     found_arb_ids[msg.arbitration_id] += 1
 
@@ -40,7 +40,7 @@ def start_listener(handler, args):
             for (arb_id, hits) in sorted(found_arb_ids.items(),
                                          key=lambda x: x[1],
                                          reverse=args.reverse):
-                print("Arb id 0x{0:03x} {1} hits".format(arb_id, hits))
+                print("Arb id 0x{0:08x} {1} hits".format(arb_id, hits))
         else:
             print("No arbitration IDs were detected.")
 

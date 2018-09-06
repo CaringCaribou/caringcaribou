@@ -174,7 +174,12 @@ def dcm_discovery(args):
         ids_to_blacklist = set()
 
         def response_handler(msg):
-            if msg.data[1] in valid_responses:
+            """
+            Blacklists the arbitration ID of a message if it could be misinterpreted as valid diagnostic response
+
+            :param msg: can.Message instance to check
+            """
+            if len(msg.data) > 1 and msg.data[1] in valid_responses:
                 ids_to_blacklist.add(msg.arbitration_id)
 
         with CanActions() as can_actions:

@@ -117,7 +117,10 @@ class CanActions:
     def send(self, data, arb_id=None, is_extended=None, is_error=False, is_remote=False):
         if len(data) > 8:
             raise IndexError("Invalid CAN message length: {0}".format(len(data)))
+        # Fallback to default arbitration ID (self.arb_id) if no other ID is specified
         if arb_id is None:
+            if self.arb_id is None:
+                raise ValueError("Arbitration ID must be set through either 'arb_id' argument or self.arb_id")
             arb_id = self.arb_id
         # Force extended flag if it is unspecified and arbitration ID is larger than the standard format allows
         if not is_extended:

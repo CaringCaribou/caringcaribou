@@ -186,7 +186,7 @@ def dcm_discovery(args):
             # Listen for matches
             can_actions.add_listener(response_handler)
             for i in range(scan_duration, 0, -1):
-                print("\r  Scanning... {0} seconds left, {1} found".format(i-1, len(ids_to_blacklist)), end="")
+                print("\r{0:> 3} seconds left, {1} found".format(i-1, len(ids_to_blacklist)), end="")
                 stdout.flush()
                 time.sleep(1)
             print("")

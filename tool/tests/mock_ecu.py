@@ -1,6 +1,6 @@
 from __future__ import print_function
 from lib import iso14229_1, iso15765_2
-from lib.can_actions import int_from_byte_list
+from lib.can_actions import int_from_byte_list, DEFAULT_INTERFACE
 import can
 import multiprocessing
 import time
@@ -14,7 +14,7 @@ class MockEcu:
     def __init__(self, bus=None):
         self.message_process = None
         if bus is None:
-            self.bus = can.Bus("vcan0", bustype="socketcan")
+            self.bus = can.Bus(DEFAULT_INTERFACE, bustype="socketcan")
         else:
             self.bus = bus
 

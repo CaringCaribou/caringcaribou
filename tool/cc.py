@@ -49,9 +49,10 @@ def available_modules():
     :rtype: str
     """
     blacklisted_files = ["__init__.py"]
+    modules = [m[:-3] for m in os.listdir(MODULES_DIR) if m.endswith(".py") and m not in blacklisted_files]
+    modules.sort()
     mod_str = "available modules:\n  "
-    mod_str += ", ".join(sorted([m[:-3] for m in os.listdir(MODULES_DIR) if
-                         m.endswith(".py") and m not in blacklisted_files]))
+    mod_str += ", ".join(modules)
     return mod_str
 
 

@@ -5,6 +5,9 @@ import argparse
 import re
 
 
+FILE_LINE_COMMENT_PREFIX = "#"
+
+
 class CanMessage:
     """
     Message wrapper class used by file parsers.
@@ -69,7 +72,7 @@ def parse_file(filename, force_delay):
     :return: list of CanMessage instances
     """
 
-    def parse_candump_line(curr_line, prev_timestamp=None):
+    def parse_candump_line(curr_line, prev_timestamp):
         """
         Parses a line on candump log format, e.g.
         (1499197954.029156) can0 123#c0ffee
@@ -92,7 +95,7 @@ def parse_file(filename, force_delay):
         message = CanMessage(arb_id, data, delay)
         return message, time_stamp
 
-    def parse_pythoncan_line(curr_line, prev_timestamp=None):
+    def parse_pythoncan_line(curr_line, prev_timestamp):
         """
         Parses a line on python-can log format.
 
@@ -119,7 +122,7 @@ def parse_file(filename, force_delay):
             delay = force_delay
         else:
             delay = time_stamp - prev_timestamp
-        # TODO Parse flags for old format as well
+        # Parse flags
         is_extended = parsed_msg.group("is_extended") == "X"
         is_error = parsed_msg.group("is_error") == "E"
         is_remote = parsed_msg.group("is_remote") == "R"
@@ -129,23 +132,29 @@ def parse_file(filename, force_delay):
     try:
         messages = []
         with open(filename, "r") as f:
-            first_line = f.readline()
-            # Simple pattern matching to identify log format
-            if first_line.startswith("("):
-                line_parser = parse_candump_line
-            elif first_line.startswith("Timestamp:"):
-                line_parser = parse_pythoncan_line
-            else:
-                raise IOError("Unrecognized file type - could not parse file")
-
-            msg, timestamp = line_parser(first_line)
-            messages.append(msg)
-            for line in f.readlines():
-                msg, timestamp = line_parser(line, timestamp)
+            timestamp = None
+            line_parser = None
+            for line in f:
+                # Skip comments and blank lines
+                if line.startswith(FILE_LINE_COMMENT_PREFIX) or len(line.strip()) == 0:
+                    continue
+                # First non-comment line - identify log format
+                if line_parser is None:
+                    if line.startswith("("):
+                        line_parser = parse_candump_line
+                    elif line.startswith("Timestamp"):
+                        line_parser = parse_pythoncan_line
+                    else:
+                        raise IOError("Unrecognized file type - could not parse file")
+                # Parse line
+                try:
+                    msg, timestamp = line_parser(line, timestamp)
+                except (ValueError, AttributeError) as e:
+                    raise IOError("Could not parse line:\n  '{0}'".format(line.rstrip("\n")))
                 messages.append(msg)
             return messages
     except IOError as e:
-        print("IOError: {0}".format(e))
+        print("ERROR: {0}\n".format(e))
         return None
 
 
@@ -163,7 +172,7 @@ def send_messages(messages, loop):
                 msg = messages[i]
                 if i != 0 or loop_counter != 0:
                     sleep(msg.delay)
-                print("  Arb_id: 0x{0:03x}, data: {1}".format(msg.arb_id, ["{0:02x}".format(a) for a in msg.data]))
+                print("  Arb_id: 0x{0:08x}, data: {1}".format(msg.arb_id, ["{0:02x}".format(a) for a in msg.data]))
                 can_wrap.send(msg.data, msg.arb_id, msg.is_extended, msg.is_error, msg.is_remote)
             if not loop:
                 break
@@ -225,5 +234,6 @@ def module_main(args):
     if not messages:
         print("No messages parsed")
     else:
+        print("  {0} messages parsed".format(len(messages)))
         print("Sending messages")
         send_messages(messages, args.loop)

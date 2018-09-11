@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # Released under GNU General Public License v3
 # https://github.com/CaringCaribou/caringcaribou
-from sys import argv
 import argparse
 import lib.can_actions
-import imp
+import importlib
 import os
 
 VERSION = "0.2"
 
 # Find the right "modules" directory, even if the script is run from another directory
-MODULES_DIR = os.path.join(os.path.dirname(argv[0]), "modules")
+MODULES_DIR = "modules"
 
 
 def show_script_header():
@@ -86,15 +85,14 @@ def load_module(module_name):
     """
     # Clean module name (since module location is decided by MODULES_DIR, we don't take a full path)
     clean_mod_name = os.path.basename(module_name)
-    mod_name_ext = "{0}.py".format(clean_mod_name)
-    module_path = os.path.join(MODULES_DIR, mod_name_ext)
+    package = "{0}.{1}".format(MODULES_DIR, clean_mod_name)
     try:
         # Import module
-        py_mod = imp.load_source(clean_mod_name, module_path)
+        py_mod = importlib.import_module(package)
         print("Loaded module '{0}'\n".format(clean_mod_name))
         return py_mod
-    except IOError as e:
-        print("Failed to load module '{0}' from '{1}':\n\n{2}".format(clean_mod_name, module_path, e))
+    except ImportError as e:
+        print("Load module failed: {0}".format(e))
         return None
 
 

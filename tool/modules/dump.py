@@ -1,7 +1,9 @@
 from __future__ import print_function
 from lib.can_actions import CanActions, int_from_str_base
-from sys import stdout
+from modules.send import FILE_LINE_COMMENT_PREFIX
+from sys import argv, stdout
 import argparse
+import datetime
 
 
 def msg_to_candump_format(msg):
@@ -70,6 +72,20 @@ def parse_args(args):
     return args
 
 
+def file_header():
+    """
+    Returns an output file header string, consisting of a number of comment lines.
+
+    :return: str header
+    """
+    argument_str = " ".join(argv)
+    lines = ["Caring Caribou dump file",
+             datetime.datetime.now(),
+             argument_str]
+    header = "".join(["{0} {1}\n".format(FILE_LINE_COMMENT_PREFIX, line) for line in lines])
+    return header
+
+
 def module_main(args):
     """
     Dump module main wrapper.
@@ -86,6 +102,10 @@ def module_main(args):
             with open(args.file, "w") as output_file:
                 global count
                 count = 0
+
+                # Write file header
+                header = file_header()
+                output_file.write(header)
 
                 def write_line_to_file(line):
                     global count

@@ -391,11 +391,11 @@ def parse_args(args):
 
     # Parser for diagnostics discovery
     parser_disc = subparsers.add_parser("discovery")
-    parser_disc.add_argument("-min", type=str, default=None)
-    parser_disc.add_argument("-max", type=str, default=None)
+    parser_disc.add_argument("-min", default=None)
+    parser_disc.add_argument("-max", default=None)
     parser_disc.add_argument("-nostop", default=False, action="store_true",
                              help="scan until end of range")
-    parser_disc.add_argument("-blacklist", metavar="B", type=str, default=[], nargs="+",
+    parser_disc.add_argument("-blacklist", metavar="B", default=[], nargs="+",
                              help="arbitration IDs to ignore")
     parser_disc.add_argument("-autoblacklist", metavar="N", type=int, default=0,
                              help="scan for interfering signals for N seconds and blacklist matching arbitration IDs")
@@ -403,23 +403,23 @@ def parse_args(args):
 
     # Parser for diagnostics service discovery
     parser_info = subparsers.add_parser("services")
-    parser_info.add_argument("src", type=str, help="arbitration ID to transmit from")
-    parser_info.add_argument("dst", type=str, help="arbitration ID to listen to")
+    parser_info.add_argument("src", help="arbitration ID to transmit from")
+    parser_info.add_argument("dst", help="arbitration ID to listen to")
     parser_info.set_defaults(func=service_discovery)
 
     # Parser for diagnostics sub-function discovery
     parser_dump = subparsers.add_parser("subfunc")
-    parser_dump.add_argument("src", type=str, help="arbitration ID to transmit from")
-    parser_dump.add_argument("dst", type=str, help="arbitration ID to listen to")
-    parser_dump.add_argument("service", type=str, help="service ID (e.g. 0x22 for Read DID)")
+    parser_dump.add_argument("src", help="arbitration ID to transmit from")
+    parser_dump.add_argument("dst", help="arbitration ID to listen to")
+    parser_dump.add_argument("service", help="service ID (e.g. 0x22 for Read DID)")
     parser_dump.add_argument("-show", action="store_true", help="show data in terminal")
     parser_dump.add_argument("i", type=int, nargs="+", help="sub-function indices")
     parser_dump.set_defaults(func=subfunc_discovery)
 
     # Parser for DTC
     parser_dtc = subparsers.add_parser("dtc")
-    parser_dtc.add_argument("src", type=str, help="arbitration ID to transmit from")
-    parser_dtc.add_argument("dst", type=str, help="arbitration ID to listen to")
+    parser_dtc.add_argument("src", help="arbitration ID to transmit from")
+    parser_dtc.add_argument("dst", help="arbitration ID to listen to")
     parser_dtc.add_argument("-clear", action="store_true", help="Clear DTC / MIL")
     parser_dtc.set_defaults(func=dcm_dtc)
 

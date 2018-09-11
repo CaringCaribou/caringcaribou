@@ -87,7 +87,7 @@ def parse_args(args):
   cc.py module_template -arbId 123
   cc.py module_template -arbId 0x1FF""")
 
-    parser.add_argument("-arbId", type=str, default="0", help="arbitration ID to use")
+    parser.add_argument("-arbId", default="0", help="arbitration ID to use")
 
     args = parser.parse_args(args)
     return args

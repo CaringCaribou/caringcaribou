@@ -212,7 +212,7 @@ def parse_args(args):
 
     # Parser for sending messages from file
     file_msg = subparsers.add_parser("file")
-    file_msg.add_argument("data", metavar="filename", type=str, help="path to file")
+    file_msg.add_argument("data", metavar="filename", help="path to file")
     file_msg.add_argument("--delay", "-d", metavar="D", type=float, default=None,
                           help="delay between messages in seconds (overrides timestamps in file)")
     file_msg.add_argument("--loop", "-l", action="store_true", help="loop message sequence (re-send over and over)")

@@ -474,30 +474,30 @@ def parse_args(args):
 
     # Parser for XCP discovery
     parser_disc = subparsers.add_parser("discovery")
-    parser_disc.add_argument("-min", type=str, default=None)
-    parser_disc.add_argument("-max", type=str, default=None)
+    parser_disc.add_argument("-min", default=None)
+    parser_disc.add_argument("-max", default=None)
     parser_disc.set_defaults(func=xcp_arbitration_id_discovery)
 
     # Parser for XCP commands discovery
     parser_comm = subparsers.add_parser("commands")
-    parser_comm.add_argument("src", type=str, help="arbitration ID to transmit from")
-    parser_comm.add_argument("dst", type=str, help="arbitration ID to listen to")
+    parser_comm.add_argument("src", help="arbitration ID to transmit from")
+    parser_comm.add_argument("dst", help="arbitration ID to listen to")
     parser_comm.set_defaults(func=xcp_command_discovery)
 
     # Parser for XCP info
     parser_info = subparsers.add_parser("info")
-    parser_info.add_argument("src", type=str, help="arbitration ID to transmit from")
-    parser_info.add_argument("dst", type=str, help="arbitration ID to listen to")
+    parser_info.add_argument("src", help="arbitration ID to transmit from")
+    parser_info.add_argument("dst", help="arbitration ID to listen to")
     parser_info.set_defaults(func=xcp_get_basic_information)
 
     # Parser for XCP data dump
     parser_dump = subparsers.add_parser("dump")
-    parser_dump.add_argument("src", type=str, help="arbitration ID to transmit from")
-    parser_dump.add_argument("dst", type=str, help="arbitration ID to listen to")
-    parser_dump.add_argument("start", type=str, help="start address")
+    parser_dump.add_argument("src", help="arbitration ID to transmit from")
+    parser_dump.add_argument("dst", help="arbitration ID to listen to")
+    parser_dump.add_argument("start", help="start address")
     # TODO: use length OR end address as mutually exclusive group?
-    parser_dump.add_argument("length", type=str, help="dump length")
-    parser_dump.add_argument("-f", "-file", type=str, help="output file", default=None)
+    parser_dump.add_argument("length", help="dump length")
+    parser_dump.add_argument("-f", "-file", help="output file", default=None)
     parser_dump.set_defaults(func=xcp_memory_dump)
 
     args = parser.parse_args(args)

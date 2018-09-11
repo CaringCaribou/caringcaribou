@@ -56,7 +56,6 @@ def parse_args(args):
   cc.py dump -f output.txt
   cc.py dump -c -f output.txt 0x733 0x734""")
     parser.add_argument("-f", "--file",
-                        type=str,
                         metavar="F",
                         help="Write output to file F (default: stdout)")
     parser.add_argument("whitelist",

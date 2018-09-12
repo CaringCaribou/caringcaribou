@@ -22,10 +22,6 @@ BYTE_MAX = 0xFF
 DEFAULT_INTERFACE = None
 
 
-def pad_data(data):
-    return list(data) + [0] * (8 - len(data))
-
-
 def int_from_str_base(s):
     """
     Converts a str to an int, supporting both base 10 and base 16 literals.
@@ -143,9 +139,8 @@ class CanActions:
         # Force extended flag if it is unspecified and arbitration ID is larger than the standard format allows
         if not is_extended:
             is_extended = arb_id > ARBITRATION_ID_MAX
-        full_data = pad_data(data)
         msg = can.Message(arbitration_id=arb_id,
-                          data=full_data,
+                          data=data,
                           extended_id=is_extended,
                           is_error_frame=is_error,
                           is_remote_frame=is_remote)
@@ -174,7 +169,7 @@ class CanActions:
             extended = False
             if arb_id > 0xffff:
                 extended = True
-            msg = can.Message(arbitration_id=arb_id, data=pad_data(data), extended_id=extended)
+            msg = can.Message(arbitration_id=arb_id, data=data, extended_id=extended)
             self.bus.send(msg)
             time.sleep(MESSAGE_DELAY)
             # Return if stopped by calling module

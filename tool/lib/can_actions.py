@@ -74,6 +74,24 @@ def int_from_byte_list(byte_values, start_index, length):
     return value
 
 
+def msg_to_candump_format(msg):
+    """
+    Converts a CAN message to a string on candump format.
+
+    E.g. msg_to_candump_format(can.Message(arbitration_id=0x7ff, data=[
+
+    :param msg: CAN message
+    :return: str on candump format
+    """
+    if msg.is_extended_id:
+        output = "({0:.6f}) {1} {2:08X}#{3}"
+    else:
+        output = "({0:.6f}) {1} {2:03X}#{3}"
+    data = "".join(["{0:02X}".format(x) for x in msg.data])
+    candump = output.format(msg.timestamp, msg.channel, msg.arbitration_id, data)
+    return candump
+
+
 def insert_message_length(data):
     """
     Inserts a message length byte before data

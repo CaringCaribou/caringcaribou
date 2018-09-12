@@ -1,21 +1,9 @@
 from __future__ import print_function
-from lib.can_actions import CanActions, int_from_str_base
+from lib.can_actions import CanActions, int_from_str_base, msg_to_candump_format
 from modules.send import FILE_LINE_COMMENT_PREFIX
 from sys import argv, stdout
 import argparse
 import datetime
-
-
-def msg_to_candump_format(msg):
-    """
-    Converts a CAN message to a string on candump format.
-
-    :param msg: CAN message
-    :rtype: str
-    """
-    return "({0:.6f}) can0 {1:03x}#{2}".format(msg.timestamp,
-                                               msg.arbitration_id,
-                                               "".join(["{0:02x}".format(x) for x in msg.data]))
 
 
 def initiate_dump(handler, args):

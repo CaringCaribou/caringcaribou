@@ -1,5 +1,5 @@
 from __future__ import print_function
-from tests.mock_ecu import MockEcuIsoTp
+from tests.mock.mock_ecu_iso_tp import MockEcuIsoTp
 from lib import iso15765_2
 from lib.can_actions import DEFAULT_INTERFACE
 import can

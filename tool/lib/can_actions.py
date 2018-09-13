@@ -166,8 +166,9 @@ class CanActions:
         self.bruteforce_running = True
         for arb_id in range(min_id, max_id + 1):
             self.notifier.listeners = [callback(arb_id)]
+            # Use standard addressing (11 bits arbitration ID) instead of extended (29 bits) when possible
             extended = False
-            if arb_id > 0xffff:
+            if arb_id > ARBITRATION_ID_MAX:
                 extended = True
             msg = can.Message(arbitration_id=arb_id, data=data, extended_id=extended)
             self.bus.send(msg)

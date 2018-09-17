@@ -88,16 +88,20 @@ def msg_to_candump_format(msg):
     return candump
 
 
-def insert_message_length(data):
+def insert_message_length(data, pad=False):
     """
     Inserts a message length byte before data
 
     :param data: Message data
+    :param pad: If True, pads returned data to 8 bytes
     :return:
     """
-    if len(data) > 7:
+    length = len(data)
+    if length > 7:
         raise IndexError("send_with_auto_length: data can only contain up to 7 bytes: {0}".format(len(data)))
-    full_data = [len(data)] + data
+    full_data = [length] + data
+    if pad:
+        full_data += [0x00] * (7-length)
     return full_data
 
 

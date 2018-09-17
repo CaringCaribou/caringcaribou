@@ -130,7 +130,7 @@ def dcm_dtc(args):
             print("There are {0} DTCs".format(msg.data[3]))
             print("DTC: {0}".format(decode_dtc(msg.data[4:6])))
             print("DTC: {0}".format(decode_dtc(msg.data[6:8])))
-            can_wrap.send([0x30, 0x0, 0x0])
+            can_wrap.send([0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
             big_data_size = full_dlc - 6
         if (msg.data[0] & 0xF0) == 0x20:  # Consecutive
             if big_data_size > 8:
@@ -145,14 +145,17 @@ def dcm_dtc(args):
 
     with CanActions(arb_id=send_arb_id) as can_wrap:
         if clear:
-            can_wrap.send([0x01, 0x04])
+            msg = insert_message_length([0x04], pad=True)
+            can_wrap.send(msg)
             print("Cleared DTCs and reset MIL")
         else:
             print("Fetching Diagnostic Trouble Codes")
-            can_wrap.send_single_message_with_callback([0x01, 0x03], decode_dtc_pkt)
+            msg = insert_message_length([0x03], pad=True)
+            can_wrap.send_single_message_with_callback(msg, decode_dtc_pkt)
             time.sleep(0.5)
             print("Fetching Pending Diagnostic Trouble Codes")
-            can_wrap.send_single_message_with_callback([0x01, 0x07], decode_dtc_pkt)
+            msg = insert_message_length([0x07], pad=True)
+            can_wrap.send_single_message_with_callback(msg, decode_dtc_pkt)
             time.sleep(1)
 
 
@@ -230,7 +233,7 @@ def dcm_discovery(args):
                 print("\nDiagnostics service could not be found: {0}".format(s))
 
         # Message to bruteforce - [length, session control, default session]
-        message = insert_message_length([0x10, 0x01])
+        message = insert_message_length([0x10, 0x01], pad=True)
         can_wrap.bruteforce_arbitration_id(message, response_analyser_wrapper,
                                            min_id=min_id, max_id=max_id, callback_end=discovery_finished)
 
@@ -268,7 +271,7 @@ def service_discovery(args):
             print("\nDone!")
 
         # Message to bruteforce - [length, service id]
-        msg = [0x01, 0x00]
+        msg = insert_message_length([0x00], pad=True)
         # Index of service id byte in message
         service_index = 1
         try:
@@ -331,10 +334,10 @@ def subfunc_discovery(args):
                     found_sub_functions.append((data, [msg]))
                     if show_data:
                         # Cool, give me the rest
-                        can_wrap.send([0x30])
+                        can_wrap.send([0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
                     else:
                         # Fine, but I don't want the remaining data
-                        can_wrap.send([0x32])
+                        can_wrap.send([0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
                 elif show_data and msg.data[0] & 0xF0 == 0x20:
                     # Parts following a 0x30 in multiple frame response (keep waiting)
                     can_wrap.current_delay = 1.0
@@ -350,7 +353,7 @@ def subfunc_discovery(args):
 
         try:
             # Message to bruteforce - [length, session control, default session]
-            message = insert_message_length([service_id, 0x00, 0x00])
+            message = insert_message_length([service_id, 0x00, 0x00], pad=True)
             can_wrap.bruteforce_data_new(message, bruteforce_indices=bruteforce_indices,
                                          callback=response_analyser_wrapper,
                                          callback_done=finished)

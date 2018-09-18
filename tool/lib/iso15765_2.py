@@ -48,6 +48,20 @@ class IsoTp:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.bus.shutdown()
 
+    def _set_filters(self, filters):
+        """
+        Sets filters for the CAN bus - description can be found at
+        https://python-can.readthedocs.io/en/stable/bus.html#can.BusABC.set_filters
+
+        :param filters: dict specifying "can_id", "can_mask" and (optional) "extended" flag
+        :return: None
+        """
+        self.bus.set_filters(filters)
+
+    def set_filter_single_arbitration_id(self, arbitration_id):
+        arbitration_id_filter = [{"can_id": arbitration_id, "can_mask": 0x1fffffff}]
+        self._set_filters(arbitration_id_filter)
+
     def send_message(self, data, arbitration_id):
         """
         Transmits a message using 'arbitration_id' and 'data' on 'self.bus'

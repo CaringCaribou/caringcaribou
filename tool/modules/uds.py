@@ -341,7 +341,7 @@ def parse_args(args):
     parser_info.add_argument("--delay", type=float, default=REQUEST_DELAY, help="delay between each message")
     parser_info.set_defaults(func=service_discovery_wrapper)
 
-    # Parser for TesterPresent
+    # Parser for Tester Present
     parser_tp = subparsers.add_parser("testerpresent")
     parser_tp.add_argument("src", help="arbitration ID to transmit from")
     parser_tp.add_argument("-delay", type=float, default=0.5, help="delay between each TesterPresent message")

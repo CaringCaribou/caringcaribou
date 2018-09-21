@@ -1,5 +1,5 @@
 from __future__ import print_function
-from lib.can_actions import int_from_str_base
+from lib.can_actions import int_from_str_base, ARBITRATION_ID_MIN, ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
 from lib.iso15765_2 import IsoTp
 from lib.iso14229_1 import Iso14229_1_nrc
 from sys import stdout
@@ -51,11 +51,114 @@ UDS_SERVICE_NAMES = {
 REQUEST_DELAY = 0.01
 BYTE_MIN = 0x00
 BYTE_MAX = 0xFF
+VALID_SESSION_CONTROL_RESPONSES = [0x50, 0x7F]
+
+
+def auto_blacklist(tp, duration, print_results):
+    """
+    Blacklists the arbitration ID of messages which could be misinterpreted as valid diagnostic responses
+
+    :param tp: transport protocol
+    :param duration: int duration in seconds
+    :param print_results: bool indicating whether results should be printed to stdout
+    """
+    if print_results:
+        print("Scanning for arbitration IDs to blacklist (-autoblacklist)")
+    ids_to_blacklist = set()
+    start_time = time.time()
+    end_time = start_time + duration
+    while time.time() < end_time:
+        if print_results:
+            print("\r{0:> 5.1f} seconds left, {1} found".format(
+                end_time - time.time() + 0, len(ids_to_blacklist)), end="")  # Adding zero prevents negative zero "-0.0"
+            stdout.flush()
+        msg = tp.bus.recv(0.1)
+        if msg is None:
+            continue
+        if len(msg.data) > 1 and msg.data[1] in VALID_SESSION_CONTROL_RESPONSES:
+            ids_to_blacklist.add(msg.arbitration_id)
+    if print_results:
+        print("\nDetected IDs: {0}".format(sorted(list(map(hex, ids_to_blacklist)))))
+    return ids_to_blacklist
+
+
+def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration, delay, print_results):
+    """
+    Scans for diagnostics support by brute forcing session control messages to different arbitration IDs
+
+    :param min_id: start arbitration ID value
+    :param max_id: end arbitration ID value
+    :param blacklist_args: blacklist for arbitration ID values
+    :param auto_blacklist_duration: seconds to scan for interfering arbitration IDs to blacklist automatically
+    :param delay: delay between each message
+    :param print_results: bool indicating whether results should be printed to stdout
+    :return:
+    """
+    # Set limits
+    if min_id is None:
+        min_id = ARBITRATION_ID_MIN
+    if max_id is None:
+        if min_id <= ARBITRATION_ID_MAX:
+            max_id = ARBITRATION_ID_MAX
+        else:
+            # If min_id is extended, use an extended default max_id as well
+            max_id = ARBITRATION_ID_MAX_EXTENDED
+
+    found_arbitration_ids = []
+    session_control_data = [0x10, 0x01]
+
+    with IsoTp(None, None) as tp:
+        blacklist = set(blacklist_args)
+        # Perform automatic blacklist scan
+        if auto_blacklist_duration > 0:
+            auto_blacklist_arb_ids = auto_blacklist(tp, auto_blacklist_duration, print_results)
+            blacklist |= auto_blacklist_arb_ids
+        # Prepare session control frame
+        session_control_frames = tp.get_frames_from_message(session_control_data)
+        for send_arbitration_id in range(min_id, max_id + 1):
+            if print_results:
+                print("\rSending Diagnostic Session Control to 0x{0:04x}".format(send_arbitration_id), end="")
+                stdout.flush()
+            # Send Diagnostic Session Control
+            tp.transmit(session_control_frames, send_arbitration_id, None)
+            end_time = time.time() + delay
+            # Listen for response
+            while time.time() < end_time:
+                msg = tp.bus.recv(0)
+                if msg is None:
+                    # No response received
+                    continue
+                if msg.arbitration_id in blacklist:
+                    # Ignore blacklisted arbitration IDs
+                    continue
+                if len(msg.data) >= 2 and msg.data[1] in VALID_SESSION_CONTROL_RESPONSES:
+                    # Valid response
+                    if print_results:
+                        print("\nFound diagnostics at arbitration ID 0x{0:04x}, response at 0x{1:04x}".format(
+                            send_arbitration_id, msg.arbitration_id))
+                    found_arb_id_pair = (send_arbitration_id, msg.arbitration_id)
+                    found_arbitration_ids.append(found_arb_id_pair)
+        if print_results:
+            print()
+    return found_arbitration_ids
+
+
+def uds_discovery_wrapper(args):
+    min_id = int_from_str_base(args.min)
+    max_id = int_from_str_base(args.max)
+    blacklist = [int_from_str_base(b) for b in args.blacklist]
+    auto_blacklist_duration = args.autoblacklist
+    delay = args.delay
+    print_results = True
+
+    arb_id_pairs = uds_discovery(min_id, max_id, blacklist, auto_blacklist_duration, delay, print_results)
+    # TODO Handle results, print a nice summary
+    print(arb_id_pairs)
 
 
 def service_discovery(arb_id_request, arb_id_response, request_delay):
     """
-    Scans for supported UDS services on the specified arbitration ID.
+    Scans for supported UDS services on the specified arbitration ID
 
     :return: list of supported service IDs
     :param arb_id_request: int arbitration ID for requests
@@ -90,7 +193,7 @@ def service_discovery(arb_id_request, arb_id_response, request_delay):
 
 def service_discovery_wrapper(args):
     """
-    Scans for supported UDS services on the specified arbitration ID.
+    Wrapper used to initiate a service discovery scan
 
     :return: list of supported service IDs
     :param args: A namespace containing src and dst
@@ -117,9 +220,23 @@ def parse_args(args):
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description="""Universal Diagnostic Services module for CaringCaribou""",
                                      epilog="""Example usage:
+  cc.py uds discovery
+  cc.py uds discovery -blacklist 0x123 0x456
+  cc.py uds discovery -autoblacklist 10
   cc.py uds services 0x733 0x633""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
+
+    # Parser for diagnostics discovery
+    parser_discovery = subparsers.add_parser("discovery")
+    parser_discovery.add_argument("-min", default=None)
+    parser_discovery.add_argument("-max", default=None)
+    parser_discovery.add_argument("-blacklist", metavar="B", default=[], nargs="+", help="arbitration IDs to ignore")
+    parser_discovery.add_argument("-autoblacklist", metavar="N", type=int, default=0,
+                                  help="scan for interfering signals for N seconds and blacklist matching "
+                                       "arbitration IDs")
+    parser_discovery.add_argument("--delay", type=float, default=REQUEST_DELAY, help="delay between each message")
+    parser_discovery.set_defaults(func=uds_discovery_wrapper)
 
     # Parser for diagnostics service discovery
     parser_info = subparsers.add_parser("services")

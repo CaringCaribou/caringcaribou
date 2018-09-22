@@ -1,6 +1,5 @@
-import time
-
-from lib import iso15765_2, iso14229_1
+from lib.iso15765_2 import IsoTp
+from lib.iso14229_1 import *
 from lib.can_actions import int_from_byte_list
 from tests.mock.mock_ecu import MockEcu
 from tests.mock.mock_ecu_iso_tp import MockEcuIsoTp
@@ -30,11 +29,11 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         arbitration_id_filter = [{"can_id": arb_id_request, "can_mask": 0x1fffffff}]
         self.bus.set_filters(arbitration_id_filter)
         # Setup ISO-TP using the filtered bus
-        self.iso_tp = iso15765_2.IsoTp(arb_id_request=self.ARBITRATION_ID_ISO_14229_REQUEST,
-                                       arb_id_response=self.ARBITRATION_ID_ISO_14229_RESPONSE,
-                                       bus=self.bus)
+        self.iso_tp = IsoTp(arb_id_request=self.ARBITRATION_ID_ISO_14229_REQUEST,
+                            arb_id_response=self.ARBITRATION_ID_ISO_14229_RESPONSE,
+                            bus=self.bus)
         # Setup diagnostics on top of ISO-TP
-        self.diagnostics = iso14229_1.Iso14229_1(tp=self.iso_tp)
+        self.diagnostics = Iso14229_1(tp=self.iso_tp)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         MockEcuIsoTp.__exit__(self, None, None, None)
@@ -49,7 +48,7 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         :return: List of bytes to be sent as data payload in the response
         """
         # Positive response uses a response service ID (SIDPR) based on the request service ID (SIDRQ)
-        service_response_id = iso14229_1.Iso14229_1.get_service_response_id(request_service_id)
+        service_response_id = Iso14229_1.get_service_response_id(request_service_id)
         response = [service_response_id]
         # Append payload
         if response_data is not None:
@@ -65,7 +64,7 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         :param nrc: Negative response code (NRC_)
         :return: List of bytes to be sent as data payload in the response
         """
-        response = [iso14229_1.Iso14229_1_id.NEGATIVE_RESPONSE,
+        response = [Iso14229_1_id.NEGATIVE_RESPONSE,
                     request_service_id,
                     nrc]
         return response
@@ -81,16 +80,16 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         try:
             service_id = data[0]
             # Handle different services
-            if service_id == iso14229_1.Iso14229_1_id.DIAGNOSTIC_SESSION_CONTROL:
+            if service_id == Iso14229_1_id.DIAGNOSTIC_SESSION_CONTROL:
                 # Diagnostic session control
                 response_data = self.handle_diagnostic_session_control(data)
-            elif service_id == iso14229_1.Iso14229_1_id.READ_DATA_BY_IDENTIFIER:
+            elif service_id == Iso14229_1_id.READ_DATA_BY_IDENTIFIER:
                 # Read data by identifier
                 response_data = self.handle_read_data_by_identifier(data)
-            elif service_id == iso14229_1.Iso14229_1_id.WRITE_DATA_BY_IDENTIFIER:
+            elif service_id == Iso14229_1_id.WRITE_DATA_BY_IDENTIFIER:
                 # Write data by identifier
                 response_data = self.handle_write_data_by_identifier(data)
-            elif service_id == iso14229_1.Iso14229_1_id.READ_MEMORY_BY_ADDRESS:
+            elif service_id == Iso14229_1_id.READ_MEMORY_BY_ADDRESS:
                 # Read memory by address
                 response_data = self.handle_read_memory_by_address(data)
             else:
@@ -108,7 +107,7 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
     def handle_unsupported_service(self, data):
         """Provides a standard response for unmapped services, by responding with NRC Service Not Supported"""
         service_id = data[0]
-        response_data = self.create_negative_response(service_id, iso14229_1.Iso14229_1_nrc.SERVICE_NOT_SUPPORTED)
+        response_data = self.create_negative_response(service_id, Iso14229_1_nrc.SERVICE_NOT_SUPPORTED)
         return response_data
 
     def handle_diagnostic_session_control(self, data):
@@ -136,11 +135,11 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             response_data = self.create_positive_response(service_id, payload)
         elif request == self.IDENTIFIER_REQUEST_NEGATIVE:
             # Request for negative response - use Conditions Not Correct
-            nrc = iso14229_1.Iso14229_1_nrc.CONDITIONS_NOT_CORRECT
+            nrc = Iso14229_1_nrc.CONDITIONS_NOT_CORRECT
             response_data = self.create_negative_response(service_id, nrc)
         else:
             # Unmatched request - use a general reject response
-            nrc = iso14229_1.Iso14229_1_nrc.GENERAL_REJECT
+            nrc = Iso14229_1_nrc.GENERAL_REJECT
             response_data = self.create_negative_response(service_id, nrc)
         return response_data
 
@@ -163,15 +162,15 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         if identifier == self.REQUEST_IDENTIFIER_VALID:
             # Request for positive response
             # Standard specifies the response payload to be an echo of the data identifier from the request
-            payload = data[identifier_start_position:identifier_start_position+identifier_length]
+            payload = data[identifier_start_position:identifier_start_position + identifier_length]
             response_data = self.create_positive_response(service_id, payload)
         elif identifier == self.REQUEST_IDENTIFIER_INVALID:
             # Request for negative response - use Conditions Not Correct
-            nrc = iso14229_1.Iso14229_1_nrc.CONDITIONS_NOT_CORRECT
+            nrc = Iso14229_1_nrc.CONDITIONS_NOT_CORRECT
             response_data = self.create_negative_response(service_id, nrc)
         else:
             # Unmatched request - use a general reject response
-            nrc = iso14229_1.Iso14229_1_nrc.GENERAL_REJECT
+            nrc = Iso14229_1_nrc.GENERAL_REJECT
             response_data = self.create_negative_response(service_id, nrc)
         return response_data
 
@@ -195,6 +194,6 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             memory_data = self.DATA[start_address:end_address]
             response_data = self.create_positive_response(service_id, memory_data)
         else:
-            nrc = iso14229_1.Iso14229_1_nrc.REQUEST_OUT_OF_RANGE
+            nrc = Iso14229_1_nrc.REQUEST_OUT_OF_RANGE
             response_data = self.create_negative_response(service_id, nrc)
         return response_data

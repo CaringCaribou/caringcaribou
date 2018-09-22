@@ -78,29 +78,38 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         :return: None
         """
         assert isinstance(data, list)
-        iso14229_service = data[0]
-        # Simulate a small delay before responding
-        time.sleep(self.DELAY_BEFORE_RESPONSE)
-        # Handle different services
-        if iso14229_service == iso14229_1.Iso14229_1_id.DIAGNOSTIC_SESSION_CONTROL:
-            # Diagnostic session control
-            response_data = self.handle_diagnostic_session_control(data)
-        elif iso14229_service == iso14229_1.Iso14229_1_id.READ_DATA_BY_IDENTIFIER:
-            # Read data by identifier
-            response_data = self.handle_read_data_by_identifier(data)
-        elif iso14229_service == iso14229_1.Iso14229_1_id.WRITE_DATA_BY_IDENTIFIER:
-            # Write data by identifier
-            response_data = self.handle_write_data_by_identifier(data)
-        elif iso14229_service == iso14229_1.Iso14229_1_id.READ_MEMORY_BY_ADDRESS:
-            # Read memory by address
-            response_data = self.handle_read_memory_by_address(data)
-        else:
-            # Unmapped message
-            error_message = "Unmapped message in {0}.message_handler:\n  {1}".format(self.__class__.__name__, data)
-            raise NotImplementedError(error_message)
+        try:
+            service_id = data[0]
+            # Handle different services
+            if service_id == iso14229_1.Iso14229_1_id.DIAGNOSTIC_SESSION_CONTROL:
+                # Diagnostic session control
+                response_data = self.handle_diagnostic_session_control(data)
+            elif service_id == iso14229_1.Iso14229_1_id.READ_DATA_BY_IDENTIFIER:
+                # Read data by identifier
+                response_data = self.handle_read_data_by_identifier(data)
+            elif service_id == iso14229_1.Iso14229_1_id.WRITE_DATA_BY_IDENTIFIER:
+                # Write data by identifier
+                response_data = self.handle_write_data_by_identifier(data)
+            elif service_id == iso14229_1.Iso14229_1_id.READ_MEMORY_BY_ADDRESS:
+                # Read memory by address
+                response_data = self.handle_read_memory_by_address(data)
+            else:
+                # Unsupported service
+                response_data = self.handle_unsupported_service(data)
+        except IndexError:
+            # Parsing failed due to invalid message structure
+            response_data = None
         # This check makes it possible to support services where a response should not be sent
         if response_data is not None:
+            # Simulate a small delay before responding
+            time.sleep(self.DELAY_BEFORE_RESPONSE)
             self.diagnostics.send_response(response_data)
+
+    def handle_unsupported_service(self, data):
+        """Provides a standard response for unmapped services, by responding with NRC Service Not Supported"""
+        service_id = data[0]
+        response_data = self.create_negative_response(service_id, iso14229_1.Iso14229_1_nrc.SERVICE_NOT_SUPPORTED)
+        return response_data
 
     def handle_diagnostic_session_control(self, data):
         """Evaluates a diagnostic session control request and returns a response"""

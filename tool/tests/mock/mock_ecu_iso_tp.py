@@ -1,7 +1,7 @@
 import multiprocessing
 import time
 
-from lib import iso15765_2
+from lib.iso15765_2 import IsoTp
 from tests.mock.mock_ecu import MockEcu
 
 
@@ -21,9 +21,9 @@ class MockEcuIsoTp(MockEcu):
         MockEcu.__init__(self, bus)
         self.ARBITRATION_ID_REQUEST = arb_id_request
         self.ARBITRATION_ID_RESPONSE = arb_id_response
-        self.iso_tp = iso15765_2.IsoTp(arb_id_request=self.ARBITRATION_ID_REQUEST,
-                                       arb_id_response=self.ARBITRATION_ID_RESPONSE,
-                                       bus=self.bus)
+        self.iso_tp = IsoTp(arb_id_request=self.ARBITRATION_ID_REQUEST,
+                            arb_id_response=self.ARBITRATION_ID_RESPONSE,
+                            bus=self.bus)
 
     def __enter__(self):
         """
@@ -92,10 +92,10 @@ class MockEcuIsoTp(MockEcu):
         # Simulate a small delay before responding
         time.sleep(self.DELAY_BEFORE_RESPONSE)
         if data == self.MOCK_SINGLE_FRAME_REQUEST:
-                self.iso_tp.send_response(self.MOCK_SINGLE_FRAME_RESPONSE)
+            self.iso_tp.send_response(self.MOCK_SINGLE_FRAME_RESPONSE)
         elif data == self.MOCK_MULTI_FRAME_TWO_MESSAGES_REQUEST:
-                self.iso_tp.send_response(self.MOCK_MULTI_FRAME_TWO_MESSAGES_RESPONSE)
+            self.iso_tp.send_response(self.MOCK_MULTI_FRAME_TWO_MESSAGES_RESPONSE)
         elif data == self.MOCK_MULTI_FRAME_LONG_MESSAGE_REQUEST:
-                self.iso_tp.send_response(self.MOCK_MULTI_FRAME_LONG_MESSAGE_RESPONSE)
+            self.iso_tp.send_response(self.MOCK_MULTI_FRAME_LONG_MESSAGE_RESPONSE)
         else:
             print("Unmapped message in {0}.message_handler:\n  {1}".format(self.__class__.__name__, data))

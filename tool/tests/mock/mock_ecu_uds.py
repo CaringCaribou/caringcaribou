@@ -98,6 +98,7 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         except IndexError:
             # Parsing failed due to invalid message structure
             response_data = None
+
         # This check makes it possible to support services where a response should not be sent
         if response_data is not None:
             # Simulate a small delay before responding

@@ -26,9 +26,14 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         MockEcu.__init__(self, bus)
         self.ARBITRATION_ID_ISO_14229_REQUEST = arb_id_request
         self.ARBITRATION_ID_ISO_14229_RESPONSE = arb_id_response
+        # Set CAN filter to only listen to incoming requests on the correct arbitration ID
+        arbitration_id_filter = [{"can_id": arb_id_request, "can_mask": 0x1fffffff}]
+        self.bus.set_filters(arbitration_id_filter)
+        # Setup ISO-TP using the filtered bus
         self.iso_tp = iso15765_2.IsoTp(arb_id_request=self.ARBITRATION_ID_ISO_14229_REQUEST,
                                        arb_id_response=self.ARBITRATION_ID_ISO_14229_RESPONSE,
                                        bus=self.bus)
+        # Setup diagnostics on top of ISO-TP
         self.diagnostics = iso14229_1.Iso14229_1(tp=self.iso_tp)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -77,7 +82,10 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         # Simulate a small delay before responding
         time.sleep(self.DELAY_BEFORE_RESPONSE)
         # Handle different services
-        if iso14229_service == iso14229_1.Iso14229_1_id.READ_DATA_BY_IDENTIFIER:
+        if iso14229_service == iso14229_1.Iso14229_1_id.DIAGNOSTIC_SESSION_CONTROL:
+            # Diagnostic session control
+            response_data = self.handle_diagnostic_session_control(data)
+        elif iso14229_service == iso14229_1.Iso14229_1_id.READ_DATA_BY_IDENTIFIER:
             # Read data by identifier
             response_data = self.handle_read_data_by_identifier(data)
         elif iso14229_service == iso14229_1.Iso14229_1_id.WRITE_DATA_BY_IDENTIFIER:
@@ -93,6 +101,14 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         # This check makes it possible to support services where a response should not be sent
         if response_data is not None:
             self.diagnostics.send_response(response_data)
+
+    def handle_diagnostic_session_control(self, data):
+        """Evaluates a diagnostic session control request and returns a response"""
+        service_id = data[0]
+        # TODO Handle different values?
+        session_type = data[1]
+        response_data = self.create_positive_response(service_id)
+        return response_data
 
     def handle_read_data_by_identifier(self, data):
         """

@@ -29,6 +29,7 @@ class Iso14229_1_id(object):
     """
     ISO-14229-1 service ID definitions
     """
+    DIAGNOSTIC_SESSION_CONTROL = 0x10
     ECU_RESET = 0x11
     READ_DATA_BY_IDENTIFIER = 0x22
     READ_DATA_BY_PERIODIC_IDENTIFIER = 0x2A

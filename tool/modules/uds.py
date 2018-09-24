@@ -207,22 +207,23 @@ def service_discovery(arb_id_request, arb_id_response, request_delay):
         # Send requests
         for service_id in range(BYTE_MIN, BYTE_MAX + 1):
             tp.send_request([service_id])
-            print("\rProbing service 0x{0:02x} ({0}/{1})".format(service_id, BYTE_MAX), end="")
+            print("\rProbing service 0x{0:02x} ({0}/{1}) found {2}".format(service_id, BYTE_MAX, len(found_services)),
+                  end="")
             stdout.flush()
             time.sleep(request_delay)
-        print("\n")
-        # Parse responses
-        while True:
+            # Get response
             msg = tp.bus.recv(0.1)
             if msg is None:
-                # No more responses to parse
-                break
+                # No response received
+                continue
+            # Parse response
             if len(msg.data) >= 3:
                 service_id = msg.data[2]
                 status = msg.data[3]
                 if status != Iso14229_1_nrc.SERVICE_NOT_SUPPORTED:
                     # Any other response than "service not supported" counts
                     found_services.append(service_id)
+        print("\n")
     return found_services
 
 

@@ -92,7 +92,7 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration, delay
     :param auto_blacklist_duration: seconds to scan for interfering arbitration IDs to blacklist automatically
     :param delay: delay between each message
     :param print_results: bool indicating whether results should be printed to stdout
-    :return:
+    :return: list of (client_arbitration_id, server_arbitration_id) pairs
     """
     # Set limits
     if min_id is None:
@@ -144,6 +144,12 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration, delay
 
 
 def uds_discovery_wrapper(args):
+    """
+    Wrapper used to initiate a UDS discovery scan
+
+    :return: list of (client_arbitration_id, server_arbitration_id) pairs
+    :param args: namespace containing min, max, blacklist, autoblacklist and delay
+    """
     min_id = int_from_str_base(args.min)
     max_id = int_from_str_base(args.max)
     blacklist = [int_from_str_base(b) for b in args.blacklist]

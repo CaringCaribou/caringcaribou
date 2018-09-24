@@ -107,7 +107,8 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
     def handle_unsupported_service(self, data):
         """Provides a standard response for unmapped services, by responding with NRC Service Not Supported"""
         service_id = data[0]
-        response_data = self.create_negative_response(service_id, Iso14229_1_nrc.SERVICE_NOT_SUPPORTED)
+        nrc = NegativeResponseCodes.SERVICE_NOT_SUPPORTED
+        response_data = self.create_negative_response(service_id, nrc)
         return response_data
 
     def handle_diagnostic_session_control(self, data):
@@ -135,11 +136,11 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             response_data = self.create_positive_response(service_id, payload)
         elif request == self.IDENTIFIER_REQUEST_NEGATIVE:
             # Request for negative response - use Conditions Not Correct
-            nrc = Iso14229_1_nrc.CONDITIONS_NOT_CORRECT
+            nrc = NegativeResponseCodes.CONDITIONS_NOT_CORRECT
             response_data = self.create_negative_response(service_id, nrc)
         else:
             # Unmatched request - use a general reject response
-            nrc = Iso14229_1_nrc.GENERAL_REJECT
+            nrc = NegativeResponseCodes.GENERAL_REJECT
             response_data = self.create_negative_response(service_id, nrc)
         return response_data
 
@@ -166,11 +167,11 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             response_data = self.create_positive_response(service_id, payload)
         elif identifier == self.REQUEST_IDENTIFIER_INVALID:
             # Request for negative response - use Conditions Not Correct
-            nrc = Iso14229_1_nrc.CONDITIONS_NOT_CORRECT
+            nrc = NegativeResponseCodes.CONDITIONS_NOT_CORRECT
             response_data = self.create_negative_response(service_id, nrc)
         else:
             # Unmatched request - use a general reject response
-            nrc = Iso14229_1_nrc.GENERAL_REJECT
+            nrc = NegativeResponseCodes.GENERAL_REJECT
             response_data = self.create_negative_response(service_id, nrc)
         return response_data
 
@@ -194,6 +195,6 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             memory_data = self.DATA[start_address:end_address]
             response_data = self.create_positive_response(service_id, memory_data)
         else:
-            nrc = Iso14229_1_nrc.REQUEST_OUT_OF_RANGE
+            nrc = NegativeResponseCodes.REQUEST_OUT_OF_RANGE
             response_data = self.create_negative_response(service_id, nrc)
         return response_data

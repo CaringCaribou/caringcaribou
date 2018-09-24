@@ -80,7 +80,7 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
 
     def test_read_data_by_identifier_failure(self):
         service_id = iso14229_1.Iso14229_1_id.READ_DATA_BY_IDENTIFIER
-        expected_nrc = iso14229_1.Iso14229_1_nrc.CONDITIONS_NOT_CORRECT
+        expected_nrc = iso14229_1.NegativeResponseCodes.CONDITIONS_NOT_CORRECT
         result = self.diagnostics.read_data_by_identifier([MockEcuIso14229.IDENTIFIER_REQUEST_NEGATIVE])
         self.verify_negative_response(service_id, result, expected_nrc)
 
@@ -94,7 +94,7 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
 
     def test_write_data_by_identifier_failure(self):
         service_id = iso14229_1.Iso14229_1_id.WRITE_DATA_BY_IDENTIFIER
-        expected_nrc = iso14229_1.Iso14229_1_nrc.CONDITIONS_NOT_CORRECT
+        expected_nrc = iso14229_1.NegativeResponseCodes.CONDITIONS_NOT_CORRECT
         result = self.diagnostics.write_data_by_identifier(MockEcuIso14229.REQUEST_IDENTIFIER_INVALID,
                                                            MockEcuIso14229.REQUEST_VALUE)
         self.verify_negative_response(service_id, result, expected_nrc)
@@ -113,7 +113,7 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
 
     def test_read_memory_by_address_failure_on_invalid_length(self):
         service_id = iso14229_1.Iso14229_1_id.READ_MEMORY_BY_ADDRESS
-        expected_nrc = iso14229_1.Iso14229_1_nrc.REQUEST_OUT_OF_RANGE
+        expected_nrc = iso14229_1.NegativeResponseCodes.REQUEST_OUT_OF_RANGE
         address_length_and_format = MockEcuIso14229.REQUEST_ADDRESS_LENGTH_AND_FORMAT
         start_address = 0
         # Request memory outside of the available address space, which should result in a failure

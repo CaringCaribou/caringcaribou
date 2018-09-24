@@ -79,7 +79,7 @@ def auto_blacklist(tp, duration, print_results):
         msg = tp.bus.recv(0.1)
         if msg is None:
             continue
-        if len(msg.data) > 1 and msg.data[1] in VALID_SESSION_CONTROL_RESPONSES:
+        if len(msg.data) >= 2 and msg.data[1] in VALID_SESSION_CONTROL_RESPONSES:
             ids_to_blacklist.add(msg.arbitration_id)
     if print_results:
         print("\n  Detected IDs: {0}".format(" ".join(sorted(list(map(hex, ids_to_blacklist))))))
@@ -217,11 +217,12 @@ def service_discovery(arb_id_request, arb_id_response, request_delay):
             if msg is None:
                 # No more responses to parse
                 break
-            service_id = msg.data[2]
-            status = msg.data[3]
-            if status != Iso14229_1_nrc.SERVICE_NOT_SUPPORTED:
-                # Any other response than "service not supported" counts
-                found_services.append(service_id)
+            if len(msg.data) >= 3:
+                service_id = msg.data[2]
+                status = msg.data[3]
+                if status != Iso14229_1_nrc.SERVICE_NOT_SUPPORTED:
+                    # Any other response than "service not supported" counts
+                    found_services.append(service_id)
     return found_services
 
 

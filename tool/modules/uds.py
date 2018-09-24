@@ -2,10 +2,14 @@ from __future__ import print_function
 from lib.can_actions import int_from_str_base, ARBITRATION_ID_MIN, ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
 from lib.iso15765_2 import IsoTp
 from lib.iso14229_1 import Iso14229_1_nrc
-from sys import stdout
+from sys import stdout, version_info
 import argparse
 import time
 
+
+# Handle large ranges efficiently in both python 2 and 3
+if version_info[0] == 2:
+    range = xrange
 
 UDS_SERVICE_NAMES = {
     0x10: "DIAGNOSTIC_SESSION_CONTROL",

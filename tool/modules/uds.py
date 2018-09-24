@@ -78,7 +78,7 @@ def auto_blacklist(tp, duration, print_results):
         if len(msg.data) > 1 and msg.data[1] in VALID_SESSION_CONTROL_RESPONSES:
             ids_to_blacklist.add(msg.arbitration_id)
     if print_results:
-        print("\nDetected IDs: {0}".format(sorted(list(map(hex, ids_to_blacklist)))))
+        print("\n  Detected IDs: {0}".format(" ".join(sorted(list(map(hex, ids_to_blacklist))))))
     return ids_to_blacklist
 
 

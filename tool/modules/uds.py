@@ -82,7 +82,7 @@ def auto_blacklist(tp, duration, print_results):
     return ids_to_blacklist
 
 
-def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration, delay, print_results):
+def uds_discovery(min_id=None, max_id=None, blacklist_args=None, auto_blacklist_duration=0, delay=0.01, print_results=True):
     """
     Scans for diagnostics support by brute forcing session control messages to different arbitration IDs
 
@@ -94,7 +94,7 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration, delay
     :param print_results: bool indicating whether results should be printed to stdout
     :return: list of (client_arbitration_id, server_arbitration_id) pairs
     """
-    # Set limits
+    # Set defaults
     if min_id is None:
         min_id = ARBITRATION_ID_MIN
     if max_id is None:
@@ -103,6 +103,16 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration, delay
         else:
             # If min_id is extended, use an extended default max_id as well
             max_id = ARBITRATION_ID_MAX_EXTENDED
+    if auto_blacklist_duration is None:
+        auto_blacklist_duration = 0
+    if blacklist_args is None:
+        blacklist_args = []
+
+    # Sanity checks
+    if max_id < min_id:
+        raise ValueError("max_id must not be smaller than min_id - got min:0x{0:x}, max:0x{1:x}".format(min_id, max_id))
+    if auto_blacklist_duration < 0:
+        raise ValueError("auto_blacklist_duration must not be smaller than 0, got {0}'".format(auto_blacklist_duration))
 
     found_arbitration_ids = []
     session_control_data = [0x10, 0x01]
@@ -157,20 +167,23 @@ def uds_discovery_wrapper(args):
     delay = args.delay
     print_results = True
 
-    arb_id_pairs = uds_discovery(min_id, max_id, blacklist, auto_blacklist_duration, delay, print_results)
-    if len(arb_id_pairs) == 0:
-        # No UDS discovered
-        print("\nDiagnostics service could not be found: {0}".format(s))
-    else:
-        # Print result table
-        print()
-        table_line = "+------------+------------+"
-        print(table_line)
-        print("| CLIENT ID  | SERVER ID  |")
-        print(table_line)
-        for (client_id, server_id) in arb_id_pairs:
-            print("| 0x{0:08x} | 0x{1:08x} |".format(client_id, server_id))
-        print(table_line)
+    try:
+        arb_id_pairs = uds_discovery(min_id, max_id, blacklist, auto_blacklist_duration, delay, print_results)
+        if len(arb_id_pairs) == 0:
+            # No UDS discovered
+            print("\nDiagnostics service could not be found.")
+        else:
+            # Print result table
+            print()
+            table_line = "+------------+------------+"
+            print(table_line)
+            print("| CLIENT ID  | SERVER ID  |")
+            print(table_line)
+            for (client_id, server_id) in arb_id_pairs:
+                print("| 0x{0:08x} | 0x{1:08x} |".format(client_id, server_id))
+            print(table_line)
+    except ValueError as e:
+        print("Discovery failed: {0}".format(e))
 
 
 def service_discovery(arb_id_request, arb_id_response, request_delay):

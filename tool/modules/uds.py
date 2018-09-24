@@ -230,12 +230,8 @@ def service_discovery(arb_id_request, arb_id_response, request_delay, min_id=BYT
                 if status != NegativeResponseCodes.SERVICE_NOT_SUPPORTED:
                     # Any other response than "service not supported" counts
                     found_services.append(service_id)
-<<<<<<< HEAD
         if print_results:
             print("\n")
-=======
-        print("\n")
->>>>>>> Show number of found services when service discovery is running
     return found_services
 
 

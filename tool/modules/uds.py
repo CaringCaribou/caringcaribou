@@ -128,6 +128,7 @@ def uds_discovery(min_id=None, max_id=None, blacklist_args=None, auto_blacklist_
         if auto_blacklist_duration > 0:
             auto_blacklist_arb_ids = auto_blacklist(tp, auto_blacklist_duration, print_results)
             blacklist |= auto_blacklist_arb_ids
+        
         # Prepare session control frame
         session_control_frames = tp.get_frames_from_message(session_control_data)
         for send_arbitration_id in range(min_id, max_id + 1):

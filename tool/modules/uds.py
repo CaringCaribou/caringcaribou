@@ -158,8 +158,19 @@ def uds_discovery_wrapper(args):
     print_results = True
 
     arb_id_pairs = uds_discovery(min_id, max_id, blacklist, auto_blacklist_duration, delay, print_results)
-    # TODO Handle results, print a nice summary
-    print(arb_id_pairs)
+    if len(arb_id_pairs) == 0:
+        # No UDS discovered
+        print("\nDiagnostics service could not be found: {0}".format(s))
+    else:
+        # Print result table
+        print()
+        table_line = "+------------+------------+"
+        print(table_line)
+        print("| CLIENT ID  | SERVER ID  |")
+        print(table_line)
+        for (client_id, server_id) in arb_id_pairs:
+            print("| 0x{0:08x} | 0x{1:08x} |".format(client_id, server_id))
+        print(table_line)
 
 
 def service_discovery(arb_id_request, arb_id_response, request_delay):

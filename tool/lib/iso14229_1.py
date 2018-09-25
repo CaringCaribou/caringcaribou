@@ -70,20 +70,43 @@ class NegativeResponseCodes(object):
     # 0xFF ISO SAE Reserved
 
 
-class Iso14229_1_id(object):
+class ServiceID(object):
     """
     ISO-14229-1 service ID definitions
     """
     DIAGNOSTIC_SESSION_CONTROL = 0x10
     ECU_RESET = 0x11
+    CLEAR_DIAGNOSTIC_INFORMATION = 0x14
+    READ_DTC_INFORMATION = 0x19
     READ_DATA_BY_IDENTIFIER = 0x22
+    READ_MEMORY_BY_ADDRESS = 0x23
+    READ_SCALING_DATA_BY_IDENTIFIER = 0x24
+    SECURITY_ACCESS = 0x27
+    COMMUNICATION_CONTROL = 0x28
     READ_DATA_BY_PERIODIC_IDENTIFIER = 0x2A
     DYNAMICALLY_DEFINE_DATA_IDENTIFIER = 0x2C
     WRITE_DATA_BY_IDENTIFIER = 0x2E
     INPUT_OUTPUT_CONTROL_BY_IDENTIFIER = 0x2F
-    READ_MEMORY_BY_ADDRESS = 0x23
+    ROUTINE_CONTROL = 0x31
+    REQUEST_DOWNLOAD = 0x34
+    REQUEST_UPLOAD = 0x35
+    TRANSFER_DATA = 0x36
+    REQUEST_TRANSFER_EXIT = 0x37
+    REQUEST_FILE_TRANSFER = 0x38
     WRITE_MEMORY_BY_ADDRESS = 0x3D
-    NEGATIVE_RESPONSE = 0x7F
+    TESTER_PRESENT = 0x3E
+    ACCESS_TIMING_PARAMETER = 0x83
+    SECURED_DATA_TRANSMISSION = 0x84
+    CONTROL_DTC_SETTING = 0x85
+    RESPONSE_ON_EVENT = 0x86
+    LINK_CONTROL = 0x87
+
+
+class Constants(object):
+    # NR_SI (Negative Response Service Identifier) is a bit special, since it is not a service per se.
+    # From ISO-14229-1 specification: "The NR_SI value is co-ordinated with the SI values. The NR_SI
+    # value is not used as a SI value in order to make A_Data coding and decoding easier."
+    NR_SI = 0x7F
 
 
 class Iso14229_1(object):
@@ -142,7 +165,7 @@ class Iso14229_1(object):
 
             response = self.tp.indication(wait_window)
             if response is not None and len(response) > 3:
-                if response[0] == Iso14229_1_id.NEGATIVE_RESPONSE and \
+                if response[0] == Constants.NR_SI and \
                         response[2] == NegativeResponseCodes.REQUEST_CORRECTLY_RECEIVED_RESPONSE_PENDING:
                     continue
             break
@@ -157,7 +180,7 @@ class Iso14229_1(object):
         :return: False if response is a NEGATIVE_RESPONSE,
                  True otherwise
         """
-        if response is not None and len(response) > 0 and response[0] != Iso14229_1_id.NEGATIVE_RESPONSE:
+        if response is not None and len(response) > 0 and response[0] != Constants.NR_SI:
             return True
         return False
 
@@ -173,7 +196,7 @@ class Iso14229_1(object):
         num_dids = len(identifier)
         if num_dids > 0:
             request = [0] * ((num_dids * 2) + 1)
-            request[0] = Iso14229_1_id.READ_DATA_BY_IDENTIFIER
+            request[0] = ServiceID.READ_DATA_BY_IDENTIFIER
             for i in range(0, num_dids):
                 request[i * 2 + 1] = (identifier[i] >> 8) & 0xFF
                 request[i * 2 + 2] = identifier[i] & 0xFF
@@ -195,7 +218,7 @@ class Iso14229_1(object):
         data_size_format = (address_and_length_format & 0xF)
 
         request = [0] * (1 + 1 + address_size_format + data_size_format)
-        request[0] = Iso14229_1_id.READ_MEMORY_BY_ADDRESS
+        request[0] = ServiceID.READ_MEMORY_BY_ADDRESS
         request[1] = address_and_length_format
         offset = 2
         for i in (range(0, address_size_format)):
@@ -228,7 +251,7 @@ class Iso14229_1(object):
         data_size_format = (address_and_length_format & 0xF)
 
         request = [0] * (1 + 1 + address_size_format + data_size_format)
-        request[0] = Iso14229_1_id.WRITE_MEMORY_BY_ADDRESS
+        request[0] = ServiceID.WRITE_MEMORY_BY_ADDRESS
         request[1] = address_and_length_format
         offset = 2
         for i in (range(0, address_size_format)):
@@ -258,7 +281,7 @@ class Iso14229_1(object):
         """
         request = [0] * (1 + 2)
 
-        request[0] = Iso14229_1_id.WRITE_DATA_BY_IDENTIFIER
+        request[0] = ServiceID.WRITE_DATA_BY_IDENTIFIER
         request[1] = (identifier >> 8) & 0xFF
         request[2] = identifier & 0xFF
         request += data
@@ -278,7 +301,7 @@ class Iso14229_1(object):
         """
         request = [0] * (1 + 2)
 
-        request[0] = Iso14229_1_id.INPUT_OUTPUT_CONTROL_BY_IDENTIFIER
+        request[0] = ServiceID.INPUT_OUTPUT_CONTROL_BY_IDENTIFIER
         request[1] = (identifier >> 8) & 0xFF
         request[2] = identifier & 0xFF
         request += data
@@ -302,7 +325,7 @@ class Iso14229_1(object):
             return None
 
         request = [0] * (1 + 1 + 2 + len(sub_function_arg) * 4)
-        request[0] = Iso14229_1_id.DYNAMICALLY_DEFINE_DATA_IDENTIFIER
+        request[0] = ServiceID.DYNAMICALLY_DEFINE_DATA_IDENTIFIER
         request[1] = sub_function
         request[2] = (identifier >> 8) & 0xFF
         request[3] = identifier & 0xFF
@@ -336,7 +359,7 @@ class Iso14229_1(object):
             suppress_positive_response = True
 
         request = [0] * 2
-        request[0] = Iso14229_1_id.ECU_RESET
+        request[0] = ServiceID.ECU_RESET
         request[1] = sub_function
 
         self.tp.send_request(request)
@@ -360,7 +383,7 @@ class Iso14229_1(object):
             return None
 
         request = [0] * (2 + len(identifier))
-        request[0] = Iso14229_1_id.READ_DATA_BY_PERIODIC_IDENTIFIER
+        request[0] = ServiceID.READ_DATA_BY_PERIODIC_IDENTIFIER
         request[1] = transmission_mode
 
         for i in range(0, len(identifier)):

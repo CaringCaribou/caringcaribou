@@ -64,7 +64,7 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         :param nrc: Negative response code (NRC_)
         :return: List of bytes to be sent as data payload in the response
         """
-        response = [Iso14229_1_id.NEGATIVE_RESPONSE,
+        response = [Constants.NR_SI,
                     request_service_id,
                     nrc]
         return response
@@ -80,16 +80,16 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         try:
             service_id = data[0]
             # Handle different services
-            if service_id == Iso14229_1_id.DIAGNOSTIC_SESSION_CONTROL:
+            if service_id == ServiceID.DIAGNOSTIC_SESSION_CONTROL:
                 # Diagnostic session control
                 response_data = self.handle_diagnostic_session_control(data)
-            elif service_id == Iso14229_1_id.READ_DATA_BY_IDENTIFIER:
+            elif service_id == ServiceID.READ_DATA_BY_IDENTIFIER:
                 # Read data by identifier
                 response_data = self.handle_read_data_by_identifier(data)
-            elif service_id == Iso14229_1_id.WRITE_DATA_BY_IDENTIFIER:
+            elif service_id == ServiceID.WRITE_DATA_BY_IDENTIFIER:
                 # Write data by identifier
                 response_data = self.handle_write_data_by_identifier(data)
-            elif service_id == Iso14229_1_id.READ_MEMORY_BY_ADDRESS:
+            elif service_id == ServiceID.READ_MEMORY_BY_ADDRESS:
                 # Read memory by address
                 response_data = self.handle_read_memory_by_address(data)
             else:

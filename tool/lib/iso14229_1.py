@@ -102,6 +102,21 @@ class ServiceID(object):
     LINK_CONTROL = 0x87
 
 
+class Services(object):
+
+    class EcuReset(object):
+        # 0x00 ISO SAE Reserved
+        HARD_RESET = 0x01
+        KEY_OFF_ON_RESET = 0x02
+        SOFT_RESET = 0x03
+        ENABLE_RAPID_POWER_SHUTDOWN = 0x04
+        DISABLE_RAPID_POWER_SHUTDOWN = 0x05
+        # 0x06-0x3F ISO SAE Reserved
+        # 0x40-0x5F Vehicle manufacturer specific
+        # 0x60-0x7E System supplier specific
+        # 0x7F ISO SAE Reserved
+
+
 class Constants(object):
     # NR_SI (Negative Response Service Identifier) is a bit special, since it is not a service per se.
     # From ISO-14229-1 specification: "The NR_SI value is co-ordinated with the SI values. The NR_SI
@@ -343,24 +358,24 @@ class Iso14229_1(object):
 
         return response
 
-    def ecu_reset(self, sub_function):
+    def ecu_reset(self, reset_type):
         """
-        Sends an "ECU reset" request for 'sub_function'
+        Sends an "ECU reset" request for specified reset type
 
-        :param sub_function: Sub function
+        :param reset_type: Indicates which kind of reset should be requested
         :return: Response data if successful AND positive responses are not suppressed by 'sub_function',
                  None otherwise
         """
-        if sub_function is None:
+        if reset_type is None:
             return None
 
         suppress_positive_response = False
-        if (sub_function & 0x80) != 0:
+        if (reset_type & 0x80) != 0:
             suppress_positive_response = True
 
         request = [0] * 2
         request[0] = ServiceID.ECU_RESET
-        request[1] = sub_function
+        request[1] = reset_type
 
         self.tp.send_request(request)
         response = None

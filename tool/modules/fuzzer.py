@@ -32,7 +32,7 @@ LEAD_ID_CHARACTERS = string.digits[0: 8]
 MAX_ID_LENGTH = 4
 # The max length of a payload.
 MAX_PAYLOAD_LENGTH = 16
-# An extended aribitration id consisting only of zeros.
+# An extended arbitration id consisting only of zeros.
 ZERO_ARB_ID = "0" * MAX_ID_LENGTH
 # A payload consisting only of zeros.
 ZERO_PAYLOAD = "0" * MAX_PAYLOAD_LENGTH
@@ -68,7 +68,7 @@ def write_directive_to_file(filename, arb_id, payload):
     fd = open(filename, "a")
     try:
         fd.write(arb_id + "#" + payload + "\n")
-    finally:    
+    finally:
         fd.close()
 
 
@@ -161,7 +161,8 @@ def get_random_payload(length=MAX_PAYLOAD_LENGTH):
     return payload
 
 
-def random_fuzz(static_arb_id, static_payload, logging=0, filename=None, id_length=MAX_ID_LENGTH - 1, payload_length=MAX_PAYLOAD_LENGTH):
+def random_fuzz(static_arb_id, static_payload, logging=0, filename=None, id_length=MAX_ID_LENGTH - 1,
+                payload_length=MAX_PAYLOAD_LENGTH):
     """
     A simple random id fuzzer algorithm.
     Send random or static CAN payloads to random or static arbitration ids.
@@ -227,7 +228,7 @@ def linear_file_fuzz(filename, logging=0):
         if logging != 0:
             log[counter % logging] = directive
 
-    
+
 # --- [4]
 # Methods that handle replay fuzzing.
 # ---
@@ -242,14 +243,14 @@ def split_composites(old_composites):
     """
     new_composites = []
     if len(old_composites) <= 5:
-        for composite in old_composites:        
+        for composite in old_composites:
             new_composites.append([composite])
         return new_composites
-                        
+
     pieces = 5
     count = len(old_composites) // pieces
     increments = [count] * pieces
-        
+
     rest = len(old_composites) % pieces
     for i in range(rest):
         increments[i] += 1
@@ -267,20 +268,22 @@ def split_composites(old_composites):
 
 def replay_file_fuzz(composites, logging=0):
     """
-    Use a given input file to send can packets.
-    Uses CanActions to send/receive from the CAN bus. 
+    Use a list of arb_id and payload composites.
+    Uses CanActions to send/receive from the CAN bus.
     This method will also ask for user input after each iteration of the linear algorithm.
-    This alows the user to find what singular packet is causing the effect.
+    This allows the user to find what singular packet is causing the effect.
 
-    :param filename: The file where the cansend directives should be read from.
+    :param composites: A list of arb_id and payload composites.
     :param logging: How many cansend directives must be kept in memory at a time.
     """
     # Define a callback function which will handle incoming messages
     def response_handler(msg):
         print("Directive: " + arb_id + "#" + payload)
         print("  Received Message: " + str(msg))
-	
+
     counter = 0
+    log = [None] * logging
+
     for composite in composites:
         arb_id = composite[0]
         payload = composite[1]
@@ -289,16 +292,16 @@ def replay_file_fuzz(composites, logging=0):
 
         counter += 1
         if logging != 0:
-            log[counter % logging] = directive
+            log[counter % logging] = arb_id + "#" + payload
 
     print("Played {} payloads.".format(len(composites)))
-    while(True):
+    while True:
         print("")
         response = str(raw_input("Was the desired effect observed?" + "\n"
                                  "((y)es | (n)o | (l)ist | (r)eplay) | (q)uit: "))
- 
+
         if response == "y":
-            if len(composites) == 1:    
+            if len(composites) == 1:
                 print("The potential payload is:")
                 print(composites[0][0] + "#" + composites[0][1])
                 raise StopIteration()
@@ -310,17 +313,17 @@ def replay_file_fuzz(composites, logging=0):
             return
 
         elif response == "n":
-            return 
+            return
 
         elif response == "q":
-            raise StopIteration()	
+            raise StopIteration()
 
         elif response == "r":
             print("Replaying the same payloads.")
             replay_file_fuzz(composites, logging)
-            return       
-        
-        elif response == "l" :
+            return
+
+        elif response == "l":
             for composite in composites:
                 print(composite[0] + "#" + composite[1])
             print("Dumped directives currently in memory.")
@@ -353,10 +356,11 @@ def get_masked_payload(payload_bitmap, payload, length=MAX_PAYLOAD_LENGTH):
 
     :param payload: The original payload.
     :param payload_bitmap: Bitmap that specifies what (hex) bits need to be used in the new payload. A 0 is a mask.
+    :param length: The length of the payload.
     :return: Returns a new payload where all but the bits specified in the payload_bitmap are masked.
     """
     for i in range(length - len(payload_bitmap)):
-        payload_bitmap.append(True)        
+        payload_bitmap.append(True)
 
     old_payload = payload + "1" * (length - len(payload))
     new_payload = ""
@@ -417,7 +421,8 @@ def get_next_bf_payload(last_payload):
     return payload
 
 
-def ring_bf_fuzz(arb_id, initial_payload=ZERO_PAYLOAD, payload_bitmap=None, logging=0, filename=None, length=MAX_PAYLOAD_LENGTH):
+def ring_bf_fuzz(arb_id, initial_payload=ZERO_PAYLOAD, payload_bitmap=None, logging=0, filename=None,
+                 length=MAX_PAYLOAD_LENGTH):
     """
     A simple brute force fuzzer algorithm.
     Attempts to brute force a static id using a ring based brute force algorithm.
@@ -493,7 +498,7 @@ def get_mutated_id(arb_id, arb_id_bitmap):
     :return: Returns a mutated arbitration id.
     """
     for i in range(MAX_ID_LENGTH - len(arb_id_bitmap)):
-        arb_id_bitmap.append(True)     
+        arb_id_bitmap.append(True)
 
     old_arb_id = "0" * (MAX_ID_LENGTH - len(arb_id)) + arb_id
     new_arb_id = ""
@@ -520,7 +525,7 @@ def get_mutated_payload(payload, payload_bitmap):
     :return: Returns a mutated payload.
     """
     for i in range(MAX_PAYLOAD_LENGTH - len(payload_bitmap)):
-        payload_bitmap.append(True)     
+        payload_bitmap.append(True)
 
     old_payload = payload + "1" * (MAX_PAYLOAD_LENGTH - len(payload))
     new_payload = ""
@@ -613,7 +618,7 @@ def __handle_mutate(args):
 
     if args.id_bitmap is None:
         args.id_bitmap = [True] * (MAX_ID_LENGTH - 1)
-        args.id_bitmap.insert(0, False) # By default, don't mutate on extended can ids
+        args.id_bitmap.insert(0, False)  # By default, don't mutate on extended can ids
 
     if args.payload_bitmap is None:
         args.payload_bitmap = [True] * MAX_PAYLOAD_LENGTH
@@ -632,7 +637,7 @@ def __handle_replay(args):
     for directive in fd:
         composite = parse_directive(directive)
         composites.append(composite)
-    
+
     try:
         replay_file_fuzz(composites, logging=args.log)
     except StopIteration:
@@ -727,7 +732,8 @@ def parse_args(args):
     parser.add_argument("-id", type=str, help="Specify an id to use. "
                                               " Use the following syntax: 123")
     parser.add_argument("-id_bitmap", type=list, help="Override the default id bitmap with a different id bitmap. "
-                                                      "Use the following syntax: 0100 (with 1 a digit that can be overriden)")
+                                                      "Use the following syntax: 0100 "
+                                                      "(with 1 a digit that can be overriden)")
 
     parser.add_argument("-payload", type=str, help="Specify a payload to use. "
                                                    "Use the following syntax: FFFFFFFF")
@@ -757,4 +763,3 @@ def module_main(arg_list):
     except NameError:
         print("Not enough arguments specified.")
     exit(0)
-

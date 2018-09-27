@@ -190,7 +190,8 @@ def uds_discovery_wrapper(args):
         print("Discovery failed: {0}".format(e))
 
 
-def service_discovery(arb_id_request, arb_id_response, request_delay):
+def service_discovery(arb_id_request, arb_id_response, request_delay, min_id=BYTE_MIN, max_id=BYTE_MAX,
+                      print_results=True):
     """
     Scans for supported UDS services on the specified arbitration ID
 
@@ -198,6 +199,9 @@ def service_discovery(arb_id_request, arb_id_response, request_delay):
     :param arb_id_request: int arbitration ID for requests
     :param arb_id_response: int arbitration ID for responses
     :param request_delay: float delay between each request sent
+    :param min_id: int first service ID to scan
+    :param max_id: int last service ID to scan
+    :param print_results: bool indicating whether progress should be printed to stdout
     """
     found_services = []
 
@@ -205,10 +209,11 @@ def service_discovery(arb_id_request, arb_id_response, request_delay):
         # Setup filter for incoming messages
         tp.set_filter_single_arbitration_id(arb_id_response)
         # Send requests
-        for service_id in range(BYTE_MIN, BYTE_MAX + 1):
+        for service_id in range(min_id, max_id + 1):
             tp.send_request([service_id])
-            print("\rProbing service 0x{0:02x} ({0}/{1}) found {2}".format(service_id, BYTE_MAX, len(found_services)),
-                  end="")
+            if print_results:
+                print("\rProbing service 0x{0:02x} ({0}/{1}) found {2}".format(
+                    service_id, BYTE_MAX, len(found_services)), end="")
             stdout.flush()
             time.sleep(request_delay)
             # Get response
@@ -223,7 +228,8 @@ def service_discovery(arb_id_request, arb_id_response, request_delay):
                 if status != NegativeResponseCodes.SERVICE_NOT_SUPPORTED:
                     # Any other response than "service not supported" counts
                     found_services.append(service_id)
-        print("\n")
+        if print_results:
+            print("\n")
     return found_services
 
 

@@ -35,3 +35,18 @@ class UdsModuleTestCase(unittest.TestCase):
         expected_result = [(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE)]
         self.assertListEqual(result, expected_result, "UDS discovery gave '{0}', expected '{1}'".format(
             result, expected_result))
+
+    def test_service_discovery(self):
+        # Service discovery arguments
+        range_start = 0x00
+        range_end = 0x10
+        print_results = False
+        # Perform service discovery
+        result = uds.service_discovery(arb_id_request=self.ARB_ID_REQUEST,
+                                       arb_id_response=self.ARB_ID_RESPONSE,
+                                       request_delay=self.BRUTEFORCE_DELAY,
+                                       min_id=range_start,
+                                       max_id=range_end,
+                                       print_results=print_results)
+        # TODO Add assertion(s) here, once mock implementation is finished
+        #print(result)

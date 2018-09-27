@@ -198,7 +198,6 @@ def random_fuzz(static_arb_id, static_payload, logging=0, filename=None, id_leng
         counter += 1
         if logging != 0:
             log[counter % logging] = arb_id + "#" + payload
-
         if filename is not None:
             write_directive_to_file(filename, arb_id, payload)
 
@@ -591,15 +590,11 @@ def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, 
 
 
 def __handle_random(args):
-    random_fuzz(static_arb_id=args.id, static_payload=args.payload, logging=args.log, filename=args.file)
+    random_fuzz(static_arb_id=args.arb_id, static_payload=args.payload, logging=args.log, filename=args.file)
 
 
 def __handle_linear(args):
-    filename = args.file
-    if filename is None:
-        raise NameError
-
-    linear_file_fuzz(filename=filename, logging=args.log)
+    linear_file_fuzz(filename=args.file, logging=args.log)
     print("Linear fuzz finished.")
 
 
@@ -608,17 +603,14 @@ def __handle_ring_bf(args):
     if payload is None:
         payload = ZERO_PAYLOAD
 
-    if args.id is None:
-        raise ValueError
-
-    ring_bf_fuzz(arb_id=args.id, initial_payload=payload, payload_bitmap=args.payload_bitmap,
+    ring_bf_fuzz(arb_id=args.arb_id, initial_payload=payload, payload_bitmap=args.payload_bitmap,
                  logging=args.log, filename=args.file)
     print("Brute forcing finished.")
 
 
 def __handle_mutate(args):
-    if args.id is None:
-        args.id = ZERO_PAYLOAD
+    if args.arb_id is None:
+        args.arb_id = ZERO_PAYLOAD
 
     if args.payload is None:
         args.payload = ZERO_PAYLOAD
@@ -630,14 +622,12 @@ def __handle_mutate(args):
     if args.payload_bitmap is None:
         args.payload_bitmap = [True] * MAX_PAYLOAD_LENGTH
 
-    mutate_fuzz(initial_payload=args.payload, initial_arb_id=args.id, arb_id_bitmap=args.id_bitmap,
+    mutate_fuzz(initial_payload=args.payload, initial_arb_id=args.arb_id, arb_id_bitmap=args.id_bitmap,
                 payload_bitmap=args.payload_bitmap, logging=args.log, filename=args.file)
 
 
 def __handle_replay(args):
     filename = args.file
-    if filename is None:
-        raise NameError
 
     fd = open(filename, "r")
     composites = []
@@ -653,43 +643,6 @@ def __handle_replay(args):
     print("Exited replay mode.")
 
 
-def handle_args(args):
-    """
-    Set up the environment using the passed arguments and execute the correct algorithm.
-
-    :param args: Module argument list passed by cc.py
-    """
-
-    if args.id and len(args.id) > MAX_ID_LENGTH:
-        raise ValueError
-    if args.payload and (len(args.payload) % 2 != 0 or len(args.payload) > MAX_PAYLOAD_LENGTH):
-        raise ValueError
-
-    if args.id_bitmap:
-        if len(args.id_bitmap) > MAX_ID_LENGTH:
-            raise ValueError
-        for i in range(len(args.id_bitmap)):
-            args.id_bitmap[i] = string_to_bool(args.id_bitmap[i])
-    if args.payload_bitmap:
-        if len(args.payload_bitmap) > MAX_PAYLOAD_LENGTH:
-            raise ValueError
-        for i in range(len(args.payload_bitmap)):
-            args.payload_bitmap[i] = string_to_bool(args.payload_bitmap[i])
-
-    if args.alg == "random":
-        __handle_random(args)
-    elif args.alg == "linear":
-        __handle_linear(args)
-    elif args.alg == "replay":
-        __handle_replay(args)
-    elif args.alg == "ring_bf":
-        __handle_ring_bf(args)
-    elif args.alg == "mutate":
-        __handle_mutate(args)
-    else:
-        raise ValueError
-
-
 # --- [8]
 # Main methods.
 # ---
@@ -697,11 +650,7 @@ def handle_args(args):
 
 def parse_args(args):
     """
-    Argument parser for the template module.
-
-    Notes about values of namespace after parsing:
-    Arguments that must be converted before -use static, -gen.
-    Arguments that can be None: -alg, -file, -payload.
+    Argument parser for the fuzzer module.
 
     :param args: List of arguments
     :return: Argument namespace
@@ -711,50 +660,98 @@ def parse_args(args):
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description="A fuzzer for the CAN bus",
                                      epilog="""Example usage:
-                                     ./cc.py fuzzer -alg random
-                                     ./cc.py fuzzer -alg ring_bf -id 244 -payload_bitmap 0000001 
-                                     -file example.txt
-                                     """
+./cc.py fuzzer random
+./cc.py fuzzer ring_bf 244 -payload_bitmap 0000001 
+-file example.txt
 
-                                            + """\nCurrently supported algorithms:
-                                     random - Send random or static CAN payloads to 
-                                              random or static arbitration ids.
-                                     linear - Use a given input file to send can packets.
-                                     replay - Use the linear algorithm but also attempt 
-                                              to find a specific payload response.
-                                     ring_bf - Attempts to brute force a static id 
-                                               using a ring based brute force algorithm.
-                                     mutate - Mutates (hex) bits in the given id/payload.
-                                              The mutation bits are specified 
-                                              in the id/payload bitmaps.""")
+Supported algorithms:
+random - Send random or static CAN payloads to 
+      random or static arbitration ids.
+linear - Use a given input file to send can packets.
+replay - Use the linear algorithm but also attempt 
+      to find a specific payload response.
+ring_bf - Attempts to brute force a static id 
+       using a ring based brute force algorithm.
+mutate - Mutates (hex) bits in the given id/payload.
+      The mutation bits are specified 
+      in the id/payload bitmaps.""")
+    subparsers = parser.add_subparsers(dest="module_function")
+    subparsers.required = True
 
-    parser.add_argument("-alg", type=str, help="What fuzzing algorithm to use.")
-    parser.add_argument("-log", type=int, default=0,
-                        help="How many cansend directives must be kept in memory at a time (default is 0)")
+    cmd_random = subparsers.add_parser("random")
+    cmd_random.add_argument("-arb_id", default=None, help="set static arbitration ID")
+    cmd_random.add_argument("-payload", default=None, help="set static payload")
+    cmd_random.add_argument("-log", type=int, default=0, help="number of cansend directives to keep in memory")
+    cmd_random.add_argument("-file", "-f", default=None, help="log file for cansend directives")
+    cmd_random.set_defaults(func=__handle_random)
 
-    parser.add_argument("-file", type=str, help="Specify a file to where the fuzzer should write"
-                                                "the cansend directives it uses. "
-                                                "This is required for the linear algorithm.")
+    # Linear
+    cmd_linear = subparsers.add_parser("linear")
+    cmd_linear.add_argument("filename", help="input directive file to replay")
+    cmd_linear.add_argument("-log", type=int, default=0, help="number of cansend directives to keep in memory")
+    cmd_linear.set_defaults(func=__handle_linear)
 
-    parser.add_argument("-id", type=str, help="Specify an id to use. "
-                                              " Use the following syntax: 123")
-    parser.add_argument("-id_bitmap", type=list, help="Override the default id bitmap with a different id bitmap. "
-                                                      "Use the following syntax: 0100 "
-                                                      "(with 1 a digit that can be overriden)")
+    # Replay (linear with response mapping)
+    cmd_replay = subparsers.add_parser("replay")
+    cmd_replay.add_argument("filename", help="input directive file to replay")
+    cmd_replay.add_argument("-log", type=int, default=0, help="number of cansend directives to keep in memory")
+    cmd_replay.set_defaults(func=__handle_replay)
 
-    parser.add_argument("-payload", type=str, help="Specify a payload to use. "
-                                                   "Use the following syntax: FFFFFFFF")
-    parser.add_argument("-payload_bitmap", type=list,
-                        help="Override the default payload bitmap with a different payload bitmap. "
-                             "Use the following syntax: 0100 (with 1 a digit that can be overriden)")
+    # Ring based bruteforce
+    cmd_ring_bf = subparsers.add_parser("ring_bf")
+    cmd_ring_bf.add_argument("arb_id", help="arbitration ID")
+    cmd_ring_bf.add_argument("-payload", "-p", default=ZERO_PAYLOAD, help="force payload (hex string, e.g. FFFFFFFF)")
+    cmd_ring_bf.add_argument("-payload_bitmap", "-pb", help="force payload bitmap (binary string, e.g. 0100 where "
+                                                            "'1' is a digit that can be overridden)")
+    cmd_ring_bf.add_argument("-file", "-f", default=None, help="directive file to replay")
+    cmd_ring_bf.add_argument("-log", type=int, default=0, help="number of cansend directives to keep in memory")
+    cmd_ring_bf.set_defaults(func=__handle_ring_bf)
+
+    # Mutate
+    cmd_mutate = subparsers.add_parser("mutate")
+    cmd_mutate.add_argument("-arb_id", default=ZERO_ARB_ID, help="")
+    cmd_mutate.add_argument("-payload", default=ZERO_PAYLOAD, help="")
+    cmd_mutate.add_argument("-id_bitmap", "-ib", help="force arbitration ID bitmap (binary string, e.g. 0100 where "
+                                                      "'1' is a digit that can be overridden)")
+    cmd_mutate.add_argument("-payload_bitmap", "-pb", help="force payload bitmap (binary string, e.g. 0100 where "
+                                                           "'1' is a digit that can be overridden)")
+    cmd_mutate.add_argument("-file", "-f", default=None, help="log file for cansend directives")
+    cmd_mutate.add_argument("-log", type=int, default=0, help="number of cansend directives to keep in memory")
+    cmd_mutate.set_defaults(func=__handle_mutate)
 
     args = parser.parse_args(args)
+
+    # Process specific argument logic
+    # TODO Rewrite wrapper logic for custom formats
+    if "arb_id" in args and args.arb_id is not None and len(args.arb_id) > MAX_ID_LENGTH:
+        raise ValueError
+
+    if "payload" in args and args.payload is not None and \
+            (len(args.payload) % 2 != 0 or len(args.payload) > MAX_PAYLOAD_LENGTH):
+        raise ValueError
+
+    if "id_bitmap" in args and args.id_bitmap is not None:
+        if len(args.id_bitmap) > MAX_ID_LENGTH:
+            raise ValueError
+        bitmap = [None] * len(args.id_bitmap)
+        for i in range(len(args.id_bitmap)):
+            bitmap[i] = string_to_bool(args.id_bitmap[i])
+        args.id_bitmap = bitmap
+
+    if "payload_bitmap" in args and args.payload_bitmap is not None:
+        if len(args.payload_bitmap) > MAX_PAYLOAD_LENGTH:
+            raise ValueError
+        bitmap = [None] * len(args.payload_bitmap)
+        for i in range(len(args.payload_bitmap)):
+            bitmap[i] = string_to_bool(args.payload_bitmap[i])
+        args.payload_bitmap = bitmap
+
     return args
 
 
 def module_main(arg_list):
     """
-    Module main wrapper. This is the entry point of the module when called by cc.py
+    Fuzz module main wrapper.
 
     :param arg_list: Module argument list passed by cc.py
     """
@@ -762,11 +759,7 @@ def module_main(arg_list):
         # Parse arguments
         args = parse_args(arg_list)
         print("Press control + c to exit.\n")
-        handle_args(args)
+        # Call appropriate function
+        args.func(args)
     except KeyboardInterrupt:
         print("\n\nTerminated by user")
-    except ValueError:
-        print("Invalid syntax.")
-    except NameError:
-        print("Not enough arguments specified.")
-    exit(0)

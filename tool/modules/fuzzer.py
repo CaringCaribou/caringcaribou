@@ -6,13 +6,20 @@
 #       This is similar to the arguments one would pass to the cansend command line tool (part of can-util).
 #   2. "composite cansend directive"
 #       A cansend directive split up in its id and payload: [id, payload].
-
+from __future__ import print_function
+from sys import version_info
 import argparse
 import random
 import string
 
 from lib.can_actions import CanActions, int_from_str_base
 from time import sleep
+
+
+# Python 2/3 compatibility
+if version_info[0] == 2:
+    range = xrange
+    input = raw_input
 
 
 # --- [0]
@@ -297,8 +304,8 @@ def replay_file_fuzz(composites, logging=0):
     print("Played {} payloads.".format(len(composites)))
     while True:
         print("")
-        response = str(raw_input("Was the desired effect observed?" + "\n"
-                                 "((y)es | (n)o | (l)ist | (r)eplay) | (q)uit: "))
+        response = str(input("Was the desired effect observed?" + "\n"
+                             "((y)es | (n)o | (l)ist | (r)eplay) | (q)uit: "))
 
         if response == "y":
             if len(composites) == 1:

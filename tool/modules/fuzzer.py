@@ -11,7 +11,7 @@ import argparse
 import random
 import string
 
-from can_actions import CanActions, int_from_str_base
+from lib.can_actions import CanActions, int_from_str_base
 from time import sleep
 
 

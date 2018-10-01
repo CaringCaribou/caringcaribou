@@ -12,7 +12,7 @@ import argparse
 import random
 import string
 
-from lib.can_actions import CanActions, int_from_str_base
+from lib.can_actions import *
 from time import sleep
 
 
@@ -27,8 +27,12 @@ if version_info[0] == 2:
 # ---
 
 
-# Number of seconds for callback handler to be active.
-CALLBACK_HANDLER_DURATION = 0.0001
+# Number of seconds to wait between messages
+CALLBACK_HANDLER_DURATION = 0.01
+# Payload length limits
+MIN_PL_LENGTH = 1
+MAX_PL_LENGTH = 8
+
 # The characters used to generate random ids/payloads.
 CHARACTERS = string.hexdigits[0: 10] + string.hexdigits[16: 22]
 # The leading value in a can id is a value between 0 and 7.
@@ -45,23 +49,26 @@ ZERO_ARB_ID = "0" * MAX_ID_LENGTH
 ZERO_PAYLOAD = "0" * MAX_PAYLOAD_LENGTH
 
 
-def directive_send(arb_id, payload, response_handler):
+def directive_send(arb_id, payload, response_handler, can_wrap):
     """
     Sends a cansend directive.
 
     :param arb_id: The destination arbitration id.
     :param payload: The payload to be sent.
     :param response_handler: The callback handler that needs to be called when a response message is received.
+    :param can_wrap: CanActions instance used to send message
     """
-    arb_id = "0x" + arb_id
+    arb_id = "0x" + arb_id  # FIXME auto-prefix should be removed to use default behavior
     send_msg = payload_to_str_base(payload)
-    with CanActions(int_from_str_base(arb_id)) as can_wrap:
-        # Send the message on the CAN bus and register a callback
-        # handler for incoming messages
-        can_wrap.send_single_message_with_callback(list_int_from_str_base(send_msg), response_handler)
-        # Letting callback handler be active for CALLBACK_HANDLER_DURATION seconds
-        sleep(CALLBACK_HANDLER_DURATION)
-        # can_wrap.clear_listeners()
+    arb_id = int_from_str_base(arb_id)
+    # Send the message on the CAN bus and register a callback
+    # handler for incoming messages
+    msg_list = list_int_from_str_base(send_msg)
+    can_wrap.set_listener(response_handler)
+    can_wrap.send(msg_list, arb_id)
+    # Letting callback handler be active for CALLBACK_HANDLER_DURATION seconds
+    sleep(CALLBACK_HANDLER_DURATION)
+    # can_wrap.clear_listeners()
 
 
 def write_directive_to_file(filename, arb_id, payload):
@@ -77,6 +84,18 @@ def write_directive_to_file(filename, arb_id, payload):
         fd.write(arb_id + "#" + payload + "\n")
     finally:
         fd.close()
+
+
+def write_directive_to_file_handle(file_handle, arb_id, payload):
+    """
+    Writes a cansend directive to a file
+
+    :param file_handle: handle for the file to write to
+    :param arb_id: arbitration ID of the cansend directive
+    :param payload: payload of the cansend directive
+    """
+    data = "".join(["{0:02X}".format(x) for x in payload])
+    file_handle.write("{0:03X}#{1}\n".format(arb_id, data))
 
 
 # --- [1]
@@ -138,69 +157,111 @@ def parse_directive(line):
     return composite
 
 
+def directive_str(arb_id, payload):
+    payload_str = "".join(["{0:02X}".format(x) for x in payload])
+    directive = "{0:03X}#{1}".format(arb_id, payload_str)
+    return directive
+
+
 # --- [2]
 # Methods that handle random fuzzing.
 # ---
 
 
-def get_random_id(length=MAX_ID_LENGTH - 1):
+def get_random_arbitration_id(min_id, max_id):
     """
-    Gets a random arbitration id.
+    Returns an arbitration ID in the range min_id <= arb_id <= max_id
 
-    :return: A random arbitration id.
+    :param min_id: Minimum allowed arbitration ID (inclusive)
+    :param max_id: Maximum allowed arbitration ID (inclusive)
+    :return: int arbitration ID
     """
-    arb_id = random.choice(LEAD_ID_CHARACTERS)
-    for i in range(length - 1):
-        arb_id += random.choice(CHARACTERS)
+    arb_id = random.randint(min_id, max_id)
     return arb_id
 
 
-def get_random_payload(length=MAX_PAYLOAD_LENGTH):
-    """
-    Gets a random payload.
-
-    :param: length: The length of the payload.
-    :return: A random payload.
-    """
-    payload = ""
-    for i in range(length):
-        payload += random.choice(CHARACTERS)
+def get_random_payload_data(min_length, max_length):
+    # Decide number of bytes to generate
+    payload_length = random.randint(min_length, max_length)
+    # Generate random bytes
+    payload = []
+    for i in range(payload_length):
+        data_byte = random.randint(BYTE_MIN, BYTE_MAX)
+        payload.append(data_byte)
     return payload
 
 
-def random_fuzz(static_arb_id, static_payload, logging=0, filename=None, id_length=MAX_ID_LENGTH - 1,
-                payload_length=MAX_PAYLOAD_LENGTH):
+def random_fuzz(static_arb_id, static_payload, logging=0, filename=None, min_id=ARBITRATION_ID_MIN,
+                max_id=ARBITRATION_ID_MAX, min_payload_length=MIN_PL_LENGTH, max_payload_length=MAX_PL_LENGTH):
     """
-    A simple random id fuzzer algorithm.
-    Send random or static CAN payloads to random or static arbitration ids.
-    Uses CanActions to send/receive from the CAN bus.
+    A simple random fuzzer algorithm, which sends random or static CAN payloads to random or static arbitration IDs
 
-    :param logging: How many cansend directives must be kept in memory at a time.
-    :param static_arb_id: Override the static id with the given id.
-    :param static_payload: Override the static payload with the given payload.
-    :param filename: The file where the cansend directives should be written to.
-    :param id_length: The length of the id.
-    :param payload_length: The length of the payload.
+    :param logging: number of cansend directives to keep in memory
+    :param static_arb_id: force usage of given arbitration ID
+    :param static_payload: force usage of given payload
+    :param filename: file to write cansend directives to
+    :param min_id: minimum allowed arbitration ID
+    :param max_id: maximum allowed arbitration ID
+    :param min_payload_length: minimum allowed payload length
+    :param max_payload_length: maximum allowed payload length
     """
+    # Sanity checks
+    if min_id > max_id:
+        raise ValueError("min_id must not be larger than max_id")
+    if min_payload_length > max_payload_length:
+        raise ValueError("min_payload_length must not be larger than max_payload_length")
+
     # Define a callback function which will handle incoming messages
     def response_handler(msg):
-        print("Directive: " + arb_id + "#" + payload)
-        print("  Received Message: " + str(msg))
+        if msg.arbitration_id != arb_id or list(msg.data) != payload:
+            directive = directive_str(arb_id, payload)
+            print("Directive: {0}".format(directive))
+            print("  Received message: {0}".format(msg))
 
     log = [None] * logging
+    arb_id = None
+    payload = None
+    file_logging_enabled = filename is not None
+    output_file = None
     counter = 0
-    while True:
-        arb_id = (static_arb_id if static_arb_id is not None else get_random_id(id_length))
-        payload = (static_payload if static_payload is not None else get_random_payload(payload_length))
+    try:
+        if file_logging_enabled:
+            output_file = open(filename, "a")
+        with CanActions() as can_wrap:
+            # Register callback handler for incoming messages
+            can_wrap.add_listener(response_handler)
+            # Fuzzing logic
+            while True:
+                # Set arbitration ID
+                if static_arb_id is None:
+                    # Use a random arbitration ID
+                    arb_id = get_random_arbitration_id(min_id, max_id)
+                else:
+                    # Use the static arbitration ID
+                    arb_id = static_arb_id
 
-        directive_send(arb_id, payload, response_handler)
+                # Set payload
+                if static_payload is None:
+                    payload = get_random_payload_data(min_payload_length, max_payload_length)
+                else:
+                    payload = static_payload
 
-        counter += 1
-        if logging != 0:
-            log[counter % logging] = arb_id + "#" + payload
-        if filename is not None:
-            write_directive_to_file(filename, arb_id, payload)
+                # Send message
+                can_wrap.send(data=payload, arb_id=arb_id)
+                sleep(CALLBACK_HANDLER_DURATION)
 
+                # Logging
+                # TODO How should logging be used?
+                counter += 1
+                if logging != 0:
+                    log[counter % logging] = arb_id + "#" + payload
+
+                # Log to file
+                if file_logging_enabled:
+                    write_directive_to_file_handle(output_file, arb_id, payload)
+    finally:
+        if output_file is not None:
+            output_file.close()
 
 # --- [3]
 # Methods that handle linear fuzzing.
@@ -590,7 +651,8 @@ def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, 
 
 
 def __handle_random(args):
-    random_fuzz(static_arb_id=args.arb_id, static_payload=args.payload, logging=args.log, filename=args.file)
+    random_fuzz(static_arb_id=args.arb_id, static_payload=args.payload, logging=args.log, filename=args.file,
+                min_payload_length=args.minpl, max_payload_length=args.maxpl)
 
 
 def __handle_linear(args):
@@ -683,6 +745,8 @@ mutate - Mutates (hex) bits in the given id/payload.
     cmd_random.add_argument("-payload", default=None, help="set static payload")
     cmd_random.add_argument("-log", type=int, default=0, help="number of cansend directives to keep in memory")
     cmd_random.add_argument("-file", "-f", default=None, help="log file for cansend directives")
+    cmd_random.add_argument("-minpl", type=int, default=MIN_PL_LENGTH, help="minimum payload length")
+    cmd_random.add_argument("-maxpl", type=int, default=MAX_PL_LENGTH, help="maximum payload length")
     cmd_random.set_defaults(func=__handle_random)
 
     # Linear

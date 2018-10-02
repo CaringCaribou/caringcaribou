@@ -154,18 +154,18 @@ def string_to_bool(value):
     return False if value.upper() == "FALSE" or value == "0" or value == "" else True
 
 
-def parse_directive(line):
+def parse_directive(directive):
     """
-    Parses a given cansend directive.
+    Parses a cansend directive
 
-    :param line: A given string that represent a cansend directive.
-    :return: Returns a composite directive: [id, payload]
+    :param directive: str representing a cansend directive
+    :return: tuple (int arbitration_id, [int data_byte])
     """
-    composite = list()
-    pointer = line.find("#")
-    composite.append(line[0: pointer])
-    composite.append(line[pointer + 1: len(line) - 1])
-    return composite
+    segments = directive.split("#")
+    arb_id = int(segments[0], 16)
+    data_str = segments[1]
+    data = [int(data_str[i:i+2], 16) for i in range(0, len(data_str), 2)]
+    return arb_id, data
 
 
 def directive_str(arb_id, payload):
@@ -276,26 +276,29 @@ def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION
 
 def linear_file_fuzz(filename):
     """
-    Use a given input file to send can packets.
-    Uses CanActions to send/receive from the CAN bus.
+    Replay cansend directives from the given file
 
-    :param filename: The file where the cansend directives should be read from.
+    :param filename: Source file to read cansend directives from
     """
+
     # Define a callback function which will handle incoming messages
     def response_handler(msg):
-        print("Directive: " + directive.rstrip())
-        print("  Received Message: " + str(msg))
+        if msg.arbitration_id != arb_id or list(msg.data) != payload:
+            print("Directive: {0}".format(directive))
+            print("  Received message: {0}".format(msg))
 
-    fd = open(filename, "r")
-    counter = 0
-    for directive in fd:
-        composite = parse_directive(directive)
-        arb_id = composite[0]
-        payload = composite[1]
+    arb_id = None
+    payload = None
 
-        directive_send(arb_id, payload, response_handler)
-
-        counter += 1
+    with open(filename, "r") as fd:
+        with CanActions() as can_wrap:
+            can_wrap.add_listener(response_handler)
+            for line in fd:
+                directive = line.rstrip()
+                if directive:
+                    arb_id, payload = parse_directive(directive)
+                    can_wrap.send(data=payload, arb_id=arb_id)
+                    sleep(CALLBACK_HANDLER_DURATION)
 
 
 # --- [4]
@@ -632,8 +635,8 @@ def __handle_random(args):
 
 
 def __handle_linear(args):
-    linear_file_fuzz(filename=args.file)
-    print("Linear fuzz finished.")
+    linear_file_fuzz(filename=args.filename)
+    print("Linear fuzz finished")
 
 
 def __handle_ring_bf(args):

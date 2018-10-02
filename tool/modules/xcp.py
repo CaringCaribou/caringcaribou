@@ -185,6 +185,47 @@ def xcp_arbitration_id_discovery(args):
     blacklist = [int_from_str_base(b) for b in args.blacklist]
     hit_counter = 0
 
+    def is_valid_response(data):
+        """
+        Returns a bool indicating whether 'data' is a valid XCP response
+
+        :param data: list of message data bytes
+        :return: True if data is a valid XCP response,
+                 False otherwise
+        """
+        return (len(data) > 1 and data[0] == 0xff and any(data[1:])) or \
+               (len(data) > 0 and data[0] == 0xfe)
+
+    def scan_arbitration_ids_to_blacklist(scan_duration):
+        print("Scanning for arbitration IDs to blacklist (-autoblacklist)")
+        ids_to_blacklist = set()
+
+        def response_handler(msg):
+            """
+            Blacklists the arbitration ID of a message if it could be misinterpreted as valid diagnostic response
+
+            :param msg: can.Message instance to check
+            """
+            if is_valid_response(msg.data):
+                ids_to_blacklist.add(msg.arbitration_id)
+
+        with CanActions() as can_actions:
+            # Listen for matches
+            can_actions.add_listener(response_handler)
+            for i in range(scan_duration, 0, -1):
+                print("\r{0:> 3} seconds left, {1} found".format(i-1, len(ids_to_blacklist)), end="")
+                stdout.flush()
+                time.sleep(1)
+            print("")
+            can_actions.clear_listeners()
+        # Add found matches to blacklist
+        for arb_id in ids_to_blacklist:
+            blacklist.append(arb_id)
+
+    # Perform automatic blacklist scanning
+    if args.autoblacklist > 0:
+        scan_arbitration_ids_to_blacklist(args.autoblacklist)
+
     with CanActions() as can_wrap:
         print("Starting XCP discovery")
 
@@ -481,6 +522,8 @@ def parse_args(args):
     parser_disc.add_argument("-min", default=None)
     parser_disc.add_argument("-max", default=None)
     parser_disc.add_argument("-blacklist", metavar="B", default=[], nargs="+", help="arbitration IDs to ignore")
+    parser_disc.add_argument("-autoblacklist", metavar="N", type=int, default=0,
+                             help="scan for interfering signals for N seconds and blacklist matching arbitration IDs")
     parser_disc.set_defaults(func=xcp_arbitration_id_discovery)
 
     # Parser for XCP commands discovery

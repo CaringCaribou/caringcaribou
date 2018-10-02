@@ -100,6 +100,15 @@ def write_directive_to_file_handle(file_handle, arb_id, payload):
     file_handle.write("{0:03X}#{1}\n".format(arb_id, data))
 
 
+def set_seed(seed=None):
+    if seed is None:
+        seed = random.randint(0, DEFAULT_SEED_MAX)
+    else:
+        seed = int_from_str_base(seed)
+    print("Seed: {0} (0x{0:x})".format(seed))
+    random.seed(seed)
+
+
 # --- [1]
 # Converter methods
 # ---
@@ -214,12 +223,7 @@ def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION
         raise ValueError("min_payload_length must not be larger than max_payload_length")
 
     # Seed handling
-    if seed is None:
-        seed = random.randint(0, DEFAULT_SEED_MAX)
-    else:
-        seed = int_from_str_base(seed)
-    print("Seed: {0} (0x{0:x})".format(seed))
-    random.seed(seed)
+    set_seed(seed)
 
     # Define a callback function which will handle incoming messages
     def response_handler(msg):

@@ -182,6 +182,7 @@ def xcp_arbitration_id_discovery(args):
     global hit_counter
     min_id = int_from_str_base(args.min)
     max_id = int_from_str_base(args.max)
+    blacklist = [int_from_str_base(b) for b in args.blacklist]
     hit_counter = 0
 
     with CanActions() as can_wrap:
@@ -193,6 +194,9 @@ def xcp_arbitration_id_discovery(args):
 
             def response_analyser(msg):
                 global hit_counter
+                # Ignore blacklisted arbitration IDs
+                if msg.arbitration_id in blacklist:
+                    return
                 # Handle positive response
                 if msg.data[0] == 0xff and any(msg.data[1:]):
                     hit_counter += 1
@@ -476,6 +480,7 @@ def parse_args(args):
     parser_disc = subparsers.add_parser("discovery")
     parser_disc.add_argument("-min", default=None)
     parser_disc.add_argument("-max", default=None)
+    parser_disc.add_argument("-blacklist", metavar="B", default=[], nargs="+", help="arbitration IDs to ignore")
     parser_disc.set_defaults(func=xcp_arbitration_id_discovery)
 
     # Parser for XCP commands discovery

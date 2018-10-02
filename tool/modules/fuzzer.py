@@ -32,6 +32,8 @@ CALLBACK_HANDLER_DURATION = 0.01
 # Payload length limits
 MIN_PL_LENGTH = 1
 MAX_PL_LENGTH = 8
+# Max size of random seed if no seed is provided in arguments
+DEFAULT_SEED_MAX = 2**16
 
 # The characters used to generate random ids/payloads.
 CHARACTERS = string.hexdigits[0: 10] + string.hexdigits[16: 22]
@@ -191,8 +193,8 @@ def get_random_payload_data(min_length, max_length):
     return payload
 
 
-def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION_ID_MIN,
-                max_id=ARBITRATION_ID_MAX, min_payload_length=MIN_PL_LENGTH, max_payload_length=MAX_PL_LENGTH):
+def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION_ID_MIN, max_id=ARBITRATION_ID_MAX,
+                min_payload_length=MIN_PL_LENGTH, max_payload_length=MAX_PL_LENGTH, seed=None):
     """
     A simple random fuzzer algorithm, which sends random or static CAN payloads to random or static arbitration IDs
 
@@ -203,12 +205,21 @@ def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION
     :param max_id: maximum allowed arbitration ID
     :param min_payload_length: minimum allowed payload length
     :param max_payload_length: maximum allowed payload length
+    :param seed: use given seed instead of random seed
     """
     # Sanity checks
     if min_id > max_id:
         raise ValueError("min_id must not be larger than max_id")
     if min_payload_length > max_payload_length:
         raise ValueError("min_payload_length must not be larger than max_payload_length")
+
+    # Seed handling
+    if seed is None:
+        seed = random.randint(0, DEFAULT_SEED_MAX)
+    else:
+        seed = int_from_str_base(seed)
+    print("Seed: {0} (0x{0:x})".format(seed))
+    random.seed(seed)
 
     # Define a callback function which will handle incoming messages
     def response_handler(msg):
@@ -613,7 +624,7 @@ def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, 
 
 def __handle_random(args):
     random_fuzz(static_arb_id=args.arb_id, static_payload=args.payload, filename=args.file,
-                min_payload_length=args.minpl, max_payload_length=args.maxpl)
+                min_payload_length=args.minpl, max_payload_length=args.maxpl, seed=args.seed)
 
 
 def __handle_linear(args):
@@ -706,6 +717,7 @@ mutate - Mutates (hex) bits in the given id/payload.
     cmd_random.add_argument("-file", "-f", default=None, help="log file for cansend directives")
     cmd_random.add_argument("-minpl", type=int, default=MIN_PL_LENGTH, help="minimum payload length")
     cmd_random.add_argument("-maxpl", type=int, default=MAX_PL_LENGTH, help="maximum payload length")
+    cmd_random.add_argument("-seed", "-s", metavar="S", default=None, help="set random seed")
     cmd_random.set_defaults(func=__handle_random)
 
     # Linear

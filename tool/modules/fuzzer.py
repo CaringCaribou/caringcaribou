@@ -191,12 +191,11 @@ def get_random_payload_data(min_length, max_length):
     return payload
 
 
-def random_fuzz(static_arb_id, static_payload, logging=0, filename=None, min_id=ARBITRATION_ID_MIN,
+def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION_ID_MIN,
                 max_id=ARBITRATION_ID_MAX, min_payload_length=MIN_PL_LENGTH, max_payload_length=MAX_PL_LENGTH):
     """
     A simple random fuzzer algorithm, which sends random or static CAN payloads to random or static arbitration IDs
 
-    :param logging: number of cansend directives to keep in memory
     :param static_arb_id: force usage of given arbitration ID
     :param static_payload: force usage of given payload
     :param filename: file to write cansend directives to
@@ -218,12 +217,10 @@ def random_fuzz(static_arb_id, static_payload, logging=0, filename=None, min_id=
             print("Directive: {0}".format(directive))
             print("  Received message: {0}".format(msg))
 
-    log = [None] * logging
     arb_id = None
     payload = None
     file_logging_enabled = filename is not None
     output_file = None
-    counter = 0
     try:
         if file_logging_enabled:
             output_file = open(filename, "a")
@@ -250,12 +247,6 @@ def random_fuzz(static_arb_id, static_payload, logging=0, filename=None, min_id=
                 can_wrap.send(data=payload, arb_id=arb_id)
                 sleep(CALLBACK_HANDLER_DURATION)
 
-                # Logging
-                # TODO How should logging be used?
-                counter += 1
-                if logging != 0:
-                    log[counter % logging] = arb_id + "#" + payload
-
                 # Log to file
                 if file_logging_enabled:
                     write_directive_to_file_handle(output_file, arb_id, payload)
@@ -268,13 +259,12 @@ def random_fuzz(static_arb_id, static_payload, logging=0, filename=None, min_id=
 # ---
 
 
-def linear_file_fuzz(filename, logging=0):
+def linear_file_fuzz(filename):
     """
     Use a given input file to send can packets.
     Uses CanActions to send/receive from the CAN bus.
 
     :param filename: The file where the cansend directives should be read from.
-    :param logging: How many cansend directives must be kept in memory at a time.
     """
     # Define a callback function which will handle incoming messages
     def response_handler(msg):
@@ -282,7 +272,6 @@ def linear_file_fuzz(filename, logging=0):
         print("  Received Message: " + str(msg))
 
     fd = open(filename, "r")
-    log = [None] * logging
     counter = 0
     for directive in fd:
         composite = parse_directive(directive)
@@ -292,8 +281,6 @@ def linear_file_fuzz(filename, logging=0):
         directive_send(arb_id, payload, response_handler)
 
         counter += 1
-        if logging != 0:
-            log[counter % logging] = directive
 
 
 # --- [4]
@@ -333,7 +320,7 @@ def split_composites(old_composites):
     return new_composites
 
 
-def replay_file_fuzz(composites, logging=0):
+def replay_file_fuzz(composites):
     """
     Use a list of arb_id and payload composites.
     Uses CanActions to send/receive from the CAN bus.
@@ -341,25 +328,17 @@ def replay_file_fuzz(composites, logging=0):
     This allows the user to find what singular packet is causing the effect.
 
     :param composites: A list of arb_id and payload composites.
-    :param logging: How many cansend directives must be kept in memory at a time.
     """
     # Define a callback function which will handle incoming messages
     def response_handler(msg):
         print("Directive: " + arb_id + "#" + payload)
         print("  Received Message: " + str(msg))
 
-    counter = 0
-    log = [None] * logging
-
     for composite in composites:
         arb_id = composite[0]
         payload = composite[1]
 
         directive_send(arb_id, payload, response_handler)
-
-        counter += 1
-        if logging != 0:
-            log[counter % logging] = arb_id + "#" + payload
 
     print("Played {} payloads.".format(len(composites)))
     while True:
@@ -376,7 +355,7 @@ def replay_file_fuzz(composites, logging=0):
             new_composites = split_composites(composites)
 
             for temp in reversed(new_composites):
-                replay_file_fuzz(temp, logging)
+                replay_file_fuzz(temp)
             return
 
         elif response == "n":
@@ -387,7 +366,7 @@ def replay_file_fuzz(composites, logging=0):
 
         elif response == "r":
             print("Replaying the same payloads.")
-            replay_file_fuzz(composites, logging)
+            replay_file_fuzz(composites)
             return
 
         elif response == "l":
@@ -488,7 +467,7 @@ def get_next_bf_payload(last_payload):
     return payload
 
 
-def ring_bf_fuzz(arb_id, initial_payload=ZERO_PAYLOAD, payload_bitmap=None, logging=0, filename=None,
+def ring_bf_fuzz(arb_id, initial_payload=ZERO_PAYLOAD, payload_bitmap=None, filename=None,
                  length=MAX_PAYLOAD_LENGTH):
     """
     A simple brute force fuzzer algorithm.
@@ -498,7 +477,6 @@ def ring_bf_fuzz(arb_id, initial_payload=ZERO_PAYLOAD, payload_bitmap=None, logg
     :param arb_id: The arbitration id to use.
     :param payload_bitmap: A bitmap that specifies what bits should be brute-forced.
     :param initial_payload: The initial payload from where to start brute forcing.
-    :param logging: How many cansend directives must be kept in memory at a time.
     :param filename: The file where the cansend directives should be written to.
     :param length: The length of the payload.
     """
@@ -511,16 +489,10 @@ def ring_bf_fuzz(arb_id, initial_payload=ZERO_PAYLOAD, payload_bitmap=None, logg
     # The internal payload is the reverse of the relevant part of the send payload.
     # Initially, no mask must be applied.
     internal_masked_payload = reverse_payload(initial_payload[: length + 1])
-    log = [None] * logging
-    counter = 0
 
     # manually send first payload
     send_payload = reverse_payload(internal_masked_payload)
     directive_send(arb_id, send_payload, response_handler)
-
-    counter += 1
-    if logging != 0:
-        log[counter % logging] = arb_id + "#" + send_payload
 
     while internal_masked_payload != "F" * length:
         if payload_bitmap is not None:
@@ -542,10 +514,6 @@ def ring_bf_fuzz(arb_id, initial_payload=ZERO_PAYLOAD, payload_bitmap=None, logg
             send_payload = reverse_payload(internal_masked_payload)
 
         directive_send(arb_id, send_payload, response_handler)
-
-        counter += 1
-        if logging != 0:
-            log[counter % logging] = arb_id + "#" + send_payload
 
         if filename is not None:
             write_directive_to_file(filename, arb_id, send_payload)
@@ -608,7 +576,7 @@ def get_mutated_payload(payload, payload_bitmap):
     return new_payload
 
 
-def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, logging=0, filename=None):
+def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, filename=None):
     """
     A simple mutation based fuzzer algorithm.
     Mutates (hex) bits in the given id/payload.
@@ -620,7 +588,6 @@ def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, 
     :param initial_payload: The initial payload to use.
     :param arb_id_bitmap: Specifies what (hex) bits need to be mutated in the arbitration id.
     :param payload_bitmap: Specifies what (hex) bits need to be mutated in the payload.
-    :param logging: How many cansend directives must be kept in memory at a time.
     :param filename: The file where the cansend directives should be written to.
     """
     # Define a callback function which will handle incoming messages
@@ -629,17 +596,11 @@ def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, 
         print("  Received Message: " + str(msg))
 
     # payload_bitmap = [False, False, True, True, False, False, False, False]
-    log = [None] * logging
-    counter = 0
     while True:
         arb_id = get_mutated_id(initial_arb_id, arb_id_bitmap)
         payload = get_mutated_payload(initial_payload, payload_bitmap)
 
         directive_send(arb_id, payload, response_handler)
-
-        counter += 1
-        if logging != 0:
-            log[counter % logging] = arb_id + "#" + payload
 
         if filename is not None:
             write_directive_to_file(filename, arb_id, payload)
@@ -651,12 +612,12 @@ def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, 
 
 
 def __handle_random(args):
-    random_fuzz(static_arb_id=args.arb_id, static_payload=args.payload, logging=args.log, filename=args.file,
+    random_fuzz(static_arb_id=args.arb_id, static_payload=args.payload, filename=args.file,
                 min_payload_length=args.minpl, max_payload_length=args.maxpl)
 
 
 def __handle_linear(args):
-    linear_file_fuzz(filename=args.file, logging=args.log)
+    linear_file_fuzz(filename=args.file)
     print("Linear fuzz finished.")
 
 
@@ -665,8 +626,7 @@ def __handle_ring_bf(args):
     if payload is None:
         payload = ZERO_PAYLOAD
 
-    ring_bf_fuzz(arb_id=args.arb_id, initial_payload=payload, payload_bitmap=args.payload_bitmap,
-                 logging=args.log, filename=args.file)
+    ring_bf_fuzz(arb_id=args.arb_id, initial_payload=payload, payload_bitmap=args.payload_bitmap, filename=args.file)
     print("Brute forcing finished.")
 
 
@@ -685,7 +645,7 @@ def __handle_mutate(args):
         args.payload_bitmap = [True] * MAX_PAYLOAD_LENGTH
 
     mutate_fuzz(initial_payload=args.payload, initial_arb_id=args.arb_id, arb_id_bitmap=args.id_bitmap,
-                payload_bitmap=args.payload_bitmap, logging=args.log, filename=args.file)
+                payload_bitmap=args.payload_bitmap, filename=args.file)
 
 
 def __handle_replay(args):
@@ -698,7 +658,7 @@ def __handle_replay(args):
         composites.append(composite)
 
     try:
-        replay_file_fuzz(composites, logging=args.log)
+        replay_file_fuzz(composites)
     except StopIteration:
         pass
 
@@ -743,7 +703,6 @@ mutate - Mutates (hex) bits in the given id/payload.
     cmd_random = subparsers.add_parser("random")
     cmd_random.add_argument("-arb_id", default=None, help="set static arbitration ID")
     cmd_random.add_argument("-payload", default=None, help="set static payload")
-    cmd_random.add_argument("-log", type=int, default=0, help="number of cansend directives to keep in memory")
     cmd_random.add_argument("-file", "-f", default=None, help="log file for cansend directives")
     cmd_random.add_argument("-minpl", type=int, default=MIN_PL_LENGTH, help="minimum payload length")
     cmd_random.add_argument("-maxpl", type=int, default=MAX_PL_LENGTH, help="maximum payload length")
@@ -752,13 +711,11 @@ mutate - Mutates (hex) bits in the given id/payload.
     # Linear
     cmd_linear = subparsers.add_parser("linear")
     cmd_linear.add_argument("filename", help="input directive file to replay")
-    cmd_linear.add_argument("-log", type=int, default=0, help="number of cansend directives to keep in memory")
     cmd_linear.set_defaults(func=__handle_linear)
 
     # Replay (linear with response mapping)
     cmd_replay = subparsers.add_parser("replay")
     cmd_replay.add_argument("filename", help="input directive file to replay")
-    cmd_replay.add_argument("-log", type=int, default=0, help="number of cansend directives to keep in memory")
     cmd_replay.set_defaults(func=__handle_replay)
 
     # Ring based bruteforce
@@ -768,7 +725,6 @@ mutate - Mutates (hex) bits in the given id/payload.
     cmd_ring_bf.add_argument("-payload_bitmap", "-pb", help="force payload bitmap (binary string, e.g. 0100 where "
                                                             "'1' is a digit that can be overridden)")
     cmd_ring_bf.add_argument("-file", "-f", default=None, help="directive file to replay")
-    cmd_ring_bf.add_argument("-log", type=int, default=0, help="number of cansend directives to keep in memory")
     cmd_ring_bf.set_defaults(func=__handle_ring_bf)
 
     # Mutate
@@ -780,7 +736,6 @@ mutate - Mutates (hex) bits in the given id/payload.
     cmd_mutate.add_argument("-payload_bitmap", "-pb", help="force payload bitmap (binary string, e.g. 0100 where "
                                                            "'1' is a digit that can be overridden)")
     cmd_mutate.add_argument("-file", "-f", default=None, help="log file for cansend directives")
-    cmd_mutate.add_argument("-log", type=int, default=0, help="number of cansend directives to keep in memory")
     cmd_mutate.set_defaults(func=__handle_mutate)
 
     args = parser.parse_args(args)

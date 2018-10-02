@@ -511,6 +511,8 @@ def parse_args(args):
                                      description="""XCP module for CaringCaribou""",
                                      epilog="""Example usage:
   cc.py xcp discovery
+  cc.py xcp discovery -blacklist 0x100 0xabc
+  cc.py xcp discovery -autoblacklist 10
   cc.py xcp commands 0x3e8 0x3e9
   cc.py xcp info 1000 1001
   cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex""")

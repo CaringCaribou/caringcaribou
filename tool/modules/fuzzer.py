@@ -742,8 +742,10 @@ mutate - Mutates (hex) bits in the given id/payload.
 
     # Process specific argument logic
     # TODO Rewrite wrapper logic for custom formats
-    if "arb_id" in args and args.arb_id is not None and len(args.arb_id) > MAX_ID_LENGTH:
-        raise ValueError
+
+    # Parse arbitration ID as int
+    if "arb_id" in args and args.arb_id is not None:
+        args.arb_id = int_from_str_base(args.arb_id)
 
     if "payload" in args and args.payload is not None and \
             (len(args.payload) % 2 != 0 or len(args.payload) > MAX_PAYLOAD_LENGTH):

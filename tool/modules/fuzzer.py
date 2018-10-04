@@ -34,6 +34,8 @@ MIN_PL_LENGTH = 1
 MAX_PL_LENGTH = 8
 # Max size of random seed if no seed is provided in arguments
 DEFAULT_SEED_MAX = 2**16
+# Number of sub-lists to split message list into per round in 'replay' mode
+REPLAY_NUMBER_OF_SUB_LISTS = 5
 
 # The characters used to generate random ids/payloads.
 CHARACTERS = string.hexdigits[0: 10] + string.hexdigits[16: 22]
@@ -88,6 +90,19 @@ def write_directive_to_file(filename, arb_id, payload):
         fd.close()
 
 
+def directive_str(arb_id, payload):
+    """
+    Converts a directive to its string representation
+
+    :param arb_id: message arbitration ID
+    :param payload: message data bytes
+    :return: str representing directive
+    """
+    data = "".join(["{0:02X}".format(x) for x in payload])
+    directive = "{0:03X}#{1}".format(arb_id, data)
+    return directive
+
+
 def write_directive_to_file_handle(file_handle, arb_id, payload):
     """
     Writes a cansend directive to a file
@@ -96,8 +111,8 @@ def write_directive_to_file_handle(file_handle, arb_id, payload):
     :param arb_id: arbitration ID of the cansend directive
     :param payload: payload of the cansend directive
     """
-    data = "".join(["{0:02X}".format(x) for x in payload])
-    file_handle.write("{0:03X}#{1}\n".format(arb_id, data))
+    directive = directive_str(arb_id, payload)
+    file_handle.write("{0}\n".format(directive))
 
 
 def set_seed(seed=None):
@@ -166,12 +181,6 @@ def parse_directive(directive):
     data_str = segments[1]
     data = [int(data_str[i:i+2], 16) for i in range(0, len(data_str), 2)]
     return arb_id, data
-
-
-def directive_str(arb_id, payload):
-    payload_str = "".join(["{0:02X}".format(x) for x in payload])
-    directive = "{0:03X}#{1}".format(arb_id, payload_str)
-    return directive
 
 
 # --- [2]
@@ -306,94 +315,102 @@ def linear_file_fuzz(filename):
 # ---
 
 
-def split_composites(old_composites):
+def split_composites(composites, pieces):
     """
-    Split the old composites in 5 equal parts.
+    Generator function which splits 'old_composites' into smaller sub-lists
 
-    :param old_composites: The old composites that need to be split.
-    :return: returns a list of composite lists. Where each composite list has count ~= len(old_composites) // 5.
+    :param composites: list to split
+    :param pieces: number of sub-lists to produce
+    :return: yields one sub-list at a time
     """
-    new_composites = []
-    if len(old_composites) <= 5:
-        for composite in old_composites:
-            new_composites.append([composite])
-        return new_composites
-
-    pieces = 5
-    count = len(old_composites) // pieces
-    increments = [count] * pieces
-
-    rest = len(old_composites) % pieces
-    for i in range(rest):
-        increments[i] += 1
-
-    offset = 0
-    for i in range(len(increments)):
-        temp_composites = []
-        for j in range(increments[i]):
-            temp_composites.append(old_composites[offset + j])
-        new_composites.append(temp_composites)
-        offset += increments[i]
-
-    return new_composites
+    length = len(composites)
+    for i in range(pieces):
+        sub_list = composites[i * length // pieces: (i + 1) * length // pieces]
+        if len(sub_list) == 0:
+            # Skip empty sub-lists (e.g. if a list of 2 elements if split into 3 parts, one will be empty)
+            continue
+        yield sub_list
 
 
-def replay_file_fuzz(composites):
+def replay_file_fuzz(all_composites):
     """
-    Use a list of arb_id and payload composites.
-    Uses CanActions to send/receive from the CAN bus.
-    This method will also ask for user input after each iteration of the linear algorithm.
-    This allows the user to find what singular packet is causing the effect.
+    Replays a list of composites causing an effect, prompting for input to help isolate the message causing the effect
 
-    :param composites: A list of arb_id and payload composites.
+    :param all_composites: list of composites
+    :return: str directive if message is found,
+             None otherwise
     """
-    # Define a callback function which will handle incoming messages
+
     def response_handler(msg):
-        print("Directive: " + arb_id + "#" + payload)
-        print("  Received Message: " + str(msg))
+        if msg.arbitration_id != arb_id or list(msg.data) != payload:
+            response_directive = directive_str(msg.arbitration_id, msg.data)
+            print("  Received {0}".format(response_directive))
 
-    for composite in composites:
-        arb_id = composite[0]
-        payload = composite[1]
+    arb_id = None
+    payload = None
+    composites = None
+    directive = None
+    repeat = False
 
-        directive_send(arb_id, payload, response_handler)
+    with CanActions() as can_wrap:
+        try:
+            # Send all messages in first round
+            gen = split_composites(all_composites, 1)
+            while True:
+                print()
+                if repeat:
+                    # Keep previous list of messages to send
+                    repeat = False
+                else:
+                    # Get next list of messages to send
+                    composites = next(gen)
+                # Enable CAN listener
+                can_wrap.add_listener(response_handler)
+                # Send messages
+                for composite in composites:
+                    arb_id = composite[0]
+                    payload = composite[1]
+                    directive = directive_str(arb_id, payload)
+                    print("Sending {0}".format(directive))
+                    can_wrap.send(data=payload, arb_id=arb_id)
+                    sleep(CALLBACK_HANDLER_DURATION)
+                # Disable CAN listener
+                can_wrap.clear_listeners()
 
-    print("Played {} payloads.".format(len(composites)))
-    while True:
-        print("")
-        response = str(input("Was the desired effect observed?" + "\n"
-                             "((y)es | (n)o | (l)ist | (r)eplay) | (q)uit: "))
+                # Get user input
+                print("\nWas the desired effect observed?")
+                valid_response = False
+                while not valid_response:
+                    valid_response = True
 
-        if response == "y":
-            if len(composites) == 1:
-                print("The potential payload is:")
-                print(composites[0][0] + "#" + composites[0][1])
-                raise StopIteration()
+                    response = input("(y)es | (n)o | (r)eplay | (q)uit: ").lower()
 
-            new_composites = split_composites(composites)
+                    if response == "y":
+                        if len(composites) == 1:
+                            # Single message found
+                            print("\nMatch found! Message causing effect: {0}".format(directive))
+                            return directive
+                        else:
+                            # Split into even smaller lists of messages
+                            gen = split_composites(composites, REPLAY_NUMBER_OF_SUB_LISTS)
+                    elif response == "n":
+                        # Try next list of messages
+                        pass
+                    elif response == "r":
+                        # Repeat batch
+                        repeat = True
+                    elif response == "q":
+                        # Quit
+                        return
+                    else:
+                        # Invalid choice - ask again
+                        print("Invalid choice")
+                        valid_response = False
 
-            for temp in reversed(new_composites):
-                replay_file_fuzz(temp)
-            return
-
-        elif response == "n":
-            return
-
-        elif response == "q":
-            raise StopIteration()
-
-        elif response == "r":
-            print("Replaying the same payloads.")
-            replay_file_fuzz(composites)
-            return
-
-        elif response == "l":
-            for composite in composites:
-                print(composite[0] + "#" + composite[1])
-            print("Dumped directives currently in memory.")
-
-        else:
-            print("Invalid option, please select a valid option.")
+        except StopIteration:
+            # No more messages to try - give up
+            print("\nNo match was found.")
+            return None
 
 
 # --- [5]
@@ -667,20 +684,16 @@ def __handle_mutate(args):
 
 
 def __handle_replay(args):
-    filename = args.file
+    filename = args.filename
 
     fd = open(filename, "r")
     composites = []
     for directive in fd:
-        composite = parse_directive(directive)
-        composites.append(composite)
-
-    try:
-        replay_file_fuzz(composites)
-    except StopIteration:
-        pass
-
-    print("Exited replay mode.")
+        directive = directive.rstrip()
+        if directive:
+            composite = parse_directive(directive)
+            composites.append(composite)
+    replay_file_fuzz(composites)
 
 
 # --- [8]

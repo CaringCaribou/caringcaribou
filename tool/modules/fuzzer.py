@@ -421,7 +421,8 @@ def replay_file_fuzz(all_composites):
 # ---
 
 
-def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, show_progress=True, show_responses=True):
+def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, start_index=0,
+                 show_progress=True, show_responses=True):
     """
     Performs a brute force of selected nibbles (octets) of a payload for a given arbitration ID.
     Nibble selection is controlled by bool list 'payload_bitmap'.
@@ -444,6 +445,7 @@ def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, show_pr
     :param initial_payload: list of nibbles (ints in interval 0x0-0xF, inclusive)
     :param payload_bitmap: list of bool values, representing which nibbles of 'initial_payload' to bruteforce
     :param filename: file to write cansend directives to
+    :param start_index: int index to start at (can be used to resume interrupted session)
     :param show_progress: bool indicating whether progress should be printed to stdout
     :param show_responses: bool indicating whether responses should be printed to stdout
     """
@@ -456,13 +458,19 @@ def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, show_pr
         raise ValueError("Payload ({0}) and payload bitmap ({1}) must have the same length".format(len(initial_payload),
                                                                                                    len(payload_bitmap)))
 
+    number_of_nibbles = len(payload_bitmap)
+    number_of_nibbles_to_bruteforce = sum(payload_bitmap)
+    end_index = 16 ** number_of_nibbles_to_bruteforce
+
+    if not 0 <= start_index <= end_index:
+        raise ValueError("Invalid start index '{0}', current range is [0-{1}]".format(start_index, end_index))
+
     def response_handler(msg):
+        # Callback handler for printing incoming messages
         if msg.arbitration_id != arb_id or list(msg.data) != output_payload:
             response_directive = directive_str(msg.arbitration_id, msg.data)
             print("  Received {0}".format(response_directive))
 
-    number_of_nibbles = len(payload_bitmap)
-    number_of_nibbles_to_bruteforce = len([i for i in range(number_of_nibbles) if payload_bitmap[i]])
     # Initialize fuzzed nibble generator
     nibble_values = range(0xF + 1)
     fuzz_data = product(nibble_values, repeat=number_of_nibbles_to_bruteforce)
@@ -474,14 +482,25 @@ def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, show_pr
         if file_logging_enabled:
             output_file = open(filename, "a")
         with CanActions(arb_id=arb_id) as can_wrap:
+            if show_progress:
+                print("Starting at index {0} of {1}\n".format(start_index, end_index))
             if show_responses:
                 can_wrap.add_listener(response_handler)
             message_count = 0
+            # Traverse all outputs from fuzz generator
             for current_fuzzed_nibbles in fuzz_data:
+                # Skip handling until start_index is met
+                if message_count < start_index:
+                    message_count += 1
+                    continue
+
                 fuzz_index = 0
                 output_payload = []
 
                 for index in range(0, number_of_nibbles, 2):
+                    if message_count < start_index:
+                        continue
+                    # Apply fuzzed nibbles on top of initial payload
                     if payload_bitmap[index]:
                         high_nibble = current_fuzzed_nibbles[fuzz_index]
                         fuzz_index += 1
@@ -501,7 +520,7 @@ def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, show_pr
                 message_count += 1
                 if show_progress:
                     # TODO - Pick a suitable output format
-                    print("\rCurrent: {0} Count: {1}".format(",".join(list(map("{0:02x}".format, output_payload))),
+                    print("\rCurrent: {0} Index: {1}".format(",".join(list(map("{0:02x}".format, output_payload))),
                                                              message_count), end="")
                     stdout.flush()
                 # Log to file
@@ -618,7 +637,7 @@ def __handle_linear(args):
 
 def __handle_ring_bf(args):
     ring_bf_fuzz(arb_id=args.arb_id, initial_payload=args.payload, payload_bitmap=args.payload_bitmap,
-                 filename=args.file, show_progress=True, show_responses=args.responses)
+                 filename=args.file, start_index=args.start, show_progress=True, show_responses=args.responses)
     print("Brute forcing finished")
 
 
@@ -715,6 +734,7 @@ mutate - Mutates (hex) bits in the given id/payload.
                              help="bitmap as binary string, e.g. 01001101 where '1' is a nibble index to override")
     cmd_ring_bf.add_argument("-file", "-f", default=None, help="log file for cansend directives")
     cmd_ring_bf.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
+    cmd_ring_bf.add_argument("-start", "-s", type=int, default=0, help="start index (for resuming previous session)")
     cmd_ring_bf.set_defaults(func=__handle_ring_bf)
 
     # Mutate
@@ -795,7 +815,6 @@ def module_main(arg_list):
     try:
         # Parse arguments
         args = parse_args(arg_list)
-        print("Press control + c to exit.\n")
         # Call appropriate function
         args.func(args)
     except KeyboardInterrupt:

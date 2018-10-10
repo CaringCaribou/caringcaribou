@@ -7,11 +7,12 @@
 #   2. "composite cansend directive"
 #       A cansend directive split up in its id and payload: [id, payload].
 from __future__ import print_function
-from sys import version_info
+from sys import version_info, stdout
 import argparse
 import random
 import string
 
+from itertools import product
 from lib.can_actions import *
 from time import sleep
 
@@ -36,6 +37,8 @@ MAX_PL_LENGTH = 8
 DEFAULT_SEED_MAX = 2**16
 # Number of sub-lists to split message list into per round in 'replay' mode
 REPLAY_NUMBER_OF_SUB_LISTS = 5
+# Default payload, split into nibbles
+DEFAULT_PAYLOAD = [0x0] * 16
 
 # The characters used to generate random ids/payloads.
 CHARACTERS = string.hexdigits[0: 10] + string.hexdigits[16: 22]
@@ -418,141 +421,98 @@ def replay_file_fuzz(all_composites):
 # ---
 
 
-def reverse_payload(payload):
+def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, show_progress=True, show_responses=True):
     """
-    Reverses a given payload
+    Performs a brute force of selected nibbles (octets) of a payload for a given arbitration ID.
+    Nibble selection is controlled by bool list 'payload_bitmap'.
 
-    :param payload: The payload to be reversed.
-    :return: The reverse of the given payload
+    Example:
+    ring_bf_fuzz(0x123, [0x1, 0x2, 0xA, 0xB], [True, False, False, True])
+    will cause the following messages to be sent:
+
+    0x123#02A0
+    0x123#02A1
+    0x123#02A2
+    (...)
+    0x123#02AF
+    0x123#12A0
+    0x123#12A1
+    (...)
+    0x123#F2AF
+
+    :param arb_id: int arbitration ID
+    :param initial_payload: list of nibbles (ints in interval 0x0-0xF, inclusive)
+    :param payload_bitmap: list of bool values, representing which nibbles of 'initial_payload' to bruteforce
+    :param filename: file to write cansend directives to
+    :param show_progress: bool indicating whether progress should be printed to stdout
+    :param show_responses: bool indicating whether responses should be printed to stdout
     """
-    result = ""
-    for i in range(len(payload) - 1, -1, -1):
-        result += payload[i]
-    return result
+    # Sanity checks
+    if not 2 <= len(initial_payload) <= 16:
+        raise ValueError("Invalid initial payload: must be between 2 and 16 nibbles")
+    if not len(initial_payload) % 2 == 0:
+        raise ValueError("Invalid initial payload: must have an even length")
+    if not len(initial_payload) == len(payload_bitmap):
+        raise ValueError("Payload ({0}) and payload bitmap ({1}) must have the same length".format(len(initial_payload),
+                                                                                                   len(payload_bitmap)))
 
-
-def get_masked_payload(payload_bitmap, payload, length=MAX_PAYLOAD_LENGTH):
-    """
-    Gets a masked payload.
-
-    :param payload: The original payload.
-    :param payload_bitmap: Bitmap that specifies what (hex) bits need to be used in the new payload. A 0 is a mask.
-    :param length: The length of the payload.
-    :return: Returns a new payload where all but the bits specified in the payload_bitmap are masked.
-    """
-    for i in range(length - len(payload_bitmap)):
-        payload_bitmap.append(True)
-
-    old_payload = payload + "1" * (length - len(payload))
-    new_payload = ""
-
-    for i in range(len(payload_bitmap)):
-        if payload_bitmap[i]:
-            new_payload += old_payload[i]
-
-    return new_payload
-
-
-def merge_masked_payload_with_payload(masked_payload, payload, payload_bitmap):
-    """
-    Merges a masked payload with a normal payload using the bitmap that masked the masked payload.
-
-    :param payload_bitmap: Bitmap that specifies what (hex) bits need to be used in the new payload. A 0 is a mask.
-    :param masked_payload: The payload that was masked using the given bitmap.
-    :param payload: The normal payload.
-    :return: A payload that is the result of merging the masked and normal payloads.
-    """
-    new_payload = ""
-    counter = 0
-    for i in range(len(payload)):
-        if i >= len(payload_bitmap) or not payload_bitmap[i]:
-            new_payload += payload[i]
-        elif payload_bitmap[i]:
-            new_payload += masked_payload[counter]
-            counter += 1
-    return new_payload
-
-
-def get_next_bf_payload(last_payload):
-    """
-    Gets the next brute force payload.
-    This method uses a ring method to get the next payload.
-    For example: 0001 -> 0002 and 000F -> 0010
-
-    :param last_payload: The last payload that was used.
-    :return: Returns the next brute force payload to be used.
-    """
-    # Find the most inner ring.
-    ring = len(last_payload) - 1
-    while last_payload[ring] == "F":
-        ring -= 1
-        if ring < 0:
-            raise OverflowError
-
-    if ring < 0:
-        return last_payload
-
-    # Get the position of the character at the position ring in the last payload in CHARACTERS.
-    i = CHARACTERS.find(last_payload[ring])
-    # Construct the next payload.
-    # First keep all the unchanged characters, then add the incremented character,
-    # set all the remaining characters to 0.
-    payload = last_payload[: ring] + CHARACTERS[(i + 1) % len(CHARACTERS)] + "0" * (len(last_payload) - 1 - ring)
-
-    return payload
-
-
-def ring_bf_fuzz(arb_id, initial_payload=ZERO_PAYLOAD, payload_bitmap=None, filename=None,
-                 length=MAX_PAYLOAD_LENGTH):
-    """
-    A simple brute force fuzzer algorithm.
-    Attempts to brute force a static id using a ring based brute force algorithm.
-    Uses CanActions to send/receive from the CAN bus.
-
-    :param arb_id: The arbitration id to use.
-    :param payload_bitmap: A bitmap that specifies what bits should be brute-forced.
-    :param initial_payload: The initial payload from where to start brute forcing.
-    :param filename: The file where the cansend directives should be written to.
-    :param length: The length of the payload.
-    """
-    # Define a callback function which will handle incoming messages
     def response_handler(msg):
-        print("Directive: " + arb_id + "#" + send_payload)
-        print("  Received Message: " + str(msg))
+        if msg.arbitration_id != arb_id or list(msg.data) != output_payload:
+            response_directive = directive_str(msg.arbitration_id, msg.data)
+            print("  Received {0}".format(response_directive))
 
-    # Set payload to the part of initial_payload that will be used internally.
-    # The internal payload is the reverse of the relevant part of the send payload.
-    # Initially, no mask must be applied.
-    internal_masked_payload = reverse_payload(initial_payload[: length + 1])
+    number_of_nibbles = len(payload_bitmap)
+    number_of_nibbles_to_bruteforce = len([i for i in range(number_of_nibbles) if payload_bitmap[i]])
+    # Initialize fuzzed nibble generator
+    nibble_values = range(0xF + 1)
+    fuzz_data = product(nibble_values, repeat=number_of_nibbles_to_bruteforce)
 
-    # manually send first payload
-    send_payload = reverse_payload(internal_masked_payload)
-    directive_send(arb_id, send_payload, response_handler)
+    file_logging_enabled = filename is not None
+    output_file = None
+    output_payload = []
+    try:
+        if file_logging_enabled:
+            output_file = open(filename, "a")
+        with CanActions(arb_id=arb_id) as can_wrap:
+            if show_responses:
+                can_wrap.add_listener(response_handler)
+            message_count = 0
+            for current_fuzzed_nibbles in fuzz_data:
+                fuzz_index = 0
+                output_payload = []
 
-    while internal_masked_payload != "F" * length:
-        if payload_bitmap is not None:
-            # Sets up a new internal masked payload out of the last send payload, then reverse it for internal use.
-            internal_masked_payload = reverse_payload(get_masked_payload(payload_bitmap, send_payload, length=length))
+                for index in range(0, number_of_nibbles, 2):
+                    if payload_bitmap[index]:
+                        high_nibble = current_fuzzed_nibbles[fuzz_index]
+                        fuzz_index += 1
+                    else:
+                        high_nibble = initial_payload[index]
 
-        # Get the actual next internal masked payload. If the ring overflows, brute forcing is finished.
-        try:
-            internal_masked_payload = get_next_bf_payload(internal_masked_payload)
-        except OverflowError:
-            return
+                    if payload_bitmap[index + 1]:
+                        low_nibble = current_fuzzed_nibbles[fuzz_index]
+                        fuzz_index += 1
+                    else:
+                        low_nibble = initial_payload[index + 1]
 
-        if payload_bitmap is not None:
-            # To get the new send payload, merge the reversed internal masked payload with the last send payload.
-            send_payload = merge_masked_payload_with_payload(reverse_payload(internal_masked_payload),
-                                                             send_payload, payload_bitmap)
-        else:
-            # If there is no bitmap, no merge needs to occur.
-            send_payload = reverse_payload(internal_masked_payload)
+                    current_byte = (high_nibble << 4) + low_nibble
+                    output_payload.append(current_byte)
 
-        directive_send(arb_id, send_payload, response_handler)
-
-        if filename is not None:
-            write_directive_to_file(filename, arb_id, send_payload)
-
+                can_wrap.send(output_payload)
+                message_count += 1
+                if show_progress:
+                    # TODO - Pick a suitable output format
+                    print("\rCurrent: {0} Count: {1}".format(",".join(list(map("{0:02x}".format, output_payload))),
+                                                             message_count), end="")
+                    stdout.flush()
+                # Log to file
+                if file_logging_enabled:
+                    write_directive_to_file_handle(output_file, arb_id, output_payload)
+                sleep(CALLBACK_HANDLER_DURATION)
+            if show_progress:
+                print()
+    finally:
+        if output_file is not None:
+            output_file.close()
 
 # --- [6]
 # Methods that handle mutation fuzzing.
@@ -657,12 +617,9 @@ def __handle_linear(args):
 
 
 def __handle_ring_bf(args):
-    payload = args.payload
-    if payload is None:
-        payload = ZERO_PAYLOAD
-
-    ring_bf_fuzz(arb_id=args.arb_id, initial_payload=payload, payload_bitmap=args.payload_bitmap, filename=args.file)
-    print("Brute forcing finished.")
+    ring_bf_fuzz(arb_id=args.arb_id, initial_payload=args.payload, payload_bitmap=args.payload_bitmap,
+                 filename=args.file, show_progress=True, show_responses=args.responses)
+    print("Brute forcing finished")
 
 
 def __handle_mutate(args):
@@ -753,10 +710,11 @@ mutate - Mutates (hex) bits in the given id/payload.
     # Ring based bruteforce
     cmd_ring_bf = subparsers.add_parser("ring_bf")
     cmd_ring_bf.add_argument("arb_id", help="arbitration ID")
-    cmd_ring_bf.add_argument("-payload", "-p", default=ZERO_PAYLOAD, help="force payload (hex string, e.g. FFFFFFFF)")
-    cmd_ring_bf.add_argument("-payload_bitmap", "-pb", help="force payload bitmap (binary string, e.g. 0100 where "
-                                                            "'1' is a digit that can be overridden)")
-    cmd_ring_bf.add_argument("-file", "-f", default=None, help="directive file to replay")
+    cmd_ring_bf.add_argument("-payload", "-p", default=None, help="payload as hex string, e.g. 0011223344ABCDEF")
+    cmd_ring_bf.add_argument("-payload_bitmap", "-pb", default=None,
+                             help="bitmap as binary string, e.g. 01001101 where '1' is a nibble index to override")
+    cmd_ring_bf.add_argument("-file", "-f", default=None, help="log file for cansend directives")
+    cmd_ring_bf.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
     cmd_ring_bf.set_defaults(func=__handle_ring_bf)
 
     # Mutate
@@ -779,24 +737,50 @@ mutate - Mutates (hex) bits in the given id/payload.
     if "arb_id" in args and args.arb_id is not None:
         args.arb_id = int_from_str_base(args.arb_id)
 
-    if "payload" in args and args.payload is not None and \
-            (len(args.payload) % 2 != 0 or len(args.payload) > MAX_PAYLOAD_LENGTH):
-        raise ValueError
+    # Parse payload as a str consisting of hexadecimal nibbles
+    if "payload" in args:
+        if args.payload is None:
+            default_payload = DEFAULT_PAYLOAD
+            args.payload = default_payload
+        else:
+            payload_ints = []
+            for nibble_str in args.payload:
+                nibble_int = int(nibble_str, 16)
+                payload_ints.append(nibble_int)
+            args.payload = payload_ints
+
+    def bitmap_str_to_bool_list(bitmap_str):
+        """
+        Converts a bitmap str to a corresponding bool array. Example:
+
+        bitmap_str_to_bool_list('10110') => [True, False, True, True, False]
+
+        :param bitmap_str: Binary string
+        :return: list of bool values
+        """
+        bool_bitmap = []
+        for bit in bitmap_str:
+            if bit == "0":
+                bool_bitmap.append(False)
+            elif bit == "1":
+                bool_bitmap.append(True)
+            else:
+                raise ValueError("Invalid character '{0}' in bitmap '{1}' (should be '0' or '1')".format(bit,
+                                                                                                         bitmap_str))
+        return bool_bitmap
 
     if "id_bitmap" in args and args.id_bitmap is not None:
         if len(args.id_bitmap) > MAX_ID_LENGTH:
             raise ValueError
-        bitmap = [None] * len(args.id_bitmap)
-        for i in range(len(args.id_bitmap)):
-            bitmap[i] = string_to_bool(args.id_bitmap[i])
-        args.id_bitmap = bitmap
+        bitmap = bitmap_str_to_bool_list(args.id_bitmap)
+        args.payload_bitmap = bitmap
 
     if "payload_bitmap" in args and args.payload_bitmap is not None:
-        if len(args.payload_bitmap) > MAX_PAYLOAD_LENGTH:
-            raise ValueError
-        bitmap = [None] * len(args.payload_bitmap)
-        for i in range(len(args.payload_bitmap)):
-            bitmap[i] = string_to_bool(args.payload_bitmap[i])
+        pb_length = len(args.payload_bitmap)
+        if pb_length > MAX_PAYLOAD_LENGTH:
+            raise ValueError("Payload bitmap is too long ({0} characters, max allowed: {1})".format(pb_length,
+                                                                                                    MAX_PAYLOAD_LENGTH))
+        bitmap = bitmap_str_to_bool_list(args.payload_bitmap)
         args.payload_bitmap = bitmap
 
     return args

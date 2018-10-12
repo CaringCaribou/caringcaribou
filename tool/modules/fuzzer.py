@@ -39,21 +39,15 @@ DEFAULT_SEED_MAX = 2**16
 REPLAY_NUMBER_OF_SUB_LISTS = 5
 # Default payload, split into nibbles
 DEFAULT_PAYLOAD = [0x0] * 16
+# Default arbitration ID, split into nibbles
+DEFAULT_ARB_ID = [0x0] * 4
 
-# The characters used to generate random ids/payloads.
-CHARACTERS = string.hexdigits[0: 10] + string.hexdigits[16: 22]
-# The leading value in a can id is a value between 0 and 7.
-LEAD_ID_CHARACTERS = string.digits[0: 8]
 # The max length of an id.
 # Do note that the fuzzer by default works with an id of length 3.
 # It thus does not use extended can ids by default
 MAX_ID_LENGTH = 4
 # The max length of a payload.
 MAX_PAYLOAD_LENGTH = 16
-# An extended arbitration id consisting only of zeros.
-ZERO_ARB_ID = "0" * MAX_ID_LENGTH
-# A payload consisting only of zeros.
-ZERO_PAYLOAD = "0" * MAX_PAYLOAD_LENGTH
 
 
 def directive_send(arb_id, payload, response_handler, can_wrap):
@@ -184,6 +178,63 @@ def parse_directive(directive):
     data_str = segments[1]
     data = [int(data_str[i:i+2], 16) for i in range(0, len(data_str), 2)]
     return arb_id, data
+
+
+def apply_fuzzed_data(initial_data, fuzzed_nibbles, bitmap):
+    """
+    Applies 'fuzzed_nibbles' on top of 'initial_data', for all indices where 'bitmap' is True.
+    Returns result as a list of bytes.
+
+    Example:
+    apply_fuzzed_data([0x2, 0x4, 0xA, 0xB], [0x5, 0xF], [False, True, True, False])
+    gives the following result:
+    [0x25, 0xFB]
+
+    :param initial_data: list of initial data nibbles
+    :param fuzzed_nibbles: list of nibbles to apply
+    :param bitmap: list of bool values, indicating where to apply fuzzed nibbles
+    :return: list of bytes
+    """
+    fuzz_index = 0
+    result_bytes = []
+    for index in range(0, len(bitmap), 2):
+        # Apply fuzzed nibbles on top of initial payload
+        if bitmap[index]:
+            high_nibble = fuzzed_nibbles[fuzz_index]
+            fuzz_index += 1
+        else:
+            high_nibble = initial_data[index]
+
+        if bitmap[index + 1]:
+            low_nibble = fuzzed_nibbles[fuzz_index]
+            fuzz_index += 1
+        else:
+            low_nibble = initial_data[index + 1]
+
+        current_byte = (high_nibble << 4) + low_nibble
+        result_bytes.append(current_byte)
+    return result_bytes
+
+
+def nibbles_to_bytes(nibbles):
+    """
+    Converts a list of nibbles into a list of corresponding bytes.
+
+    Example:
+    nibbles_to_bytes([0x2, 0x1, 0xF, 0xA, 0x3, 0xC])
+    gives
+    [0x21, 0xFA, 0x3C]
+
+    :param nibbles: list of nibble values
+    :return: list of int values (bytes)
+    """
+    result_bytes = []
+    for index in range(0, len(nibbles), 2):
+        high_nibble = nibbles[index]
+        low_nibble = nibbles[index + 1]
+        current_byte = (high_nibble << 4) + low_nibble
+        result_bytes.append(current_byte)
+    return result_bytes
 
 
 # --- [2]
@@ -424,7 +475,7 @@ def replay_file_fuzz(all_composites):
 def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, start_index=0,
                  show_progress=True, show_responses=True):
     """
-    Performs a brute force of selected nibbles (octets) of a payload for a given arbitration ID.
+    Performs a brute force of selected nibbles of a payload for a given arbitration ID.
     Nibble selection is controlled by bool list 'payload_bitmap'.
 
     Example:
@@ -458,7 +509,6 @@ def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, start_i
         raise ValueError("Payload ({0}) and payload bitmap ({1}) must have the same length".format(len(initial_payload),
                                                                                                    len(payload_bitmap)))
 
-    number_of_nibbles = len(payload_bitmap)
     number_of_nibbles_to_bruteforce = sum(payload_bitmap)
     end_index = 16 ** number_of_nibbles_to_bruteforce
 
@@ -493,29 +543,9 @@ def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, start_i
                 if message_count < start_index:
                     message_count += 1
                     continue
-
-                fuzz_index = 0
-                output_payload = []
-
-                for index in range(0, number_of_nibbles, 2):
-                    if message_count < start_index:
-                        continue
-                    # Apply fuzzed nibbles on top of initial payload
-                    if payload_bitmap[index]:
-                        high_nibble = current_fuzzed_nibbles[fuzz_index]
-                        fuzz_index += 1
-                    else:
-                        high_nibble = initial_payload[index]
-
-                    if payload_bitmap[index + 1]:
-                        low_nibble = current_fuzzed_nibbles[fuzz_index]
-                        fuzz_index += 1
-                    else:
-                        low_nibble = initial_payload[index + 1]
-
-                    current_byte = (high_nibble << 4) + low_nibble
-                    output_payload.append(current_byte)
-
+                # Apply fuzzed data to payload
+                output_payload = apply_fuzzed_data(initial_payload, current_fuzzed_nibbles, payload_bitmap)
+                # Send payload
                 can_wrap.send(output_payload)
                 message_count += 1
                 if show_progress:
@@ -538,86 +568,101 @@ def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, start_i
 # ---
 
 
-def get_mutated_id(arb_id, arb_id_bitmap):
+def pad_to_even_length(original_list, padding=0x0):
     """
-    Gets a mutated arbitration id.
+    Prepends 'padding' to 'original_list' if its length is uneven.
 
-    :param arb_id: The original arbitration id.
-    :param arb_id_bitmap: Specifies what (hex) bits need to be mutated in the arbitration id.
-    :return: Returns a mutated arbitration id.
+    Examples:
+    pad_to_even_length([1, 2, 3]) gives [0, 1, 2, 3]
+    pad_to_even_length([1, 2]) gives [1, 2]
+
+    :param original_list: list of elements
+    :param padding: element to prepend
+    :return: list of even length
     """
-    for i in range(MAX_ID_LENGTH - len(arb_id_bitmap)):
-        arb_id_bitmap.append(True)
-
-    old_arb_id = "0" * (MAX_ID_LENGTH - len(arb_id)) + arb_id
-    new_arb_id = ""
-
-    for i in range(len(arb_id_bitmap)):
-        if arb_id_bitmap[i] and i == 0:
-            new_arb_id += random.choice(LEAD_ID_CHARACTERS)
-        elif arb_id_bitmap[i]:
-            new_arb_id += random.choice(CHARACTERS)
-        else:
-            new_arb_id += old_arb_id[i]
-
-    for j in range(MAX_ID_LENGTH - len(arb_id_bitmap)):
-        new_arb_id += old_arb_id[len(arb_id_bitmap) + j]
-    return new_arb_id
+    if len(original_list) % 2 == 1:
+        original_list.insert(0, padding)
+    return original_list
 
 
-def get_mutated_payload(payload, payload_bitmap):
+def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, filename=None, show_status=True,
+                show_responses=False, seed=None):
     """
-    Gets a mutated payload.
+    Performs mutation based fuzzing of selected nibbles of a given arbitration ID and payload.
+    Nibble selection is controlled by bool lists 'arb_id_bitmap' and 'payload_bitmap'.
 
-    :param payload: The original payload.
-    :param payload_bitmap: Specifies what (hex) bits need to be mutated in the payload.
-    :return: Returns a mutated payload.
+    :param initial_arb_id: list of nibbles (ints in interval 0x0-0xF, inclusive)
+    :param initial_payload: list of nibbles (ints in interval 0x0-0xF, inclusive)
+    :param arb_id_bitmap: list of bool values, representing which nibbles of 'initial_arb_id' to bruteforce
+    :param payload_bitmap: list of bool values, representing which nibbles of 'initial_payload' to bruteforce
+    :param filename: file to write cansend directives to
+    :param show_status: bool indicating whether current message and counter should be printed to stdout
+    :param show_responses: bool indicating whether responses should be printed to stdout
+    :param seed: use given seed instead of random seed
     """
-    for i in range(MAX_PAYLOAD_LENGTH - len(payload_bitmap)):
-        payload_bitmap.append(True)
+    # TODO sanity checks
 
-    old_payload = payload + "1" * (MAX_PAYLOAD_LENGTH - len(payload))
-    new_payload = ""
+    # Seed handling
+    set_seed(seed)
 
-    for i in range(len(payload_bitmap)):
-        if payload_bitmap[i]:
-            new_payload += random.choice(CHARACTERS)
-        else:
-            new_payload += old_payload[i]
+    # Apply padding if needed
+    initial_arb_id = pad_to_even_length(initial_arb_id)
+    initial_payload = pad_to_even_length(initial_payload)
+    # FIXME Pad to length of arb_id and payload?
+    arb_id_bitmap = pad_to_even_length(arb_id_bitmap)
+    payload_bitmap = pad_to_even_length(payload_bitmap)
 
-    for j in range(MAX_PAYLOAD_LENGTH - len(payload_bitmap)):
-        new_payload += old_payload[len(payload_bitmap) + j]
-    return new_payload
-
-
-def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, filename=None):
-    """
-    A simple mutation based fuzzer algorithm.
-    Mutates (hex) bits in the given id/payload.
-    The mutation bits are specified in the id/payload bitmaps.
-    The mutations are random values.
-    Uses CanActions to send/receive from the CAN bus.
-
-    :param initial_arb_id: The initial arbitration id to use.
-    :param initial_payload: The initial payload to use.
-    :param arb_id_bitmap: Specifies what (hex) bits need to be mutated in the arbitration id.
-    :param payload_bitmap: Specifies what (hex) bits need to be mutated in the payload.
-    :param filename: The file where the cansend directives should be written to.
-    """
-    # Define a callback function which will handle incoming messages
     def response_handler(msg):
-        print("Directive: " + arb_id + "#" + payload)
-        print("  Received Message: " + str(msg))
+        # Callback handler for printing incoming messages
+        if msg.arbitration_id != arb_id or list(msg.data) != payload:
+            response_directive = directive_str(msg.arbitration_id, msg.data)
+            print("  Received {0}".format(response_directive))
 
-    # payload_bitmap = [False, False, True, True, False, False, False, False]
-    while True:
-        arb_id = get_mutated_id(initial_arb_id, arb_id_bitmap)
-        payload = get_mutated_payload(initial_payload, payload_bitmap)
+    number_of_nibbles_to_fuzz_arb_id = sum(arb_id_bitmap)
+    number_of_nibbles_to_fuzz_payload = sum(payload_bitmap)
 
-        directive_send(arb_id, payload, response_handler)
+    file_logging_enabled = filename is not None
+    output_file = None
+    arb_id = int_from_byte_list(nibbles_to_bytes(initial_arb_id))
+    payload = nibbles_to_bytes(initial_payload)
 
-        if filename is not None:
-            write_directive_to_file(filename, arb_id, payload)
+    try:
+        if file_logging_enabled:
+            output_file = open(filename, "a")
+        with CanActions(arb_id=arb_id) as can_wrap:
+            if show_responses:
+                can_wrap.add_listener(response_handler)
+            message_count = 0
+            while True:
+                if number_of_nibbles_to_fuzz_arb_id > 0:
+                    # Mutate arbitration ID
+                    fuzzed_nibbles_arb_id = [random.randint(0, 0xF) for _ in range(number_of_nibbles_to_fuzz_arb_id)]
+                    arb_id_bytes = apply_fuzzed_data(initial_arb_id, fuzzed_nibbles_arb_id, arb_id_bitmap)
+                    arb_id = int_from_byte_list(arb_id_bytes)
+
+                if number_of_nibbles_to_fuzz_payload > 0:
+                    # Mutate payload
+                    fuzzed_nibbles_payload = [random.randint(0, 0xF) for _ in range(number_of_nibbles_to_fuzz_payload)]
+                    payload = apply_fuzzed_data(initial_payload, fuzzed_nibbles_payload, payload_bitmap)
+
+                if show_status:
+                    print("\rSending {0:04x}#{1} ({2})".format(arb_id, " ".join(list(map("{0:02x}".format, payload))),
+                                                               message_count), end="")
+                    stdout.flush()
+                    
+                can_wrap.send(payload, arb_id)
+                message_count += 1
+
+                # Log to file
+                if file_logging_enabled:
+                    write_directive_to_file_handle(output_file, arb_id, payload)
+                sleep(CALLBACK_HANDLER_DURATION)
+    except KeyboardInterrupt:
+        if show_status:
+            print()
+    finally:
+        if output_file is not None:
+            output_file.close()
 
 
 # --- [7]
@@ -642,12 +687,6 @@ def __handle_ring_bf(args):
 
 
 def __handle_mutate(args):
-    if args.arb_id is None:
-        args.arb_id = ZERO_PAYLOAD
-
-    if args.payload is None:
-        args.payload = ZERO_PAYLOAD
-
     if args.id_bitmap is None:
         args.id_bitmap = [True] * (MAX_ID_LENGTH - 1)
         args.id_bitmap.insert(0, False)  # By default, don't mutate on extended can ids
@@ -656,7 +695,7 @@ def __handle_mutate(args):
         args.payload_bitmap = [True] * MAX_PAYLOAD_LENGTH
 
     mutate_fuzz(initial_payload=args.payload, initial_arb_id=args.arb_id, arb_id_bitmap=args.id_bitmap,
-                payload_bitmap=args.payload_bitmap, filename=args.file)
+                payload_bitmap=args.payload_bitmap, filename=args.file, show_responses=args.responses, seed=args.seed)
 
 
 def __handle_replay(args):
@@ -739,13 +778,13 @@ mutate - Mutates (hex) bits in the given id/payload.
 
     # Mutate
     cmd_mutate = subparsers.add_parser("mutate")
-    cmd_mutate.add_argument("-arb_id", default=ZERO_ARB_ID, help="")
-    cmd_mutate.add_argument("-payload", default=ZERO_PAYLOAD, help="")
-    cmd_mutate.add_argument("-id_bitmap", "-ib", help="force arbitration ID bitmap (binary string, e.g. 0100 where "
-                                                      "'1' is a digit that can be overridden)")
-    cmd_mutate.add_argument("-payload_bitmap", "-pb", help="force payload bitmap (binary string, e.g. 0100 where "
-                                                           "'1' is a digit that can be overridden)")
+    cmd_mutate.add_argument("-arb_id", default=None, help="initial arbitration ID")
+    cmd_mutate.add_argument("-id_bitmap", "-ib", metavar="BM", help="arbitration ID bitmap as binary string")
+    cmd_mutate.add_argument("-payload", "-p", default=None, help="initial payload as hex string, e.g. 0011223344ABCDEF")
+    cmd_mutate.add_argument("-payload_bitmap", "-pb", metavar="PB", help="payload bitmap as binary string")
+    cmd_mutate.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
     cmd_mutate.add_argument("-file", "-f", default=None, help="log file for cansend directives")
+    cmd_mutate.add_argument("-seed", "-s", metavar="S", default=None, help="set random seed")
     cmd_mutate.set_defaults(func=__handle_mutate)
 
     args = parser.parse_args(args)
@@ -753,15 +792,21 @@ mutate - Mutates (hex) bits in the given id/payload.
     # Process specific argument logic
     # TODO Rewrite wrapper logic for custom formats
 
-    # Parse arbitration ID as int
-    if "arb_id" in args and args.arb_id is not None:
-        args.arb_id = int_from_str_base(args.arb_id)
+    # Parse arbitration ID into list of nibble int values
+    if "arb_id" in args:
+        if args.arb_id is None:
+            args.arb_id = DEFAULT_ARB_ID
+        else:
+            arb_id_ints = []
+            for nibble_str in args.arb_id:
+                nibble_int = int(nibble_str, 16)
+                arb_id_ints.append(nibble_int)
+            args.arb_id = arb_id_ints
 
-    # Parse payload as a str consisting of hexadecimal nibbles
+    # Parse payload into list of nibble int values
     if "payload" in args:
         if args.payload is None:
-            default_payload = DEFAULT_PAYLOAD
-            args.payload = default_payload
+            args.payload = DEFAULT_PAYLOAD
         else:
             payload_ints = []
             for nibble_str in args.payload:
@@ -793,7 +838,7 @@ mutate - Mutates (hex) bits in the given id/payload.
         if len(args.id_bitmap) > MAX_ID_LENGTH:
             raise ValueError
         bitmap = bitmap_str_to_bool_list(args.id_bitmap)
-        args.payload_bitmap = bitmap
+        args.id_bitmap = bitmap
 
     if "payload_bitmap" in args and args.payload_bitmap is not None:
         pb_length = len(args.payload_bitmap)

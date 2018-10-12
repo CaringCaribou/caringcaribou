@@ -52,7 +52,7 @@ def str_to_int_list(s):
     return [int(s[i * 2:i * 2 + 2], 16) for i in range(len(s) / 2)]
 
 
-def int_from_byte_list(byte_values, start_index, length):
+def int_from_byte_list(byte_values, start_index=0, length=None):
     """
     Parses a range of unsigned-up-to-8-bit-ints (bytes) from a list into a single int
 
@@ -63,6 +63,8 @@ def int_from_byte_list(byte_values, start_index, length):
     :param length: Number of bytes to parse
     :return: int of parsed bytes
     """
+    if length is None:
+        length = len(byte_values)
     value = 0
     for i in (range(start_index, start_index+length)):
         value = value << 8

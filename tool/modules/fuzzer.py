@@ -1,16 +1,7 @@
-# fuzzer.py
-#
-# Dictionary:
-#   1.  "cansend directive"
-#       A string that follows the formatting of (for example): "123#FFFFFFFF".
-#       This is similar to the arguments one would pass to the cansend command line tool (part of can-util).
-#   2. "composite cansend directive"
-#       A cansend directive split up in its id and payload: [id, payload].
 from __future__ import print_function
 from sys import version_info, stdout
 import argparse
 import random
-import string
 
 from itertools import product
 from lib.can_actions import *
@@ -21,11 +12,6 @@ from time import sleep
 if version_info[0] == 2:
     range = xrange
     input = raw_input
-
-
-# --- [0]
-# Static variable definitions and generic methods
-# ---
 
 
 # Number of seconds to wait between messages
@@ -48,43 +34,6 @@ DEFAULT_ARB_ID = [0x0] * 4
 MAX_ID_LENGTH = 4
 # The max length of a payload.
 MAX_PAYLOAD_LENGTH = 16
-
-
-def directive_send(arb_id, payload, response_handler, can_wrap):
-    """
-    Sends a cansend directive.
-
-    :param arb_id: The destination arbitration id.
-    :param payload: The payload to be sent.
-    :param response_handler: The callback handler that needs to be called when a response message is received.
-    :param can_wrap: CanActions instance used to send message
-    """
-    arb_id = "0x" + arb_id  # FIXME auto-prefix should be removed to use default behavior
-    send_msg = payload_to_str_base(payload)
-    arb_id = int_from_str_base(arb_id)
-    # Send the message on the CAN bus and register a callback
-    # handler for incoming messages
-    msg_list = list_int_from_str_base(send_msg)
-    can_wrap.set_listener(response_handler)
-    can_wrap.send(msg_list, arb_id)
-    # Letting callback handler be active for CALLBACK_HANDLER_DURATION seconds
-    sleep(CALLBACK_HANDLER_DURATION)
-    # can_wrap.clear_listeners()
-
-
-def write_directive_to_file(filename, arb_id, payload):
-    """
-    Writes a cansend directive to a file.
-
-    :param filename: The filename of the file to write to.
-    :param arb_id: The arbitration id of the cansend directive.
-    :param payload: The payload of the cansend directive.
-    """
-    fd = open(filename, "a")
-    try:
-        fd.write(arb_id + "#" + payload + "\n")
-    finally:
-        fd.close()
 
 
 def directive_str(arb_id, payload):
@@ -113,6 +62,11 @@ def write_directive_to_file_handle(file_handle, arb_id, payload):
 
 
 def set_seed(seed=None):
+    """
+    Seeds the PRNG with 'seed'. If this is None, a seed is pulled from the PRNG instead.
+
+    :param seed: int to use for seeding
+    """
     if seed is None:
         seed = random.randint(0, DEFAULT_SEED_MAX)
     else:
@@ -121,49 +75,62 @@ def set_seed(seed=None):
     random.seed(seed)
 
 
-# --- [1]
-# Converter methods
-# ---
-
-
-def list_int_from_str_base(line):
+def hex_str_to_nibble_list(data):
     """
-    Converts a given string to its list int representation.
-    Uses CaringCaribou's int_from_str_base implementation.
+    Converts a hexadecimal str values into a list of int nibbles.
 
-    :param line: A given string that follows the format of (for example): "0xFF 0xFF 0xFF 0xFF".
-    :return: Returns a list of ints representing the values in the string.
-             For example: [0xFF, 0xFF, 0xFF, 0xFF] (with 0xFF in its int representation).
+    Example:
+    hex_str_to_nibble_list("12ABF7")
+    gives
+    [0x1, 0x2, 0xA, 0xB, 0xF, 0x7]
+
+    :param data: str of hexadecimal values
+    :return: list of int nibbles
     """
-    temp = line.split()
-    for i in range(len(temp)):
-        temp[i] = int_from_str_base(temp[i])
-    return temp
+    if data is None:
+        return None
+    data_ints = []
+    for nibble_str in data:
+        nibble_int = int(nibble_str, 16)
+        data_ints.append(nibble_int)
+    return data_ints
 
 
-def payload_to_str_base(payload):
+def bitmap_str_to_bool_list(bitmap_str):
     """
-    Converts a given payload to its str_base representation.
-    A str_base payload is for example: "0xFF 0xFF 0xFF 0xFF".
+    Converts a bitmap str to a corresponding bool array.
 
-    :param payload: The payload to be converted.
-    :return: Returns the str_base representation of the payload.
+    Example:
+    bitmap_str_to_bool_list('10110') => [True, False, True, True, False]
+
+    :param bitmap_str: Binary string
+    :return: list of bool values
     """
-    result = ""
-    for i in range(0, len(payload), 2):
-        result += "0x" + payload[i] + payload[i + 1] + " "
-    result = result[:len(result) - 1]
-    return result
+    bool_bitmap = []
+    for bit in bitmap_str:
+        if bit == "0":
+            bool_bitmap.append(False)
+        elif bit == "1":
+            bool_bitmap.append(True)
+        else:
+            raise ValueError("Invalid character '{0}' in bitmap '{1}' (should be '0' or '1')".format(
+                bit, bitmap_str))
+    return bool_bitmap
 
 
-def string_to_bool(value):
+def payload_to_str(payload):
     """
-    Converts a given string to a boolean.
+    Returns a str representation of 'payload'
 
-    :param value:
-    :return: False if value.upper() == "FALSE" or value == "0" or value == "" else True
+    Example:
+    payload_to_str([0x12, 0xFC, 0xA7]
+    gives
+    "12 fc a7"
+
+    :param payload: list of int byte values
+    :return: str representing payload
     """
-    return False if value.upper() == "FALSE" or value == "0" or value == "" else True
+    return " ".join(list(map("{0:02x}".format, payload)))
 
 
 def parse_directive(directive):
@@ -237,11 +204,6 @@ def nibbles_to_bytes(nibbles):
     return result_bytes
 
 
-# --- [2]
-# Methods that handle random fuzzing.
-# ---
-
-
 def get_random_arbitration_id(min_id, max_id):
     """
     Returns an arbitration ID in the range min_id <= arb_id <= max_id
@@ -255,6 +217,12 @@ def get_random_arbitration_id(min_id, max_id):
 
 
 def get_random_payload_data(min_length, max_length):
+    """
+    Generates a random payload, whose length lies in the interval 'min_length' to 'max_length'
+    :param min_length: int minimum length
+    :param max_length: int maximum length
+    :return: list of randomized bytes
+    """
     # Decide number of bytes to generate
     payload_length = random.randint(min_length, max_length)
     # Generate random bytes
@@ -266,7 +234,7 @@ def get_random_payload_data(min_length, max_length):
 
 
 def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION_ID_MIN, max_id=ARBITRATION_ID_MAX,
-                min_payload_length=MIN_PL_LENGTH, max_payload_length=MAX_PL_LENGTH, seed=None):
+                min_payload_length=MIN_PL_LENGTH, max_payload_length=MAX_PL_LENGTH, show_status=True, seed=None):
     """
     A simple random fuzzer algorithm, which sends random or static CAN payloads to random or static arbitration IDs
 
@@ -277,6 +245,7 @@ def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION
     :param max_id: maximum allowed arbitration ID
     :param min_payload_length: minimum allowed payload length
     :param max_payload_length: maximum allowed payload length
+    :param show_status: bool indicating whether current message and counter should be printed to stdout
     :param seed: use given seed instead of random seed
     """
     # Sanity checks
@@ -305,6 +274,7 @@ def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION
         with CanActions() as can_wrap:
             # Register callback handler for incoming messages
             can_wrap.add_listener(response_handler)
+            message_count = 0
             # Fuzzing logic
             while True:
                 # Set arbitration ID
@@ -321,8 +291,13 @@ def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION
                 else:
                     payload = static_payload
 
+                if show_status:
+                    print("\rMessages sent: {0}".format(message_count), end="")
+                    stdout.flush()
+
                 # Send message
                 can_wrap.send(data=payload, arb_id=arb_id)
+                message_count += 1
                 sleep(CALLBACK_HANDLER_DURATION)
 
                 # Log to file
@@ -331,10 +306,6 @@ def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION
     finally:
         if output_file is not None:
             output_file.close()
-
-# --- [3]
-# Methods that handle linear fuzzing.
-# ---
 
 
 def linear_file_fuzz(filename):
@@ -362,11 +333,7 @@ def linear_file_fuzz(filename):
                     arb_id, payload = parse_directive(directive)
                     can_wrap.send(data=payload, arb_id=arb_id)
                     sleep(CALLBACK_HANDLER_DURATION)
-
-
-# --- [4]
-# Methods that handle replay fuzzing.
-# ---
+    print("Linear fuzz finished")
 
 
 def split_composites(composites, pieces):
@@ -467,11 +434,6 @@ def replay_file_fuzz(all_composites):
             return None
 
 
-# --- [5]
-# Methods that handle brute force fuzzing.
-# ---
-
-
 def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, start_index=0,
                  show_progress=True, show_responses=True):
     """
@@ -549,9 +511,7 @@ def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, start_i
                 can_wrap.send(output_payload)
                 message_count += 1
                 if show_progress:
-                    # TODO - Pick a suitable output format
-                    print("\rCurrent: {0} Index: {1}".format(",".join(list(map("{0:02x}".format, output_payload))),
-                                                             message_count), end="")
+                    print("\rCurrent: {0} Index: {1}".format(payload_to_str(output_payload), message_count), end="")
                     stdout.flush()
                 # Log to file
                 if file_logging_enabled:
@@ -562,10 +522,8 @@ def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, start_i
     finally:
         if output_file is not None:
             output_file.close()
-
-# --- [6]
-# Methods that handle mutation fuzzing.
-# ---
+    if show_progress:
+        print("Brute force finished")
 
 
 def pad_to_even_length(original_list, padding=0x0):
@@ -600,15 +558,12 @@ def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, 
     :param show_responses: bool indicating whether responses should be printed to stdout
     :param seed: use given seed instead of random seed
     """
-    # TODO sanity checks
-
     # Seed handling
     set_seed(seed)
 
     # Apply padding if needed
     initial_arb_id = pad_to_even_length(initial_arb_id)
     initial_payload = pad_to_even_length(initial_payload)
-    # FIXME Pad to length of arb_id and payload?
     arb_id_bitmap = pad_to_even_length(arb_id_bitmap)
     payload_bitmap = pad_to_even_length(payload_bitmap)
 
@@ -646,10 +601,10 @@ def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, 
                     payload = apply_fuzzed_data(initial_payload, fuzzed_nibbles_payload, payload_bitmap)
 
                 if show_status:
-                    print("\rSending {0:04x}#{1} ({2})".format(arb_id, " ".join(list(map("{0:02x}".format, payload))),
-                                                               message_count), end="")
+                    print("\rSending {0:04x} # {1} ({2})".format(arb_id, payload_to_str(payload), message_count),
+                          end="")
                     stdout.flush()
-                    
+
                 can_wrap.send(payload, arb_id)
                 message_count += 1
 
@@ -665,11 +620,6 @@ def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, 
             output_file.close()
 
 
-# --- [7]
-# Handler methods.
-# ---
-
-
 def __handle_random(args):
     random_fuzz(static_arb_id=args.arb_id, static_payload=args.payload, filename=args.file,
                 min_payload_length=args.minpl, max_payload_length=args.maxpl, seed=args.seed)
@@ -677,25 +627,43 @@ def __handle_random(args):
 
 def __handle_linear(args):
     linear_file_fuzz(filename=args.filename)
-    print("Linear fuzz finished")
 
 
 def __handle_ring_bf(args):
-    ring_bf_fuzz(arb_id=args.arb_id, initial_payload=args.payload, payload_bitmap=args.payload_bitmap,
-                 filename=args.file, start_index=args.start, show_progress=True, show_responses=args.responses)
-    print("Brute forcing finished")
+    arb_id = int_from_str_base(args.arb_id)
+    payload = hex_str_to_nibble_list(args.payload) or DEFAULT_PAYLOAD
+
+    if args.payload_bitmap is None:
+        payload_bitmap = [True] * len(payload)
+    elif len(args.payload_bitmap) != len(payload):
+        raise ValueError("payload_bitmap must have same length as payload")
+    else:
+        payload_bitmap = bitmap_str_to_bool_list(args.payload_bitmap)
+
+    ring_bf_fuzz(arb_id=arb_id, initial_payload=payload, payload_bitmap=payload_bitmap, filename=args.file,
+                 start_index=args.start, show_progress=True, show_responses=args.responses)
 
 
 def __handle_mutate(args):
+    arb_id = hex_str_to_nibble_list(args.arb_id) or DEFAULT_ARB_ID
+    payload = hex_str_to_nibble_list(args.payload) or DEFAULT_PAYLOAD
+
     if args.id_bitmap is None:
-        args.id_bitmap = [True] * (MAX_ID_LENGTH - 1)
-        args.id_bitmap.insert(0, False)  # By default, don't mutate on extended can ids
+        id_bitmap = [True] * len(arb_id)
+    elif len(args.id_bitmap) != len(arb_id):
+        raise ValueError("id_bitmap must have same length as arbitration ID")
+    else:
+        id_bitmap = bitmap_str_to_bool_list(args.id_bitmap)
 
     if args.payload_bitmap is None:
-        args.payload_bitmap = [True] * MAX_PAYLOAD_LENGTH
+        payload_bitmap = [True] * len(payload)
+    elif len(args.payload_bitmap) != len(payload):
+        raise ValueError("payload_bitmap must have same length as payload")
+    else:
+        payload_bitmap = bitmap_str_to_bool_list(args.payload_bitmap)
 
-    mutate_fuzz(initial_payload=args.payload, initial_arb_id=args.arb_id, arb_id_bitmap=args.id_bitmap,
-                payload_bitmap=args.payload_bitmap, filename=args.file, show_responses=args.responses, seed=args.seed)
+    mutate_fuzz(initial_arb_id=arb_id, initial_payload=payload, arb_id_bitmap=id_bitmap,
+                payload_bitmap=payload_bitmap, filename=args.file, show_responses=args.responses, seed=args.seed)
 
 
 def __handle_replay(args):
@@ -709,11 +677,6 @@ def __handle_replay(args):
             composite = parse_directive(directive)
             composites.append(composite)
     replay_file_fuzz(composites)
-
-
-# --- [8]
-# Main methods.
-# ---
 
 
 def parse_args(args):
@@ -788,66 +751,6 @@ mutate - Mutates (hex) bits in the given id/payload.
     cmd_mutate.set_defaults(func=__handle_mutate)
 
     args = parser.parse_args(args)
-
-    # Process specific argument logic
-    # TODO Rewrite wrapper logic for custom formats
-
-    # Parse arbitration ID into list of nibble int values
-    if "arb_id" in args:
-        if args.arb_id is None:
-            args.arb_id = DEFAULT_ARB_ID
-        else:
-            arb_id_ints = []
-            for nibble_str in args.arb_id:
-                nibble_int = int(nibble_str, 16)
-                arb_id_ints.append(nibble_int)
-            args.arb_id = arb_id_ints
-
-    # Parse payload into list of nibble int values
-    if "payload" in args:
-        if args.payload is None:
-            args.payload = DEFAULT_PAYLOAD
-        else:
-            payload_ints = []
-            for nibble_str in args.payload:
-                nibble_int = int(nibble_str, 16)
-                payload_ints.append(nibble_int)
-            args.payload = payload_ints
-
-    def bitmap_str_to_bool_list(bitmap_str):
-        """
-        Converts a bitmap str to a corresponding bool array. Example:
-
-        bitmap_str_to_bool_list('10110') => [True, False, True, True, False]
-
-        :param bitmap_str: Binary string
-        :return: list of bool values
-        """
-        bool_bitmap = []
-        for bit in bitmap_str:
-            if bit == "0":
-                bool_bitmap.append(False)
-            elif bit == "1":
-                bool_bitmap.append(True)
-            else:
-                raise ValueError("Invalid character '{0}' in bitmap '{1}' (should be '0' or '1')".format(bit,
-                                                                                                         bitmap_str))
-        return bool_bitmap
-
-    if "id_bitmap" in args and args.id_bitmap is not None:
-        if len(args.id_bitmap) > MAX_ID_LENGTH:
-            raise ValueError
-        bitmap = bitmap_str_to_bool_list(args.id_bitmap)
-        args.id_bitmap = bitmap
-
-    if "payload_bitmap" in args and args.payload_bitmap is not None:
-        pb_length = len(args.payload_bitmap)
-        if pb_length > MAX_PAYLOAD_LENGTH:
-            raise ValueError("Payload bitmap is too long ({0} characters, max allowed: {1})".format(pb_length,
-                                                                                                    MAX_PAYLOAD_LENGTH))
-        bitmap = bitmap_str_to_bool_list(args.payload_bitmap)
-        args.payload_bitmap = bitmap
-
     return args
 
 

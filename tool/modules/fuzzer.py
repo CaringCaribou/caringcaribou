@@ -28,13 +28,6 @@ DEFAULT_PAYLOAD = [0x0] * 16
 # Default arbitration ID, split into nibbles
 DEFAULT_ARB_ID = [0x0] * 4
 
-# The max length of an id.
-# Do note that the fuzzer by default works with an id of length 3.
-# It thus does not use extended can ids by default
-MAX_ID_LENGTH = 4
-# The max length of a payload.
-MAX_PAYLOAD_LENGTH = 16
-
 
 def directive_str(arb_id, payload):
     """
@@ -204,12 +197,29 @@ def nibbles_to_bytes(nibbles):
     return result_bytes
 
 
+def split_lists(full_list, pieces):
+    """
+    Generator function which splits 'full_list' into smaller sub-lists
+
+    :param full_list: list to split
+    :param pieces: number of sub-lists to produce
+    :return: yields one sub-list at a time
+    """
+    length = len(full_list)
+    for i in range(pieces):
+        sub_list = full_list[i * length // pieces: (i + 1) * length // pieces]
+        if len(sub_list) == 0:
+            # Skip empty sub-lists (e.g. if a list of 2 elements is split into 3 parts, one will be empty)
+            continue
+        yield sub_list
+
+
 def get_random_arbitration_id(min_id, max_id):
     """
-    Returns an arbitration ID in the range min_id <= arb_id <= max_id
+    Returns a random arbitration ID in the range min_id <= arb_id <= max_id
 
-    :param min_id: Minimum allowed arbitration ID (inclusive)
-    :param max_id: Maximum allowed arbitration ID (inclusive)
+    :param min_id: int minimum allowed arbitration ID (inclusive)
+    :param max_id: int maximum allowed arbitration ID (inclusive)
     :return: int arbitration ID
     """
     arb_id = random.randint(min_id, max_id)
@@ -219,6 +229,7 @@ def get_random_arbitration_id(min_id, max_id):
 def get_random_payload_data(min_length, max_length):
     """
     Generates a random payload, whose length lies in the interval 'min_length' to 'max_length'
+
     :param min_length: int minimum length
     :param max_length: int maximum length
     :return: list of randomized bytes
@@ -308,11 +319,11 @@ def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION
             output_file.close()
 
 
-def linear_file_fuzz(filename):
+def replay_file_fuzz(filename):
     """
-    Replay cansend directives from the given file
+    Replay cansend directives from 'filename'
 
-    :param filename: Source file to read cansend directives from
+    :param filename: str source file to read cansend directives from
     """
 
     # Define a callback function which will handle incoming messages
@@ -333,27 +344,10 @@ def linear_file_fuzz(filename):
                     arb_id, payload = parse_directive(directive)
                     can_wrap.send(data=payload, arb_id=arb_id)
                     sleep(CALLBACK_HANDLER_DURATION)
-    print("Linear fuzz finished")
+    print("Replay finished")
 
 
-def split_composites(composites, pieces):
-    """
-    Generator function which splits 'old_composites' into smaller sub-lists
-
-    :param composites: list to split
-    :param pieces: number of sub-lists to produce
-    :return: yields one sub-list at a time
-    """
-    length = len(composites)
-    for i in range(pieces):
-        sub_list = composites[i * length // pieces: (i + 1) * length // pieces]
-        if len(sub_list) == 0:
-            # Skip empty sub-lists (e.g. if a list of 2 elements if split into 3 parts, one will be empty)
-            continue
-        yield sub_list
-
-
-def replay_file_fuzz(all_composites):
+def identify_fuzz(all_composites):
     """
     Replays a list of composites causing an effect, prompting for input to help isolate the message causing the effect
 
@@ -376,7 +370,7 @@ def replay_file_fuzz(all_composites):
     with CanActions() as can_wrap:
         try:
             # Send all messages in first round
-            gen = split_composites(all_composites, 1)
+            gen = split_lists(all_composites, 1)
             while True:
                 print()
                 if repeat:
@@ -413,7 +407,7 @@ def replay_file_fuzz(all_composites):
                             return directive
                         else:
                             # Split into even smaller lists of messages
-                            gen = split_composites(composites, REPLAY_NUMBER_OF_SUB_LISTS)
+                            gen = split_lists(composites, REPLAY_NUMBER_OF_SUB_LISTS)
                     elif response == "n":
                         # Try next list of messages
                         pass
@@ -434,14 +428,14 @@ def replay_file_fuzz(all_composites):
             return None
 
 
-def ring_bf_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, start_index=0,
-                 show_progress=True, show_responses=True):
+def bruteforce_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, start_index=0,
+                    show_progress=True, show_responses=True):
     """
     Performs a brute force of selected nibbles of a payload for a given arbitration ID.
     Nibble selection is controlled by bool list 'payload_bitmap'.
 
     Example:
-    ring_bf_fuzz(0x123, [0x1, 0x2, 0xA, 0xB], [True, False, False, True])
+    bruteforce_fuzz(0x123, [0x1, 0x2, 0xA, 0xB], [True, False, False, True])
     will cause the following messages to be sent:
 
     0x123#02A0
@@ -625,11 +619,11 @@ def __handle_random(args):
                 min_payload_length=args.minpl, max_payload_length=args.maxpl, seed=args.seed)
 
 
-def __handle_linear(args):
-    linear_file_fuzz(filename=args.filename)
+def __handle_replay(args):
+    replay_file_fuzz(filename=args.filename)
 
 
-def __handle_ring_bf(args):
+def __handle_bruteforce(args):
     arb_id = int_from_str_base(args.arb_id)
     payload = hex_str_to_nibble_list(args.payload) or DEFAULT_PAYLOAD
 
@@ -640,8 +634,8 @@ def __handle_ring_bf(args):
     else:
         payload_bitmap = bitmap_str_to_bool_list(args.payload_bitmap)
 
-    ring_bf_fuzz(arb_id=arb_id, initial_payload=payload, payload_bitmap=payload_bitmap, filename=args.file,
-                 start_index=args.start, show_progress=True, show_responses=args.responses)
+    bruteforce_fuzz(arb_id=arb_id, initial_payload=payload, payload_bitmap=payload_bitmap, filename=args.file,
+                    start_index=args.start, show_progress=True, show_responses=args.responses)
 
 
 def __handle_mutate(args):
@@ -666,7 +660,7 @@ def __handle_mutate(args):
                 payload_bitmap=payload_bitmap, filename=args.file, show_responses=args.responses, seed=args.seed)
 
 
-def __handle_replay(args):
+def __handle_identify(args):
     filename = args.filename
 
     fd = open(filename, "r")
@@ -676,7 +670,7 @@ def __handle_replay(args):
         if directive:
             composite = parse_directive(directive)
             composites.append(composite)
-    replay_file_fuzz(composites)
+    identify_fuzz(composites)
 
 
 def parse_args(args):
@@ -691,25 +685,17 @@ def parse_args(args):
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description="A fuzzer for the CAN bus",
                                      epilog="""Example usage:
-./cc.py fuzzer random
-./cc.py fuzzer ring_bf 244 -payload_bitmap 0000001 
--file example.txt
 
-Supported algorithms:
-random - Send random or static CAN payloads to 
-      random or static arbitration ids.
-linear - Use a given input file to send can packets.
-replay - Use the linear algorithm but also attempt 
-      to find a specific payload response.
-ring_bf - Attempts to brute force a static id 
-       using a ring based brute force algorithm.
-mutate - Mutates (hex) bits in the given id/payload.
-      The mutation bits are specified 
-      in the id/payload bitmaps.""")
+./cc.py fuzzer random
+./cc.py fuzzer random -f log.txt
+./cc.py fuzzer replay log.txt
+./cc.py fuzzer identify log.txt
+./cc.py fuzzer brute -p 12345678 -pb 00001100 0x123
+./cc.py fuzzer mutate -p 1234abcd -pb 00001100 -i 7fff -ib 0111""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 
-    cmd_random = subparsers.add_parser("random")
+    cmd_random = subparsers.add_parser("random", help="Random fuzzer for messages and arbitration IDs")
     cmd_random.add_argument("-arb_id", default=None, help="set static arbitration ID")
     cmd_random.add_argument("-payload", default=None, help="set static payload")
     cmd_random.add_argument("-file", "-f", default=None, help="log file for cansend directives")
@@ -719,31 +705,31 @@ mutate - Mutates (hex) bits in the given id/payload.
     cmd_random.set_defaults(func=__handle_random)
 
     # Linear
-    cmd_linear = subparsers.add_parser("linear")
+    cmd_linear = subparsers.add_parser("replay", help="Replay a previously recorded directive file")
     cmd_linear.add_argument("filename", help="input directive file to replay")
-    cmd_linear.set_defaults(func=__handle_linear)
+    cmd_linear.set_defaults(func=__handle_replay)
 
     # Replay (linear with response mapping)
-    cmd_replay = subparsers.add_parser("replay")
+    cmd_replay = subparsers.add_parser("identify", help="Replay and identify message causing a specific event")
     cmd_replay.add_argument("filename", help="input directive file to replay")
-    cmd_replay.set_defaults(func=__handle_replay)
+    cmd_replay.set_defaults(func=__handle_identify)
 
     # Ring based bruteforce
-    cmd_ring_bf = subparsers.add_parser("ring_bf")
-    cmd_ring_bf.add_argument("arb_id", help="arbitration ID")
-    cmd_ring_bf.add_argument("-payload", "-p", default=None, help="payload as hex string, e.g. 0011223344ABCDEF")
-    cmd_ring_bf.add_argument("-payload_bitmap", "-pb", default=None,
+    cmd_brute = subparsers.add_parser("brute", help="Brute force selected nibbles in a message")
+    cmd_brute.add_argument("arb_id", help="arbitration ID")
+    cmd_brute.add_argument("-payload", "-p", default=None, help="payload as hex string, e.g. 0011223344ABCDEF")
+    cmd_brute.add_argument("-payload_bitmap", "-pb", default=None,
                              help="bitmap as binary string, e.g. 01001101 where '1' is a nibble index to override")
-    cmd_ring_bf.add_argument("-file", "-f", default=None, help="log file for cansend directives")
-    cmd_ring_bf.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
-    cmd_ring_bf.add_argument("-start", "-s", type=int, default=0, help="start index (for resuming previous session)")
-    cmd_ring_bf.set_defaults(func=__handle_ring_bf)
+    cmd_brute.add_argument("-file", "-f", default=None, help="log file for cansend directives")
+    cmd_brute.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
+    cmd_brute.add_argument("-start", "-s", type=int, default=0, help="start index (for resuming previous session)")
+    cmd_brute.set_defaults(func=__handle_bruteforce)
 
     # Mutate
-    cmd_mutate = subparsers.add_parser("mutate")
-    cmd_mutate.add_argument("-arb_id", default=None, help="initial arbitration ID")
+    cmd_mutate = subparsers.add_parser("mutate", help="Mutate selected nibbles in arbitration ID and message")
+    cmd_mutate.add_argument("-arb_id", "-i", metavar="ID", default=None, help="initial arbitration ID")
     cmd_mutate.add_argument("-id_bitmap", "-ib", metavar="BM", help="arbitration ID bitmap as binary string")
-    cmd_mutate.add_argument("-payload", "-p", default=None, help="initial payload as hex string, e.g. 0011223344ABCDEF")
+    cmd_mutate.add_argument("-payload", "-p", metavar="P", default=None, help="initial payload as hex string, e.g. 0011223344ABCDEF")
     cmd_mutate.add_argument("-payload_bitmap", "-pb", metavar="PB", help="payload bitmap as binary string")
     cmd_mutate.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
     cmd_mutate.add_argument("-file", "-f", default=None, help="log file for cansend directives")

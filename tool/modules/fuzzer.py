@@ -307,11 +307,11 @@ def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION
                 # Send message
                 can_wrap.send(data=payload, arb_id=arb_id)
                 message_count += 1
-                sleep(CALLBACK_HANDLER_DURATION)
 
                 # Log to file
                 if file_logging_enabled:
                     write_directive_to_file_handle(output_file, arb_id, payload)
+                sleep(CALLBACK_HANDLER_DURATION)
     finally:
         if output_file is not None:
             output_file.close()

@@ -7,12 +7,10 @@ from itertools import product
 from lib.can_actions import *
 from time import sleep
 
-
 # Python 2/3 compatibility
 if version_info[0] == 2:
     range = xrange
     input = raw_input
-
 
 # Number of seconds to wait between messages
 CALLBACK_HANDLER_DURATION = 0.01
@@ -20,7 +18,7 @@ CALLBACK_HANDLER_DURATION = 0.01
 MIN_PL_LENGTH = 1
 MAX_PL_LENGTH = 8
 # Max size of random seed if no seed is provided in arguments
-DEFAULT_SEED_MAX = 2**16
+DEFAULT_SEED_MAX = 2 ** 16
 # Number of sub-lists to split message list into per round in 'replay' mode
 REPLAY_NUMBER_OF_SUB_LISTS = 5
 # Default payload, split into nibbles
@@ -136,7 +134,7 @@ def parse_directive(directive):
     segments = directive.split("#")
     arb_id = int(segments[0], 16)
     data_str = segments[1]
-    data = [int(data_str[i:i+2], 16) for i in range(0, len(data_str), 2)]
+    data = [int(data_str[i:i + 2], 16) for i in range(0, len(data_str), 2)]
     return arb_id, data
 
 
@@ -683,7 +681,7 @@ def parse_args(args):
     """
     parser = argparse.ArgumentParser(prog="cc.py fuzzer",
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     description="A fuzzer for the CAN bus",
+                                     description="Fuzzing module for CaringCaribou",
                                      epilog="""Example usage:
 
 ./cc.py fuzzer random
@@ -719,7 +717,7 @@ def parse_args(args):
     cmd_brute.add_argument("arb_id", help="arbitration ID")
     cmd_brute.add_argument("-payload", "-p", default=None, help="payload as hex string, e.g. 0011223344ABCDEF")
     cmd_brute.add_argument("-payload_bitmap", "-pb", default=None,
-                             help="bitmap as binary string, e.g. 01001101 where '1' is a nibble index to override")
+                           help="bitmap as binary string, e.g. 01001101 where '1' is a nibble index to override")
     cmd_brute.add_argument("-file", "-f", default=None, help="log file for cansend directives")
     cmd_brute.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
     cmd_brute.add_argument("-start", "-s", type=int, default=0, help="start index (for resuming previous session)")
@@ -729,7 +727,8 @@ def parse_args(args):
     cmd_mutate = subparsers.add_parser("mutate", help="Mutate selected nibbles in arbitration ID and message")
     cmd_mutate.add_argument("-arb_id", "-i", metavar="ID", default=None, help="initial arbitration ID")
     cmd_mutate.add_argument("-id_bitmap", "-ib", metavar="BM", help="arbitration ID bitmap as binary string")
-    cmd_mutate.add_argument("-payload", "-p", metavar="P", default=None, help="initial payload as hex string, e.g. 0011223344ABCDEF")
+    cmd_mutate.add_argument("-payload", "-p", metavar="P", default=None,
+                            help="initial payload as hex string, e.g. 0011223344ABCDEF")
     cmd_mutate.add_argument("-payload_bitmap", "-pb", metavar="PB", help="payload bitmap as binary string")
     cmd_mutate.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
     cmd_mutate.add_argument("-file", "-f", default=None, help="log file for cansend directives")

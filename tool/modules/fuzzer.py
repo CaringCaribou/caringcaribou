@@ -13,7 +13,7 @@ if version_info[0] == 2:
     input = raw_input
 
 # Number of seconds to wait between messages
-CALLBACK_HANDLER_DURATION = 0.01
+DELAY_BETWEEN_MESSAGES = 0.01
 # Payload length limits
 MIN_PL_LENGTH = 1
 MAX_PL_LENGTH = 8
@@ -311,7 +311,7 @@ def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION
                 # Log to file
                 if file_logging_enabled:
                     write_directive_to_file_handle(output_file, arb_id, payload)
-                sleep(CALLBACK_HANDLER_DURATION)
+                sleep(DELAY_BETWEEN_MESSAGES)
     finally:
         if output_file is not None:
             output_file.close()
@@ -341,7 +341,7 @@ def replay_file_fuzz(filename):
                 if directive:
                     arb_id, payload = parse_directive(directive)
                     can_wrap.send(data=payload, arb_id=arb_id)
-                    sleep(CALLBACK_HANDLER_DURATION)
+                    sleep(DELAY_BETWEEN_MESSAGES)
     print("Replay finished")
 
 
@@ -386,7 +386,7 @@ def identify_fuzz(all_composites):
                     directive = directive_str(arb_id, payload)
                     print("Sending {0}".format(directive))
                     can_wrap.send(data=payload, arb_id=arb_id)
-                    sleep(CALLBACK_HANDLER_DURATION)
+                    sleep(DELAY_BETWEEN_MESSAGES)
                 # Disable CAN listener
                 can_wrap.clear_listeners()
 
@@ -508,7 +508,7 @@ def bruteforce_fuzz(arb_id, initial_payload, payload_bitmap, filename=None, star
                 # Log to file
                 if file_logging_enabled:
                     write_directive_to_file_handle(output_file, arb_id, output_payload)
-                sleep(CALLBACK_HANDLER_DURATION)
+                sleep(DELAY_BETWEEN_MESSAGES)
             if show_progress:
                 print()
     finally:
@@ -603,7 +603,7 @@ def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, 
                 # Log to file
                 if file_logging_enabled:
                     write_directive_to_file_handle(output_file, arb_id, payload)
-                sleep(CALLBACK_HANDLER_DURATION)
+                sleep(DELAY_BETWEEN_MESSAGES)
     except KeyboardInterrupt:
         if show_status:
             print()
@@ -700,16 +700,22 @@ def parse_args(args):
     cmd_random.add_argument("-minpl", type=int, default=MIN_PL_LENGTH, help="minimum payload length")
     cmd_random.add_argument("-maxpl", type=int, default=MAX_PL_LENGTH, help="maximum payload length")
     cmd_random.add_argument("-seed", "-s", metavar="S", default=None, help="set random seed")
+    cmd_random.add_argument("-delay", "-d", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
+                            help="delay between messages")
     cmd_random.set_defaults(func=__handle_random)
 
     # Linear
     cmd_linear = subparsers.add_parser("replay", help="Replay a previously recorded directive file")
     cmd_linear.add_argument("filename", help="input directive file to replay")
+    cmd_linear.add_argument("-delay", "-d", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
+                            help="delay between messages")
     cmd_linear.set_defaults(func=__handle_replay)
 
     # Replay (linear with response mapping)
     cmd_replay = subparsers.add_parser("identify", help="Replay and identify message causing a specific event")
     cmd_replay.add_argument("filename", help="input directive file to replay")
+    cmd_replay.add_argument("-delay", "-d", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
+                            help="delay between messages")
     cmd_replay.set_defaults(func=__handle_identify)
 
     # Ring based bruteforce
@@ -721,6 +727,8 @@ def parse_args(args):
     cmd_brute.add_argument("-file", "-f", default=None, help="log file for cansend directives")
     cmd_brute.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
     cmd_brute.add_argument("-start", "-s", type=int, default=0, help="start index (for resuming previous session)")
+    cmd_brute.add_argument("-delay", "-d", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
+                           help="delay between messages")
     cmd_brute.set_defaults(func=__handle_bruteforce)
 
     # Mutate
@@ -733,9 +741,14 @@ def parse_args(args):
     cmd_mutate.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
     cmd_mutate.add_argument("-file", "-f", default=None, help="log file for cansend directives")
     cmd_mutate.add_argument("-seed", "-s", metavar="S", default=None, help="set random seed")
+    cmd_mutate.add_argument("-delay", "-d", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
+                            help="delay between messages")
     cmd_mutate.set_defaults(func=__handle_mutate)
 
     args = parser.parse_args(args)
+    if "delay" in args:
+        global DELAY_BETWEEN_MESSAGES
+        DELAY_BETWEEN_MESSAGES = args.delay
     return args
 
 

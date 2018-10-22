@@ -15,8 +15,8 @@ if version_info[0] == 2:
 # Number of seconds to wait between messages
 DELAY_BETWEEN_MESSAGES = 0.01
 # Payload length limits
-MIN_PL_LENGTH = 1
-MAX_PL_LENGTH = 8
+MIN_DATA_LENGTH = 1
+MAX_DATA_LENGTH = 8
 # Max size of random seed if no seed is provided in arguments
 DEFAULT_SEED_MAX = 2 ** 16
 # Number of sub-lists to split message list into per round in 'replay' mode
@@ -242,26 +242,33 @@ def get_random_payload_data(min_length, max_length):
     return payload
 
 
-def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION_ID_MIN, max_id=ARBITRATION_ID_MAX,
-                min_payload_length=MIN_PL_LENGTH, max_payload_length=MAX_PL_LENGTH, show_status=True, seed=None):
+def random_fuzz(static_arb_id=None, static_data=None, filename=None, min_id=ARBITRATION_ID_MIN,
+                max_id=ARBITRATION_ID_MAX, min_data_length=MIN_DATA_LENGTH, max_data_length=MAX_DATA_LENGTH,
+                show_status=True, seed=None):
     """
     A simple random fuzzer algorithm, which sends random or static CAN payloads to random or static arbitration IDs
 
-    :param static_arb_id: force usage of given arbitration ID
-    :param static_payload: force usage of given payload
+    :param static_arb_id: int static arbitration ID
+    :param static_data: list of bytes as static data payload
     :param filename: file to write cansend directives to
     :param min_id: minimum allowed arbitration ID
     :param max_id: maximum allowed arbitration ID
-    :param min_payload_length: minimum allowed payload length
-    :param max_payload_length: maximum allowed payload length
+    :param min_data_length: minimum allowed payload length
+    :param max_data_length: maximum allowed payload length
     :param show_status: bool indicating whether current message and counter should be printed to stdout
     :param seed: use given seed instead of random seed
     """
     # Sanity checks
-    if min_id > max_id:
-        raise ValueError("min_id must not be larger than max_id")
-    if min_payload_length > max_payload_length:
-        raise ValueError("min_payload_length must not be larger than max_payload_length")
+    if static_arb_id is not None and static_data is not None:
+        raise ValueError("Both static arbitration ID and static data cannot be set at the same time")
+    if not 0 <= min_id < max_id <= ARBITRATION_ID_MAX:
+        raise ValueError("Invalid value for min_id and/or max_id")
+    if not MIN_DATA_LENGTH <= min_data_length <= max_data_length <= MAX_DATA_LENGTH:
+        raise ValueError("Invalid value for min_data_length ({0}) and/or max_data_length ({1})".format(
+            min_data_length, max_data_length))
+    if static_data is not None and len(static_data) > MAX_DATA_LENGTH:
+        raise ValueError("static_data ({0} bytes) must not be more than {1} bytes long".format(
+            len(static_data), MAX_DATA_LENGTH))
 
     # Seed handling
     set_seed(seed)
@@ -295,10 +302,10 @@ def random_fuzz(static_arb_id, static_payload, filename=None, min_id=ARBITRATION
                     arb_id = static_arb_id
 
                 # Set payload
-                if static_payload is None:
-                    payload = get_random_payload_data(min_payload_length, max_payload_length)
+                if static_data is None:
+                    payload = get_random_payload_data(min_data_length, max_data_length)
                 else:
-                    payload = static_payload
+                    payload = static_data
 
                 if show_status:
                     print("\rMessages sent: {0}".format(message_count), end="")
@@ -613,8 +620,14 @@ def mutate_fuzz(initial_arb_id, initial_payload, arb_id_bitmap, payload_bitmap, 
 
 
 def __handle_random(args):
-    random_fuzz(static_arb_id=args.arb_id, static_payload=args.payload, filename=args.file,
-                min_payload_length=args.minpl, max_payload_length=args.maxpl, seed=args.seed)
+    arb_id = int_from_str_base(args.id)
+    data = None
+    if args.data is not None:
+        data_nibbles = hex_str_to_nibble_list(args.data)
+        padded_nibbles = pad_to_even_length(data_nibbles)
+        data = nibbles_to_bytes(padded_nibbles)
+    random_fuzz(static_arb_id=arb_id, static_data=data, filename=args.file,
+                min_data_length=args.min, max_data_length=args.max, seed=args.seed)
 
 
 def __handle_replay(args):
@@ -622,17 +635,17 @@ def __handle_replay(args):
 
 
 def __handle_bruteforce(args):
-    arb_id = int_from_str_base(args.arb_id)
-    payload = hex_str_to_nibble_list(args.payload) or DEFAULT_PAYLOAD
+    arb_id = int_from_str_base(args.data)
+    data = hex_str_to_nibble_list(args.data) or DEFAULT_PAYLOAD
 
     if args.payload_bitmap is None:
-        payload_bitmap = [True] * len(payload)
-    elif len(args.payload_bitmap) != len(payload):
+        payload_bitmap = [True] * len(data)
+    elif len(args.payload_bitmap) != len(data):
         raise ValueError("payload_bitmap must have same length as payload")
     else:
-        payload_bitmap = bitmap_str_to_bool_list(args.payload_bitmap)
+        payload_bitmap = bitmap_str_to_bool_list(args.db)
 
-    bruteforce_fuzz(arb_id=arb_id, initial_payload=payload, payload_bitmap=payload_bitmap, filename=args.file,
+    bruteforce_fuzz(arb_id=arb_id, initial_payload=data, payload_bitmap=payload_bitmap, filename=args.file,
                     start_index=args.start, show_progress=True, show_responses=args.responses)
 
 
@@ -679,6 +692,7 @@ def parse_args(args):
     :return: Argument namespace
     :rtype: argparse.Namespace
     """
+    global DELAY_BETWEEN_MESSAGES
     parser = argparse.ArgumentParser(prog="cc.py fuzzer",
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description="Fuzzing module for CaringCaribou",
@@ -694,60 +708,61 @@ def parse_args(args):
     subparsers.required = True
 
     cmd_random = subparsers.add_parser("random", help="Random fuzzer for messages and arbitration IDs")
-    cmd_random.add_argument("-arb_id", default=None, help="set static arbitration ID")
-    cmd_random.add_argument("-payload", default=None, help="set static payload")
+    cmd_random.add_argument("-id", default=None, help="set static arbitration ID")
+    cmd_random.add_argument("-data", "-d", default=None, help="set static data payload")
     cmd_random.add_argument("-file", "-f", default=None, help="log file for cansend directives")
-    cmd_random.add_argument("-minpl", type=int, default=MIN_PL_LENGTH, help="minimum payload length")
-    cmd_random.add_argument("-maxpl", type=int, default=MAX_PL_LENGTH, help="maximum payload length")
+    cmd_random.add_argument("-min", type=int, default=MIN_DATA_LENGTH, help="minimum payload length")
+    cmd_random.add_argument("-max", type=int, default=MAX_DATA_LENGTH, help="maximum payload length")
     cmd_random.add_argument("-seed", "-s", metavar="S", default=None, help="set random seed")
-    cmd_random.add_argument("-delay", "-d", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
+    cmd_random.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
                             help="delay between messages")
     cmd_random.set_defaults(func=__handle_random)
 
     # Linear
     cmd_linear = subparsers.add_parser("replay", help="Replay a previously recorded directive file")
     cmd_linear.add_argument("filename", help="input directive file to replay")
-    cmd_linear.add_argument("-delay", "-d", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
+    cmd_linear.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
                             help="delay between messages")
     cmd_linear.set_defaults(func=__handle_replay)
 
     # Replay (linear with response mapping)
     cmd_replay = subparsers.add_parser("identify", help="Replay and identify message causing a specific event")
     cmd_replay.add_argument("filename", help="input directive file to replay")
-    cmd_replay.add_argument("-delay", "-d", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
+    cmd_replay.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
                             help="delay between messages")
     cmd_replay.set_defaults(func=__handle_identify)
 
     # Ring based bruteforce
     cmd_brute = subparsers.add_parser("brute", help="Brute force selected nibbles in a message")
-    cmd_brute.add_argument("arb_id", help="arbitration ID")
-    cmd_brute.add_argument("-payload", "-p", default=None, help="payload as hex string, e.g. 0011223344ABCDEF")
-    cmd_brute.add_argument("-payload_bitmap", "-pb", default=None,
-                           help="bitmap as binary string, e.g. 01001101 where '1' is a nibble index to override")
+    cmd_brute.add_argument("id", help="arbitration ID")
+    cmd_brute.add_argument("-data", "-d", default=None, help="data as hex string, e.g. 0123456789ABCDEF")
+    cmd_brute.add_argument("-db", metavar="DB", default=None,
+                           help="data bitmap, e.g. 0100110000000010 where '1' is a nibble index to override")
     cmd_brute.add_argument("-file", "-f", default=None, help="log file for cansend directives")
     cmd_brute.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
-    cmd_brute.add_argument("-start", "-s", type=int, default=0, help="start index (for resuming previous session)")
-    cmd_brute.add_argument("-delay", "-d", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
+    cmd_brute.add_argument("-index", "-i", metavar="I", type=int, default=0,
+                           help="start index (for resuming previous session)")
+    cmd_brute.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
                            help="delay between messages")
     cmd_brute.set_defaults(func=__handle_bruteforce)
 
     # Mutate
     cmd_mutate = subparsers.add_parser("mutate", help="Mutate selected nibbles in arbitration ID and message")
-    cmd_mutate.add_argument("-arb_id", "-i", metavar="ID", default=None, help="initial arbitration ID")
-    cmd_mutate.add_argument("-id_bitmap", "-ib", metavar="BM", help="arbitration ID bitmap as binary string")
-    cmd_mutate.add_argument("-payload", "-p", metavar="P", default=None,
-                            help="initial payload as hex string, e.g. 0011223344ABCDEF")
-    cmd_mutate.add_argument("-payload_bitmap", "-pb", metavar="PB", help="payload bitmap as binary string")
+    cmd_mutate.add_argument("-id", "-i", metavar="ID", default=None, help="initial arbitration ID")
+    cmd_mutate.add_argument("-id_bm", "-ib", metavar="BM", help="arbitration ID bitmap as binary string")
+    cmd_mutate.add_argument("-data", "-d", metavar="P", default=None,
+                            help="data as hex string, e.g. 0123456789ABCDEF")
+    cmd_mutate.add_argument("-data_bitmap", "-db", metavar="DB",
+                            help="data bitmap as binary string")
     cmd_mutate.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
     cmd_mutate.add_argument("-file", "-f", default=None, help="log file for cansend directives")
     cmd_mutate.add_argument("-seed", "-s", metavar="S", default=None, help="set random seed")
-    cmd_mutate.add_argument("-delay", "-d", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
+    cmd_mutate.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
                             help="delay between messages")
     cmd_mutate.set_defaults(func=__handle_mutate)
 
     args = parser.parse_args(args)
     if "delay" in args:
-        global DELAY_BETWEEN_MESSAGES
         DELAY_BETWEEN_MESSAGES = args.delay
     return args
 

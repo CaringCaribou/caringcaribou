@@ -387,12 +387,14 @@ def identify_fuzz(all_composites):
                 # Enable CAN listener
                 can_wrap.add_listener(response_handler)
                 # Send messages
-                for composite in composites:
+                for index in range(len(composites)):
+                    composite = composites[index]
                     arb_id = composite[0]
                     data = composite[1]
                     directive = directive_str(arb_id, data)
-                    print("Sending {0}".format(directive))
                     can_wrap.send(data=data, arb_id=arb_id)
+                    print("\rSending ({0}/{1}) {2:<25}".format(index+1, len(composites), directive), end="")
+                    stdout.flush()
                     sleep(DELAY_BETWEEN_MESSAGES)
                 # Disable CAN listener
                 can_wrap.clear_listeners()
@@ -672,16 +674,19 @@ def __handle_mutate(args):
 
 
 def __handle_identify(args):
-    filename = args.filename
-
-    fd = open(filename, "r")
-    composites = []
-    for directive in fd:
-        directive = directive.rstrip()
-        if directive:
-            composite = parse_directive(directive)
-            composites.append(composite)
-    identify_fuzz(composites)
+    try:
+        # Parse file
+        with open(args.filename, "r") as fd:
+            composites = []
+            for directive in fd:
+                directive = directive.rstrip()
+                if directive:
+                    composite = parse_directive(directive)
+                    composites.append(composite)
+        # Call handling function
+        identify_fuzz(composites)
+    except IOError as e:
+        print("IOError:", e)
 
 
 def parse_args(args):
@@ -730,7 +735,7 @@ def parse_args(args):
     cmd_identify = subparsers.add_parser("identify", help="Replay and identify message causing a specific event")
     cmd_identify.add_argument("filename", help="input directive file to replay")
     cmd_identify.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
-                            help="delay between messages")
+                              help="delay between messages")
     cmd_identify.set_defaults(func=__handle_identify)
 
     # Brute force fuzzer

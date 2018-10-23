@@ -707,6 +707,7 @@ def parse_args(args):
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 
+    # Random fuzzer
     cmd_random = subparsers.add_parser("random", help="Random fuzzer for messages and arbitration IDs")
     cmd_random.add_argument("-id", default=None, help="set static arbitration ID")
     cmd_random.add_argument("-data", "-d", default=None, help="set static data")
@@ -718,21 +719,21 @@ def parse_args(args):
                             help="delay between messages")
     cmd_random.set_defaults(func=__handle_random)
 
-    # Linear
-    cmd_linear = subparsers.add_parser("replay", help="Replay a previously recorded directive file")
-    cmd_linear.add_argument("filename", help="input directive file to replay")
-    cmd_linear.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
-                            help="delay between messages")
-    cmd_linear.set_defaults(func=__handle_replay)
-
-    # Replay (linear with response mapping)
-    cmd_replay = subparsers.add_parser("identify", help="Replay and identify message causing a specific event")
+    # Replay
+    cmd_replay = subparsers.add_parser("replay", help="Replay a previously recorded directive file")
     cmd_replay.add_argument("filename", help="input directive file to replay")
     cmd_replay.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
                             help="delay between messages")
-    cmd_replay.set_defaults(func=__handle_identify)
+    cmd_replay.set_defaults(func=__handle_replay)
 
-    # Ring based bruteforce
+    # Identify (replay with response mapping)
+    cmd_identify = subparsers.add_parser("identify", help="Replay and identify message causing a specific event")
+    cmd_identify.add_argument("filename", help="input directive file to replay")
+    cmd_identify.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
+                            help="delay between messages")
+    cmd_identify.set_defaults(func=__handle_identify)
+
+    # Brute force fuzzer
     cmd_brute = subparsers.add_parser("brute", help="Brute force selected nibbles in a message")
     cmd_brute.add_argument("id", help="arbitration ID")
     cmd_brute.add_argument("-data", "-d", default=None, help="data as hex string, e.g. 0123456789ABCDEF")
@@ -746,7 +747,7 @@ def parse_args(args):
                            help="delay between messages")
     cmd_brute.set_defaults(func=__handle_bruteforce)
 
-    # Mutate
+    # Mutate fuzzer
     cmd_mutate = subparsers.add_parser("mutate", help="Mutate selected nibbles in arbitration ID and message")
     cmd_mutate.add_argument("-id", "-i", metavar="ID", default=None,
                             help="initial arbitration ID as hex string, e.g. 7F01")

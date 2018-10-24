@@ -242,6 +242,29 @@ def get_random_data(min_length, max_length):
     return data
 
 
+def parse_directives_from_file(filename):
+    """
+    Parses 'filename' and returns a list of all directives contained within
+
+    :param filename: str file to parse
+    :return: list of str directives
+    """
+    # Parse file
+    line_number = 0
+    with open(filename, "r") as fd:
+        directives = []
+        for directive in fd:
+            line_number += 1
+            directive = directive.rstrip()
+            if directive:
+                try:
+                    composite = parse_directive(directive)
+                    directives.append(composite)
+                except ValueError:
+                    print("Error: Could not parse message on line {0}: {1}".format(line_number, directive))
+    return directives
+
+
 def random_fuzz(static_arb_id=None, static_data=None, filename=None, min_id=ARBITRATION_ID_MIN,
                 max_id=ARBITRATION_ID_MAX, min_data_length=MIN_DATA_LENGTH, max_data_length=MAX_DATA_LENGTH,
                 show_status=True, seed=None):
@@ -324,39 +347,53 @@ def random_fuzz(static_arb_id=None, static_data=None, filename=None, min_id=ARBI
             output_file.close()
 
 
-def replay_file_fuzz(filename):
+def replay_file_fuzz(filename, show_requests, show_responses):
     """
     Replay cansend directives from 'filename'
 
     :param filename: str source file to read cansend directives from
+    :param show_requests: bool indicating whether requests should be printed to stdout
+    :param show_responses: bool indicating whether responses should be printed to stdout
     """
 
     # Define a callback function which will handle incoming messages
     def response_handler(msg):
         if msg.arbitration_id != arb_id or list(msg.data) != data:
-            print("Directive: {0}".format(directive))
-            print("  Received message: {0}".format(msg))
+            if not show_requests:
+                # Print last sent request
+                print("Sent: {0}".format(directive))
+            print("  Received: {0}".format(directive_str(msg.arbitration_id, msg.data)))
 
     arb_id = None
     data = None
+    count = 0
 
     with open(filename, "r") as fd:
         with CanActions() as can_wrap:
-            can_wrap.add_listener(response_handler)
+            if show_responses:
+                # Enable callback handler for incoming messages
+                can_wrap.add_listener(response_handler)
             for line in fd:
                 directive = line.rstrip()
+                count += 1
                 if directive:
-                    arb_id, data = parse_directive(directive)
-                    can_wrap.send(data=data, arb_id=arb_id)
-                    sleep(DELAY_BETWEEN_MESSAGES)
+                    try:
+                        arb_id, data = parse_directive(directive)
+                        can_wrap.send(data=data, arb_id=arb_id)
+                        if show_requests:
+                            print("Sending ({0}) {1:<25}".format(count, directive))
+                        sleep(DELAY_BETWEEN_MESSAGES)
+                    except ValueError:
+                        print("Error: Could not parse message on line {0}: {1}".format(count, directive))
     print("Replay finished")
 
 
-def identify_fuzz(all_composites):
+def identify_fuzz(all_composites, show_responses):
     """
     Replays a list of composites causing an effect, prompting for input to help isolate the message causing the effect
 
     :param all_composites: list of composites
+    :param show_responses: bool indicating whether responses should be printed to stdout
     :return: str directive if message is found,
              None otherwise
     """
@@ -384,8 +421,9 @@ def identify_fuzz(all_composites):
                 else:
                     # Get next list of messages to send
                     composites = next(gen)
-                # Enable CAN listener
-                can_wrap.add_listener(response_handler)
+                if show_responses:
+                    # Enable callback handler for incoming messages
+                    can_wrap.add_listener(response_handler)
                 # Send messages
                 for index in range(len(composites)):
                     composite = composites[index]
@@ -393,10 +431,9 @@ def identify_fuzz(all_composites):
                     data = composite[1]
                     directive = directive_str(arb_id, data)
                     can_wrap.send(data=data, arb_id=arb_id)
-                    print("\rSending ({0}/{1}) {2:<25}".format(index+1, len(composites), directive), end="")
-                    stdout.flush()
+                    print("Sending ({0}/{1}) {2}".format(index+1, len(composites), directive))
                     sleep(DELAY_BETWEEN_MESSAGES)
-                # Disable CAN listener
+                # Disable callback handler for incoming messages
                 can_wrap.clear_listeners()
 
                 # Get user input
@@ -423,12 +460,11 @@ def identify_fuzz(all_composites):
                         repeat = True
                     elif response == "q":
                         # Quit
-                        return
+                        return None
                     else:
                         # Invalid choice - ask again
                         print("Invalid choice")
                         valid_response = False
-
         except StopIteration:
             # No more messages to try - give up
             print("\nNo match was found.")
@@ -633,7 +669,16 @@ def __handle_random(args):
 
 
 def __handle_replay(args):
-    replay_file_fuzz(filename=args.filename)
+    replay_file_fuzz(filename=args.filename, show_requests=args.requests, show_responses=args.responses)
+
+
+def __handle_identify(args):
+    try:
+        directives = parse_directives_from_file(args.filename)
+        # Call handling function
+        identify_fuzz(directives, show_responses=args.responses)
+    except IOError as e:
+        print("IOError:", e)
 
 
 def __handle_bruteforce(args):
@@ -671,22 +716,6 @@ def __handle_mutate(args):
 
     mutate_fuzz(initial_arb_id=arb_id, initial_data=data, arb_id_bitmap=id_bitmap,
                 data_bitmap=data_bitmap, filename=args.file, show_responses=args.responses, seed=args.seed)
-
-
-def __handle_identify(args):
-    try:
-        # Parse file
-        with open(args.filename, "r") as fd:
-            composites = []
-            for directive in fd:
-                directive = directive.rstrip()
-                if directive:
-                    composite = parse_directive(directive)
-                    composites.append(composite)
-        # Call handling function
-        identify_fuzz(composites)
-    except IOError as e:
-        print("IOError:", e)
 
 
 def parse_args(args):
@@ -727,6 +756,8 @@ def parse_args(args):
     # Replay
     cmd_replay = subparsers.add_parser("replay", help="Replay a previously recorded directive file")
     cmd_replay.add_argument("filename", help="input directive file to replay")
+    cmd_replay.add_argument("-requests", "-req", action="store_true", help="print requests to stdout")
+    cmd_replay.add_argument("-responses", "-res", action="store_true", help="print responses to stdout")
     cmd_replay.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
                             help="delay between messages")
     cmd_replay.set_defaults(func=__handle_replay)
@@ -734,6 +765,7 @@ def parse_args(args):
     # Identify (replay with response mapping)
     cmd_identify = subparsers.add_parser("identify", help="Replay and identify message causing a specific event")
     cmd_identify.add_argument("filename", help="input directive file to replay")
+    cmd_identify.add_argument("-responses", "-res", action="store_true", help="print responses to stdout")
     cmd_identify.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
                               help="delay between messages")
     cmd_identify.set_defaults(func=__handle_identify)

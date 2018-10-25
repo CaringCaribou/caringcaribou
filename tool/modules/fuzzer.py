@@ -265,6 +265,23 @@ def parse_directives_from_file(filename):
     return directives
 
 
+def pad_to_even_length(original_list, padding=0x0):
+    """
+    Prepends 'padding' to 'original_list' if its length is uneven.
+
+    Examples:
+    pad_to_even_length([1, 2, 3]) gives [0, 1, 2, 3]
+    pad_to_even_length([1, 2]) gives [1, 2]
+
+    :param original_list: list of elements
+    :param padding: element to prepend
+    :return: list of even length
+    """
+    if len(original_list) % 2 == 1:
+        original_list.insert(0, padding)
+    return original_list
+
+
 def random_fuzz(static_arb_id=None, static_data=None, filename=None, min_id=ARBITRATION_ID_MIN,
                 max_id=ARBITRATION_ID_MAX, min_data_length=MIN_DATA_LENGTH, max_data_length=MAX_DATA_LENGTH,
                 show_status=True, seed=None):
@@ -561,23 +578,6 @@ def bruteforce_fuzz(arb_id, initial_data, data_bitmap, filename=None, start_inde
             output_file.close()
     if show_progress:
         print("Brute force finished")
-
-
-def pad_to_even_length(original_list, padding=0x0):
-    """
-    Prepends 'padding' to 'original_list' if its length is uneven.
-
-    Examples:
-    pad_to_even_length([1, 2, 3]) gives [0, 1, 2, 3]
-    pad_to_even_length([1, 2]) gives [1, 2]
-
-    :param original_list: list of elements
-    :param padding: element to prepend
-    :return: list of even length
-    """
-    if len(original_list) % 2 == 1:
-        original_list.insert(0, padding)
-    return original_list
 
 
 def mutate_fuzz(initial_arb_id, initial_data, arb_id_bitmap, data_bitmap, filename=None, show_status=True,

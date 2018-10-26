@@ -29,6 +29,15 @@ Detailed information on the [dcm-module](https://github.com/CaringCaribou/caring
 
 Detailed information on the [xcp-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/xcp.md).
 
+### fuzzer.py - CAN fuzzer
+- random - sends random CAN messages
+- brute - brute forces all possible messages matching a given bit mask
+- mutate - mutate selected nibbles of a given message
+- replay - replay a log file from a previous fuzzing session
+- identify - replay a log file and identify message causing a specific event
+
+Detailed information on the [fuzzer-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/fuzzer.md).
+
 ### listener.py - Listener
 - ArbId listener - register all ArbIds heard on the CAN bus
 
@@ -40,7 +49,7 @@ Detailed information on the [listener-module](https://github.com/CaringCaribou/c
 Detailed information on the [send-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/send.md).
 
 ### dump.py - Dump CAN traffic
-- Dump incoming traffic to stdout or file.
+- Dump incoming traffic to stdout or file
 
 Detailed information on the [dump-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/dump.md).
 

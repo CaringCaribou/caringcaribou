@@ -249,7 +249,7 @@ def parse_directives_from_file(filename):
     :param filename: str file to parse
     :return: list of str directives
     """
-    # Parse file
+    print("Parsing messages from {0}".format(filename))
     line_number = 0
     with open(filename, "r") as fd:
         directives = []
@@ -261,7 +261,8 @@ def parse_directives_from_file(filename):
                     composite = parse_directive(directive)
                     directives.append(composite)
                 except ValueError:
-                    print("Error: Could not parse message on line {0}: {1}".format(line_number, directive))
+                    print("  Error: Could not parse message on line {0}: {1}".format(line_number, directive))
+    print("  {0} messages parsed".format(len(directives)))
     return directives
 
 
@@ -359,16 +360,18 @@ def random_fuzz(static_arb_id=None, static_data=None, filename=None, min_id=ARBI
                 if file_logging_enabled:
                     write_directive_to_file_handle(output_file, arb_id, data)
                 sleep(DELAY_BETWEEN_MESSAGES)
+    except IOError as e:
+        print("ERROR: {0}".format(e))
     finally:
         if output_file is not None:
             output_file.close()
 
 
-def replay_file_fuzz(filename, show_requests, show_responses):
+def replay_fuzz(directives, show_requests, show_responses):
     """
     Replay cansend directives from 'filename'
 
-    :param filename: str source file to read cansend directives from
+    :param directives: list of (int arb_id, list data) tuples
     :param show_requests: bool indicating whether requests should be printed to stdout
     :param show_responses: bool indicating whether responses should be printed to stdout
     """
@@ -385,23 +388,17 @@ def replay_file_fuzz(filename, show_requests, show_responses):
     data = None
     count = 0
 
-    with open(filename, "r") as fd:
-        with CanActions() as can_wrap:
-            if show_responses:
-                # Enable callback handler for incoming messages
-                can_wrap.add_listener(response_handler)
-            for line in fd:
-                directive = line.rstrip()
-                count += 1
-                if directive:
-                    try:
-                        arb_id, data = parse_directive(directive)
-                        can_wrap.send(data=data, arb_id=arb_id)
-                        if show_requests:
-                            print("Sending ({0}) {1:<25}".format(count, directive))
-                        sleep(DELAY_BETWEEN_MESSAGES)
-                    except ValueError:
-                        print("Error: Could not parse message on line {0}: {1}".format(count, directive))
+    with CanActions() as can_wrap:
+        if show_responses:
+            # Enable callback handler for incoming messages
+            can_wrap.add_listener(response_handler)
+        for arb_id, data in directives:
+            count += 1
+            directive = directive_str(arb_id, data)
+            can_wrap.send(data=data, arb_id=arb_id)
+            if show_requests:
+                print("Sending ({0}) {1}".format(count, directive))
+            sleep(DELAY_BETWEEN_MESSAGES)
     print("Replay finished")
 
 
@@ -669,7 +666,13 @@ def __handle_random(args):
 
 
 def __handle_replay(args):
-    replay_file_fuzz(filename=args.filename, show_requests=args.requests, show_responses=args.responses)
+    filename = args.filename
+    try:
+        directives = parse_directives_from_file(filename)
+        print("Sending messages")
+        replay_fuzz(directives=directives, show_requests=args.requests, show_responses=args.responses)
+    except IOError as e:
+        print("ERROR: {0}".format(e))
 
 
 def __handle_identify(args):

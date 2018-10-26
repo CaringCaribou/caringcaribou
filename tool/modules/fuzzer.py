@@ -737,8 +737,8 @@ def parse_args(args):
 
 ./cc.py fuzzer random
 ./cc.py fuzzer random -min 4 -seed 0xabc123 -f log.txt
-./cc.py fuzzer brute -p 12345678 -pb 00001100 0x123
-./cc.py fuzzer mutate -p 1234abcd -pb 00001100 -i 7fff -ib 0111
+./cc.py fuzzer brute -d 12345678 -db 00001100 0x123
+./cc.py fuzzer mutate -d 1234abcd -db 00001100 -i 7fff -ib 0111
 ./cc.py fuzzer replay log.txt
 ./cc.py fuzzer identify log.txt""")
     subparsers = parser.add_subparsers(dest="module_function")

@@ -666,7 +666,7 @@ def __handle_random(args):
 
 
 def __handle_bruteforce(args):
-    arb_id = int_from_str_base(args.data)
+    arb_id = int_from_str_base(args.id)
     data = hex_str_to_nibble_list(args.data) or DEFAULT_DATA
 
     if args.db is None:

@@ -9,7 +9,9 @@ This work was initiated as part of the HeavenS research project, but lives on as
 ## Features and Architecture
 Caring Caribou is based on a master script `cc.py`, which runs the show. This enables an easy drop-in architecture for new modules, which are located in the `/modules` folder.
 
-The tool also has a `/libs` folder. This contains various higher level CAN protocol implementations and useful functions, which can be used by the modules.
+The `/lib` folder contains various higher level CAN protocol implementations and shared functions, meant to be used by modules.
+
+The `/tests` folder contains automated test suites and `/documentation` stores module documentation files.
 
 ## List of Modules
 A clean installation of Caring Caribou includes the following modules:
@@ -47,6 +49,9 @@ Detailed information on the [listener-module](https://github.com/CaringCaribou/c
 - Raw message transmission module, used to drive manual test cases
 
 Detailed information on the [send-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/send.md).
+
+### test.py - Run test suite
+- Runs the automated Caring Caribou test suites
 
 ### dump.py - Dump CAN traffic
 - Dump incoming traffic to stdout or file
@@ -94,7 +99,7 @@ A template for new modules is available in `tool/template`
 The target ECU used for the development setup is an STM32F107 based dev-board from ArcCore called Arctic EVK-M3, but the tool can be used against any ECU communicating over a CAN bus.
 
 ## Contributors
-* The [HeavenS](http://www.vinnova.se/sv/Resultat/Projekt/Effekta/HEAVENS-HEAling-Vulnerabilities-to-ENhance-Software-Security-and-Safety/) project, funded by VINNOVA
+* The [HEAVENS](https://www.vinnova.se/en/p/heavens-healing-vulnerabilities-to-enhance-software-security-and-safety/) project, funded by VINNOVA
 * Christian Sandberg
 * Kasper Karlsson
 * Tobias Lans
@@ -103,3 +108,4 @@ The target ECU used for the development setup is an STM32F107 based dev-board fr
 * Filip Hesslund
 * Craig Smith (OpenGarages.org)
 * internot
+* Mathijs Hubrechtsen

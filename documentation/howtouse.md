@@ -107,6 +107,13 @@ More information on the different modules is available here:
 + [send-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/send.md)
 + [listener-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/listener.md)
 
+### Virtual CAN bus
+In order to communicate over CAN without access to a physical CAN bus, it is possible to use a virtual CAN bus instead. Doing this in Linux is generally as easy as running the following commands:
+
+    sudo modprobe vcan
+    sudo ip link add dev vcan0 type vcan
+    sudo ip link set vcan0 up
+
 ## Example use
 In this example we have connected a compatible [hardware](https://github.com/CaringCaribou/caringcaribou/blob/master/README.md#hardware-requirements) (PiCAN) to our client computer (a Raspberry Pi) and installed the software according to the [instructions](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/howtoinstall.md#raspberry-pi).
 

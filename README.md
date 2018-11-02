@@ -4,7 +4,27 @@ A friendly car security exploration tool
 ## Rationale
 We are lacking a security testing tool for automotive. A zero-knowledge tool that can be dropped onto any CAN network and collect information regarding what services and vulnerabilities exist. This is a start.
 
-This work was initiated as part of the HeavenS research project, but lives on as a stand-alone project.
+This work was initiated as part of the research project HEAVENS (HEAling Vulnerabilities to ENhance Software Security and Safety), but lives on as a stand-alone project.
+
+## How to use
+The best way to understand how to use Caring Caribou is to look at the help screen:
+
+    python cc.py -h
+
+or simply
+
+    ./cc.py -h
+
+This will list all available modules at the bottom of the output. Help for specific modules works the same way. For example, the help screen for the `send` module is shown by running
+
+    ./cc.py send -h
+
+The module help always includes some usage examples. If the module has multiple sub functions, these have similar help screens as well:
+
+    ./cc.py send message -h
+    ./cc.py send file -h
+
+More detailed usage information is available [here](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/howtouse.md).
 
 ## Features and Architecture
 Caring Caribou is based on a master script `cc.py`, which runs the show. This enables an easy drop-in architecture for new modules, which are located in the `/modules` folder.
@@ -80,13 +100,6 @@ Some sort of CAN bus interface compatible with socketCAN (http://elinux.org/CAN_
 
 ## How to install
 Instructions available [here](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/howtoinstall.md)
-
-## How to use
-The best way to understand how to use Caring Caribou is to look at cc.py's help menu:
-    
-    python cc.py -h
-
-Detailed usage information is available [here](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/howtouse.md). 
 
 ## Extending the project
 Create a python file with a function `module_main(args)` and put it in the ```tool/modules``` folder. Caring Caribou will automagically recognize it as a module and list it in the output of `./cc.py -h`

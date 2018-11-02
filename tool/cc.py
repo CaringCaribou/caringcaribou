@@ -2,8 +2,11 @@
 # Released under GNU General Public License v3
 # https://github.com/CaringCaribou/caringcaribou
 import argparse
+import can
+import errno
 import lib.can_actions
 import importlib
+import traceback
 import os
 
 VERSION = "0.2"
@@ -124,5 +127,14 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         pass
+    except can.CanError as e:
+        print("\nCanError: {0}".format(e))
+    except IOError as e:
+        if e.errno is errno.ENODEV:
+            # Specifically catch "[Errno 19] No such device", which is caused by using an invalid interface
+            print("\nIOError: {0}. This might be caused by an invalid or inactive CAN interface.".format(e))
+        else:
+            # Print original stack trace
+            traceback.print_exc()
     finally:
         print("")

@@ -9,6 +9,7 @@ if version_info[0] == 2:
 
 MESSAGE_DELAY = 0.1
 DELAY_STEP = 0.02
+NOTIFIER_STOP_DURATION = 0.5
 
 ARBITRATION_ID_MIN = 0x0
 ARBITRATION_ID_MAX = 0x7FF
@@ -109,20 +110,36 @@ def insert_message_length(data, pad=False):
 
 class CanActions:
 
-    def __init__(self, arb_id=None):
+    def __init__(self, arb_id=None, notifier_enabled=True):
+        """
+        CanActions constructor
+
+        :param arb_id: int default arbitration ID for object or None
+        :param notifier_enabled: bool indicating whether a notifier for incoming message callbacks should be enabled
+        """
         self.bus = can.Bus(DEFAULT_INTERFACE, "socketcan")
-        self.notifier = can.Notifier(self.bus, listeners=[])
         self.arb_id = arb_id
         self.bruteforce_running = False
+        self.notifier = None
+        if notifier_enabled:
+            self.enable_notifier()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.clear_listeners()
-        # The following line prevents threading errors during shutdown
-        self.notifier.stop(0.5)
+        if self.notifier is not None:
+            self.disable_notifier()
         self.bus.shutdown()
+
+    def enable_notifier(self):
+        self.notifier = can.Notifier(self.bus, listeners=[])
+
+    def disable_notifier(self):
+        self.clear_listeners()
+        # Prevent threading errors by stopping notifier gracefully
+        self.notifier.stop(NOTIFIER_STOP_DURATION)
+        self.notifier = None
 
     def add_listener(self, listener):
         self.notifier.listeners.append(listener)
@@ -233,7 +250,7 @@ class CanActions:
             callback_done("Scan finished")
 
     def send_single_message_with_callback(self, data, callback):
-        self.notifier.listeners = [callback]
+        self.set_listener(callback)
         self.send(data)
 
     def bruteforce_stop(self):

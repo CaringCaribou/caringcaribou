@@ -1,9 +1,8 @@
 from __future__ import print_function
-from lib.can_actions import DEFAULT_INTERFACE, int_from_str_base, msg_to_candump_format
+from lib.can_actions import CanActions, int_from_str_base, msg_to_candump_format
 from modules.send import FILE_LINE_COMMENT_PREFIX
 from sys import argv, stdout
 import argparse
-import can
 import datetime
 
 
@@ -29,8 +28,8 @@ def initiate_dump(handler, whitelist, separator_seconds, candump_format):
     last_message_separator_printed = True
 
     print("Dumping CAN traffic (press Ctrl+C to exit)".format(whitelist))
-    with can.Bus(DEFAULT_INTERFACE, "socketcan") as bus:
-        for msg in bus:
+    with CanActions(notifier_enabled=False) as can_wrap:
+        for msg in can_wrap.bus:
             # Separator handling
             if separator_enabled and not last_message_separator_printed:
                 if (datetime.datetime.now() - last_message_timestamp).total_seconds() > separator_seconds:

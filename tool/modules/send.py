@@ -165,7 +165,7 @@ def send_messages(messages, loop):
     :param loop: bool indicating whether the message sequence should be looped (re-sent over and over)
     :param messages: List of messages, where a message has the format (arb_id, [data_byte])
     """
-    with CanActions() as can_wrap:
+    with CanActions(notifier_enabled=False) as can_wrap:
         loop_counter = 0
         while True:
             for i in range(len(messages)):

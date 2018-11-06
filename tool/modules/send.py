@@ -21,7 +21,8 @@ class CanMessage:
         """
         self.arb_id = arb_id
         self.data = data
-        self.delay = delay
+        # Negative delays are not allowed
+        self.delay = max([delay, 0.0])
         self.is_extended = is_extended
         self.is_error = is_error
         self.is_remote = is_remote

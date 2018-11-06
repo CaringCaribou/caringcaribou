@@ -101,7 +101,7 @@ def insert_message_length(data, pad=False):
     """
     length = len(data)
     if length > 7:
-        raise IndexError("send_with_auto_length: data can only contain up to 7 bytes: {0}".format(len(data)))
+        raise IndexError("Data can only contain up to 7 bytes: {0}".format(len(data)))
     full_data = [length] + data
     if pad:
         full_data += [0x00] * (7-length)
@@ -160,7 +160,7 @@ class CanActions:
                 raise ValueError("Arbitration ID must be set through either 'arb_id' argument or self.arb_id")
             arb_id = self.arb_id
         # Force extended flag if it is unspecified and arbitration ID is larger than the standard format allows
-        if not is_extended:
+        if is_extended is None:
             is_extended = arb_id > ARBITRATION_ID_MAX
         msg = can.Message(arbitration_id=arb_id,
                           data=data,

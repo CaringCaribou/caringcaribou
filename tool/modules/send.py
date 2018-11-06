@@ -63,6 +63,61 @@ def parse_messages(msgs, delay):
         exit()
 
 
+def parse_candump_line(curr_line, prev_timestamp, force_delay):
+    """
+    Parses a line on candump log format, e.g.
+    (1499197954.029156) can0 123#c0ffee
+
+    :param curr_line: str to parse
+    :param prev_timestamp: datetime timestamp of previous message (to calculate delay)
+    :param force_delay: float value to override delay or None to use calculated delay
+    :return: CanMessage representing 'curr_line', datetime.datetime timestamp of 'curr_line'
+    """
+    segments = curr_line.strip().split(" ")
+    time_stamp = float(segments[0][1:-1])
+    msg_segs = segments[2].split("#")
+    arb_id = int(msg_segs[0], 16)
+    data = str_to_int_list(msg_segs[1])
+    if prev_timestamp is None:
+        delay = 0
+    elif force_delay is not None:
+        delay = force_delay
+    else:
+        delay = time_stamp - prev_timestamp
+    message = CanMessage(arb_id, data, delay)
+    return message, time_stamp
+
+
+def parse_pythoncan_line(curr_line, prev_timestamp, force_delay):
+    """
+    Parses a line on python-can log format (which differs between versions)
+
+    :param curr_line: str to parse
+    :param prev_timestamp: datetime timestamp of previous message (to calculate delay)
+    :param force_delay: float value to override delay or None to use calculated delay
+    :return: CanMessage representing 'curr_line', datetime.datetime timestamp of 'curr_line'
+    """
+    line_regex = re.compile(r"Timestamp: +(?P<timestamp>\d+\.\d+) +ID: (?P<arb_id>[0-9a-fA-F]+) +"
+                            r"((\d+)|(?P<is_extended>[SX]) (?P<is_error>[E ]) (?P<is_remote>[R ])) +"
+                            r"DLC: +[0-8] +(?P<data>(?:[0-9a-fA-F]{2} ?){0,8}) *(Channel: (?P<channel>\w*))?")
+    parsed_msg = line_regex.match(curr_line)
+    arb_id = int(parsed_msg.group("arb_id"), 16)
+    time_stamp = float(parsed_msg.group("timestamp"))
+    data = list(int(a, 16) for a in parsed_msg.group("data").split(" ") if a)
+    if prev_timestamp is None:
+        delay = 0
+    elif force_delay is not None:
+        delay = force_delay
+    else:
+        delay = time_stamp - prev_timestamp
+    # Parse flags
+    is_extended = parsed_msg.group("is_extended") == "X"
+    is_error = parsed_msg.group("is_error") == "E"
+    is_remote = parsed_msg.group("is_remote") == "R"
+    message = CanMessage(arb_id, data, delay, is_extended, is_error, is_remote)
+    return message, time_stamp
+
+
 def parse_file(filename, force_delay):
     """
     Parses a file containing CAN traffic logs.
@@ -71,63 +126,6 @@ def parse_file(filename, force_delay):
     :param force_delay: Delay value between each message (if omitted, the delays specified by log file are used)
     :return: list of CanMessage instances
     """
-
-    def parse_candump_line(curr_line, prev_timestamp):
-        """
-        Parses a line on candump log format, e.g.
-        (1499197954.029156) can0 123#c0ffee
-
-        :param curr_line: str to parse
-        :param prev_timestamp: datetime object containing timestamp of previous message (to calculate delay)
-        :return: CanMessage representing 'curr_line', datetime.datetime timestamp of 'curr_line'
-        """
-        segments = curr_line.strip().split(" ")
-        time_stamp = float(segments[0][1:-1])
-        msg_segs = segments[2].split("#")
-        arb_id = int(msg_segs[0], 16)
-        data = str_to_int_list(msg_segs[1])
-        if prev_timestamp is None:
-            delay = 0
-        elif force_delay is not None:
-            delay = force_delay
-        else:
-            delay = time_stamp - prev_timestamp
-        message = CanMessage(arb_id, data, delay)
-        return message, time_stamp
-
-    def parse_pythoncan_line(curr_line, prev_timestamp):
-        """
-        Parses a line on python-can log format.
-
-        Example on format used by older python-can versions:
-        Timestamp:        0.000000        ID: 017a    000    DLC: 3    c0 ff ee
-        Examples on format used by python-can 2.1.0+:
-        Timestamp:        0.000000        ID: 0000    S          DLC: 3    c0 ff ee
-        Timestamp:        0.000000    ID: 00000000    X E R      DLC: 4    de ad ca fe
-
-        :param curr_line: str to parse
-        :param prev_timestamp: datetime object containing timestamp of previous message (to calculate delay)
-        :return: CanMessage representing 'curr_line', datetime.datetime timestamp of 'curr_line'
-        """
-        line_regex = re.compile(r"Timestamp: (?P<timestamp>\d+\.\d+) +ID: (?P<arb_id>[0-9a-fA-F]+) +"
-                                r"((\d+)|(?P<is_extended>[SX]) (?P<is_error>[E ]) (?P<is_remote>[R ])) +"
-                                r"DLC: [0-8] +(?P<data>(?:[0-9a-fA-F]{2} ?){0,8})")
-        parsed_msg = line_regex.match(curr_line)
-        arb_id = int(parsed_msg.group("arb_id"), 16)
-        time_stamp = float(parsed_msg.group("timestamp"))
-        data = list(int(a, 16) for a in parsed_msg.group("data").split(" "))
-        if prev_timestamp is None:
-            delay = 0
-        elif force_delay is not None:
-            delay = force_delay
-        else:
-            delay = time_stamp - prev_timestamp
-        # Parse flags
-        is_extended = parsed_msg.group("is_extended") == "X"
-        is_error = parsed_msg.group("is_error") == "E"
-        is_remote = parsed_msg.group("is_remote") == "R"
-        message = CanMessage(arb_id, data, delay, is_extended, is_error, is_remote)
-        return message, time_stamp
 
     try:
         messages = []
@@ -148,9 +146,9 @@ def parse_file(filename, force_delay):
                         raise IOError("Unrecognized file type - could not parse file")
                 # Parse line
                 try:
-                    msg, timestamp = line_parser(line, timestamp)
+                    msg, timestamp = line_parser(line, timestamp, force_delay)
                 except (ValueError, AttributeError) as e:
-                    raise IOError("Could not parse line:\n  '{0}'".format(line.rstrip("\n")))
+                    raise IOError("Could not parse line:\n  '{0}'\n  Reason: {1}".format(line.rstrip("\n"), e))
                 messages.append(msg)
             return messages
     except IOError as e:

@@ -98,9 +98,14 @@ def module_main(args):
     :param args: List of module arguments
     """
     args = parse_args(args)
-    whitelist = [int_from_str_base(x) for x in args.whitelist]
     separator_seconds = args.separator_seconds
     candump_format = args.candump_format
+    whitelist = []
+    for item in args.whitelist:
+        item_int = int_from_str_base(item)
+        if item_int is None:
+            raise ValueError("Invalid value passed in whitelist argument: '{0}'".format(item))
+        whitelist.append(item_int)
 
     # Print to stdout
     if args.file is None:

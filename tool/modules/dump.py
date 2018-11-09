@@ -55,6 +55,7 @@ def parse_args(args):
                                      description="CAN traffic dump module for CaringCaribou",
                                      epilog="""Example usage:
   cc.py dump
+  cc.py dump -s 1.0
   cc.py dump -f output.txt
   cc.py dump -c -f output.txt 0x733 0x734""")
     parser.add_argument("-f", "--file",

@@ -75,6 +75,14 @@ def parse_args(args):
                         dest="separator_seconds",
                         help="Print separating line after SEC silent seconds")
     args = parser.parse_args(args)
+    # Parse whitelist
+    whitelist = []
+    for item in args.whitelist:
+        item_int = int_from_str_base(item)
+        if item_int is None:
+            raise ValueError("Invalid value passed in whitelist argument: '{0}'".format(item))
+        whitelist.append(item_int)
+    args.whitelist = whitelist
     return args
 
 
@@ -101,12 +109,7 @@ def module_main(args):
     args = parse_args(args)
     separator_seconds = args.separator_seconds
     candump_format = args.candump_format
-    whitelist = []
-    for item in args.whitelist:
-        item_int = int_from_str_base(item)
-        if item_int is None:
-            raise ValueError("Invalid value passed in whitelist argument: '{0}'".format(item))
-        whitelist.append(item_int)
+    whitelist = args.whitelist
 
     # Print to stdout
     if args.file is None:

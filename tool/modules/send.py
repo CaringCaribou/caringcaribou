@@ -6,6 +6,7 @@ import re
 
 
 FILE_LINE_COMMENT_PREFIX = "#"
+PADDING_BYTE = 0x00
 
 
 class CanMessage:
@@ -28,12 +29,13 @@ class CanMessage:
         self.is_remote = is_remote
 
 
-def parse_messages(msgs, delay):
+def parse_messages(msgs, delay, pad):
     """
     Parses a list of message strings.
 
     :param delay: Delay between each message
     :param msgs: list of message strings
+    :param pad: bool indicating whether messages should be padded to 8 bytes
     :return: list of CanMessage instances
     """
     message_list = []
@@ -55,6 +57,9 @@ def parse_messages(msgs, delay):
                 if not 0x00 <= byte_int <= 0xff:
                     raise ValueError("Invalid byte value: '{0}'".format(byte))
                 msg_data.append(byte_int)
+            if pad:
+                # Pad to 8 bytes
+                msg_data.extend([PADDING_BYTE] * (8 - len(msg_data)))
             fixed_msg = CanMessage(arb_id, msg_data, delay)
             message_list.append(fixed_msg)
         # No delay before sending first message
@@ -178,6 +183,33 @@ def send_messages(messages, loop):
             loop_counter += 1
 
 
+def __handle_parse_messages(args):
+    """
+    Wrapper for parsing message strings
+
+    :param args: argument namespace
+    :return: list of CAN messages
+    """
+    message_strings = args.msg
+    delay = args.delay
+    pad = args.pad
+    messages = parse_messages(message_strings, delay, pad)
+    return messages
+
+
+def __handle_parse_file(args):
+    """
+    Wrapper for parsing a file containing messages
+
+    :param args: argument namespace
+    :return: list of CAN messages
+    """
+    filename = args.filename
+    delay = args.delay
+    messages = parse_file(filename, delay)
+    return messages
+
+
 def parse_args(args):
     """
     Argument parser for the send module.
@@ -193,6 +225,7 @@ def parse_args(args):
                                      epilog="""Example usage:
   cc.py send message 0x7a0#c0.ff.ee.00.11.22.33.44
   cc.py send message -d 0.5 123#de.ad.be.ef 124#01.23.45
+  cc.py send message -p 0x100#11 0x100#22.33
   cc.py send file can_dump.txt
   cc.py send file -d 0.2 can_dump.txt""")
     subparsers = parser.add_subparsers(dest="module_function")
@@ -200,22 +233,23 @@ def parse_args(args):
     
     # Parser for sending messages from command line
     cmd_msgs = subparsers.add_parser("message")
-    cmd_msgs.add_argument("data", metavar="msg", nargs="+",
+    cmd_msgs.add_argument("msg", nargs="+",
                           help="message on format ARB_ID#DATA where ARB_ID is interpreted "
                                "as hex if it starts with 0x and decimal otherwise. DATA "
                                "consists of 1-8 bytes written in hex and separated by dots.")
     cmd_msgs.add_argument("--delay", "-d", metavar="D", type=float, default=0,
                           help="delay between messages in seconds")
     cmd_msgs.add_argument("--loop", "-l", action="store_true", help="loop message sequence (re-send over and over)")
-    cmd_msgs.set_defaults(func=parse_messages)
+    cmd_msgs.add_argument("--pad", "-p", action="store_true", help="automatically pad messages to 8 bytes length")
+    cmd_msgs.set_defaults(func=__handle_parse_messages)
 
     # Parser for sending messages from file
     file_msg = subparsers.add_parser("file")
-    file_msg.add_argument("data", metavar="filename", help="path to file")
+    file_msg.add_argument("filename", help="path to file")
     file_msg.add_argument("--delay", "-d", metavar="D", type=float, default=None,
                           help="delay between messages in seconds (overrides timestamps in file)")
     file_msg.add_argument("--loop", "-l", action="store_true", help="loop message sequence (re-send over and over)")
-    file_msg.set_defaults(func=parse_file)
+    file_msg.set_defaults(func=__handle_parse_file)
 
     args = parser.parse_args(args)
     return args
@@ -229,7 +263,7 @@ def module_main(args):
     """
     args = parse_args(args)
     print("Parsing messages")
-    messages = args.func(args.data, args.delay)
+    messages = args.func(args)
     if not messages:
         print("No messages parsed")
     else:

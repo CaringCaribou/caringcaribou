@@ -372,6 +372,31 @@ def subfunc_discovery(args):
                 print("\n\nNo sub-functions were found")
 
 
+def tester_present(args):
+    send_arb_id = int_from_str_base(args.src)
+    delay = args.delay
+    suppress_positive_response = args.spr
+
+    testerpresent_service_id = 0x3E
+
+    if suppress_positive_response:
+        sub_function = 0x80
+    else:
+        sub_function = 0x00
+
+    message_data = [0x02, testerpresent_service_id, sub_function, 0x00, 0x00, 0x00, 0x00, 0x00]
+    print("Sending TesterPresent to arbitration ID {0} (0x{0:02x})".format(send_arb_id))
+    print("\nPress Ctrl+C to stop\n")
+    with CanActions(arb_id=send_arb_id) as can_wrap:
+        counter = 1
+        while True:
+            can_wrap.send(data=message_data)
+            print("\rCounter:", counter, end="")
+            stdout.flush()
+            time.sleep(delay)
+            counter += 1
+
+
 def parse_args(args):
     """
     Parser for diagnostics module arguments.
@@ -388,7 +413,8 @@ def parse_args(args):
   cc.py dcm discovery -autoblacklist 10
   cc.py dcm services 0x733 0x633
   cc.py dcm subfunc 0x733 0x633 0x22 2 3
-  cc.py dcm dtc 0x7df 0x7e8""")
+  cc.py dcm dtc 0x7df 0x7e8
+  cc.py dcm testerpresent 0x733""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 
@@ -425,6 +451,13 @@ def parse_args(args):
     parser_dtc.add_argument("dst", help="arbitration ID to listen to")
     parser_dtc.add_argument("-clear", action="store_true", help="Clear DTC / MIL")
     parser_dtc.set_defaults(func=dcm_dtc)
+
+    # Parser for TesterPresent
+    parser_tp = subparsers.add_parser("testerpresent")
+    parser_tp.add_argument("src", help="arbitration ID to transmit from")
+    parser_tp.add_argument("-delay", type=float, default=0.5, help="delay between each TesterPresent message")
+    parser_tp.add_argument("-spr", action="store_true", help="suppress positive response")
+    parser_tp.set_defaults(func=tester_present)
 
     args = parser.parse_args(args)
     return args

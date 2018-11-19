@@ -4,6 +4,7 @@ from lib.iso15765_2 import IsoTp
 from lib.iso14229_1 import NegativeResponseCodes
 from sys import stdout, version_info
 import argparse
+import datetime
 import time
 
 
@@ -251,6 +252,58 @@ def service_discovery_wrapper(args):
         print("Supported service 0x{0:02x}: {1}".format(service_id, service_name))
 
 
+def tester_present(send_arb_id, delay, duration, suppress_positive_response):
+    """
+    Sends TesterPresent messages
+
+    :param send_arb_id: int arbitration ID for requests
+    :param delay: float seconds between each request
+    :param duration: float seconds before automatically stopping or None to continue until stopped manually
+    :param suppress_positive_response: bool indicating whether positive responses should be suppressed
+    """
+    tester_present_service_id = 0x3E
+
+    # SPR simply tells the recipient not to send a positive response to each TesterPresent message
+    if suppress_positive_response:
+        sub_function = 0x80
+    else:
+        sub_function = 0x00
+
+    # Calculate end timestamp if the TesterPresent should automatically stop after a given duration
+    auto_stop = duration is not None
+    end_time = None
+    if auto_stop:
+        end_time = datetime.datetime.now() + datetime.timedelta(seconds=duration)
+
+    message_data = [tester_present_service_id, sub_function]
+    print("Sending TesterPresent to arbitration ID {0} (0x{0:02x})".format(send_arb_id))
+    print("\nPress Ctrl+C to stop\n")
+    with IsoTp(send_arb_id, None) as can_wrap:
+        counter = 1
+        while True:
+            can_wrap.send_request(message_data)
+            print("\rCounter:", counter, end="")
+            stdout.flush()
+            time.sleep(delay)
+            counter += 1
+            if auto_stop and datetime.datetime.now() >= end_time:
+                break
+
+
+def tester_present_wrapper(args):
+    """
+    Wrapper used to initiate a TesterPresent session
+
+    :param args: argparse.Namespace instance
+    """
+    send_arb_id = int_from_str_base(args.src)
+    delay = args.delay
+    duration = args.duration
+    suppress_positive_response = args.spr
+
+    tester_present(send_arb_id, delay, duration, suppress_positive_response)
+
+
 def parse_args(args):
     """
     Parser for diagnostics module arguments.
@@ -265,7 +318,8 @@ def parse_args(args):
   cc.py uds discovery
   cc.py uds discovery -blacklist 0x123 0x456
   cc.py uds discovery -autoblacklist 10
-  cc.py uds services 0x733 0x633""")
+  cc.py uds services 0x733 0x633
+  cc.py uds testerpresent 0x733""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 
@@ -286,6 +340,14 @@ def parse_args(args):
     parser_info.add_argument("dst", help="arbitration ID to listen to")
     parser_info.add_argument("--delay", type=float, default=REQUEST_DELAY, help="delay between each message")
     parser_info.set_defaults(func=service_discovery_wrapper)
+
+    # Parser for TesterPresent
+    parser_tp = subparsers.add_parser("testerpresent")
+    parser_tp.add_argument("src", help="arbitration ID to transmit from")
+    parser_tp.add_argument("-delay", type=float, default=0.5, help="delay between each TesterPresent message")
+    parser_tp.add_argument("-dur", "--duration", metavar="D", type=float, help="automatically stop after D seconds")
+    parser_tp.add_argument("-spr", action="store_true", help="suppress positive response")
+    parser_tp.set_defaults(func=tester_present_wrapper)
 
     args = parser.parse_args(args)
     return args

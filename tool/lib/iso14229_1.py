@@ -102,19 +102,47 @@ class ServiceID(object):
     LINK_CONTROL = 0x87
 
 
+class BaseService(object):
+
+    service_id = None
+
+
 class Services(object):
 
-    class EcuReset(object):
-        # 0x00 ISO SAE Reserved
-        HARD_RESET = 0x01
-        KEY_OFF_ON_RESET = 0x02
-        SOFT_RESET = 0x03
-        ENABLE_RAPID_POWER_SHUTDOWN = 0x04
-        DISABLE_RAPID_POWER_SHUTDOWN = 0x05
-        # 0x06-0x3F ISO SAE Reserved
-        # 0x40-0x5F Vehicle manufacturer specific
-        # 0x60-0x7E System supplier specific
-        # 0x7F ISO SAE Reserved
+    class DiagnosticSessionControl(BaseService):
+
+        service_id = ServiceID.DIAGNOSTIC_SESSION_CONTROL
+
+        class DiagnosticSessionType(object):
+            # 0x00 ISO SAE Reserved
+            DEFAULT_SESSION = 0x01
+            PROGRAMMING_SESSION = 0x02
+            EXTENDED_DIAGNOSTIC_SESSION = 0x03
+            SAFETY_SYSTEM_DIAGNOSTIC_SESSION = 0x04
+            # 0x05-0x3F ISO SAE Reserved
+            # 0x40-0x5F Vehicle manufacturer specific
+            # 0x60-0x7E System supplier specific
+            # 0x7F ISO SAE Reserved
+
+    class EcuReset(BaseService):
+
+        service_id = ServiceID.ECU_RESET
+
+        class ResetType(object):
+            # 0x00 ISO SAE Reserved
+            HARD_RESET = 0x01
+            KEY_OFF_ON_RESET = 0x02
+            SOFT_RESET = 0x03
+            ENABLE_RAPID_POWER_SHUTDOWN = 0x04
+            DISABLE_RAPID_POWER_SHUTDOWN = 0x05
+            # 0x06-0x3F ISO SAE Reserved
+            # 0x40-0x5F Vehicle manufacturer specific
+            # 0x60-0x7E System supplier specific
+            # 0x7F ISO SAE Reserved
+
+    class TesterPresent(BaseService):
+
+        service_id = ServiceID.TESTER_PRESENT
 
 
 class Constants(object):

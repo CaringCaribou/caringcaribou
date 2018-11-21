@@ -1,7 +1,7 @@
 from __future__ import print_function
 from lib.can_actions import int_from_str_base, ARBITRATION_ID_MIN, ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
 from lib.iso15765_2 import IsoTp
-from lib.iso14229_1 import NegativeResponseCodes
+from lib.iso14229_1 import NegativeResponseCodes, Services
 from sys import stdout, version_info
 import argparse
 import datetime
@@ -119,8 +119,11 @@ def uds_discovery(min_id=None, max_id=None, blacklist_args=None, auto_blacklist_
     if auto_blacklist_duration < 0:
         raise ValueError("auto_blacklist_duration must not be smaller than 0, got {0}'".format(auto_blacklist_duration))
 
+    service_id = Services.DiagnosticSessionControl.service_id
+    sub_function = Services.DiagnosticSessionControl.DiagnosticSessionType.DEFAULT_SESSION
+    session_control_data = [service_id, sub_function]
+
     found_arbitration_ids = []
-    session_control_data = [0x10, 0x01]
 
     with IsoTp(None, None) as tp:
         blacklist = set(blacklist_args)
@@ -262,7 +265,6 @@ def tester_present(send_arb_id, delay, duration, suppress_positive_response):
     :param duration: float seconds before automatically stopping or None to continue until stopped manually
     :param suppress_positive_response: bool indicating whether positive responses should be suppressed
     """
-    tester_present_service_id = 0x3E
 
     # SPR simply tells the recipient not to send a positive response to each TesterPresent message
     if suppress_positive_response:
@@ -276,7 +278,8 @@ def tester_present(send_arb_id, delay, duration, suppress_positive_response):
     if auto_stop:
         end_time = datetime.datetime.now() + datetime.timedelta(seconds=duration)
 
-    message_data = [tester_present_service_id, sub_function]
+    service_id = Services.TesterPresent.service_id
+    message_data = [service_id, sub_function]
     print("Sending TesterPresent to arbitration ID {0} (0x{0:02x})".format(send_arb_id))
     print("\nPress Ctrl+C to stop\n")
     with IsoTp(send_arb_id, None) as can_wrap:

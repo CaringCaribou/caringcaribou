@@ -391,25 +391,15 @@ class Iso14229_1(object):
         Sends an "ECU reset" request for specified reset type
 
         :param reset_type: Indicates which kind of reset should be requested
-        :return: Response data if successful AND positive responses are not suppressed by 'sub_function',
+        :return: Response data if successful,
                  None otherwise
         """
-        if reset_type is None:
-            return None
-
-        suppress_positive_response = False
-        if (reset_type & 0x80) != 0:
-            suppress_positive_response = True
-
         request = [0] * 2
         request[0] = ServiceID.ECU_RESET
         request[1] = reset_type
 
         self.tp.send_request(request)
-        response = None
-
-        if not suppress_positive_response:
-            response = self.receive_response(self.P3_CLIENT)
+        response = self.receive_response(self.P3_CLIENT)
 
         return response
 
@@ -419,7 +409,7 @@ class Iso14229_1(object):
 
         :param transmission_mode: Transmission mode
         :param identifier: Identifier
-        :return: Response data if successful AND positive responses are not suppressed by 'sub_function',
+        :return: Response data if successful,
                  None otherwise
         """
         if transmission_mode is None or identifier is None or len(identifier) == 0:

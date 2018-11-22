@@ -198,7 +198,7 @@ class Iso14229_1(object):
 
         :param wait_window: Minimum time (in seconds) to wait before timeout
         :return: The received response if successful,
-                 False otherwise
+                 None otherwise
         """
         start_time = time.clock()
         while True:
@@ -212,7 +212,7 @@ class Iso14229_1(object):
                         response[2] == NegativeResponseCodes.REQUEST_CORRECTLY_RECEIVED_RESPONSE_PENDING:
                     continue
             break
-        return list(response)
+        return response
 
     @staticmethod
     def is_positive_response(response):

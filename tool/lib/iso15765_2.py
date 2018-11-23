@@ -180,10 +180,17 @@ class IsoTp:
         if wait_window is None:
             wait_window = self.N_BS_TIMEOUT
         start_time = datetime.datetime.now()
+        end_time = start_time + datetime.timedelta(seconds=wait_window)
         sn = 0
         message_length = 0
 
         while True:
+            # Timeout check
+            current_time = datetime.datetime.now()
+            if current_time >= end_time:
+                # Timeout
+                return None
+            # Receive frame
             msg = self.bus.recv(wait_window)
             if msg is not None:
                 if msg.arbitration_id == self.arb_id_request:
@@ -236,11 +243,6 @@ class IsoTp:
                     else:
                         # Invalid frame type
                         return None
-            stop_time = datetime.datetime.now()
-            passed_time = stop_time - start_time
-            if passed_time.total_seconds() > wait_window:
-                # Timeout
-                return None
         return list(message)
 
     def transmit(self, frames, arbitration_id, arbitration_id_flow_control):

@@ -92,6 +92,9 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             elif service_id == ServiceID.READ_MEMORY_BY_ADDRESS:
                 # Read memory by address
                 response_data = self.handle_read_memory_by_address(data)
+            elif service_id == ServiceID.ECU_RESET:
+                # ECU reset
+                response_data = self.handle_ecu_reset(data)
             else:
                 # Unsupported service
                 response_data = self.handle_unsupported_service(data)
@@ -197,5 +200,29 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             response_data = self.create_positive_response(service_id, memory_data)
         else:
             nrc = NegativeResponseCodes.REQUEST_OUT_OF_RANGE
+            response_data = self.create_negative_response(service_id, nrc)
+        return response_data
+
+    def handle_ecu_reset(self, data):
+        """
+        Evaluates an ECU reset request and returns the appropriate response
+
+        :param data: Data from incoming request
+        :return: Response to be sent
+        """
+        service_id = data[0]
+        subfunction = data[1]
+        reset_type = subfunction & 0x7F
+        suppress_positive_response = subfunction >> 7
+
+        reset_types = Services.EcuReset.ResetType
+
+        if reset_type in [reset_types.HARD_RESET, reset_types.KEY_OFF_ON_RESET, reset_types.SOFT_RESET]:
+            if suppress_positive_response:
+                response_data = None
+            else:
+                response_data = self.create_positive_response(service_id, [reset_type])
+        else:
+            nrc = NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED
             response_data = self.create_negative_response(service_id, nrc)
         return response_data

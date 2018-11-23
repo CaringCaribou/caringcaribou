@@ -1,12 +1,11 @@
 from __future__ import print_function
 from lib.can_actions import int_from_str_base, ARBITRATION_ID_MIN, ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
 from lib.iso15765_2 import IsoTp
-from lib.iso14229_1 import NegativeResponseCodes, Services
+from lib.iso14229_1 import Iso14229_1, NegativeResponseCodes, Services
 from sys import stdout, version_info
 import argparse
 import datetime
 import time
-
 
 # Handle large ranges efficiently in both python 2 and 3
 if version_info[0] == 2:
@@ -52,6 +51,49 @@ UDS_SERVICE_NAMES = {
     0xAE: "GMLAN_DEVICE_CONTROL"
 }
 
+NRC_NAMES = {
+    0x00: "POSITIVE_RESPONSE",
+    0x10: "GENERAL_REJECT",
+    0x11: "SERVICE_NOT_SUPPORTED",
+    0x12: "SUB_FUNCTION_NOT_SUPPORTED",
+    0x13: "INCORRECT_MESSAGE_LENGTH_OR_INVALID_FORMAT",
+    0x14: "RESPONSE_TOO_LONG",
+    0x21: "BUSY_REPEAT_REQUEST",
+    0x22: "CONDITIONS_NOT_CORRECT",
+    0x24: "REQUEST_SEQUENCE_ERROR",
+    0x25: "NO_RESPONSE_FROM_SUBNET_COMPONENT",
+    0x26: "FAILURE_PREVENTS_EXECUTION_OF_REQUESTED_ACTION",
+    0x31: "REQUEST_OUT_OF_RANGE",
+    0x33: "SECURITY_ACCESS_DENIED",
+    0x35: "INVALID_KEY",
+    0x36: "EXCEEDED_NUMBER_OF_ATTEMPTS",
+    0x37: "REQUIRED_TIME_DELAY_NOT_EXPIRED",
+    0x70: "UPLOAD_DOWNLOAD_NOT_ACCEPTED",
+    0x71: "TRANSFER_DATA_SUSPENDED",
+    0x72: "GENERAL_PROGRAMMING_FAILURE",
+    0x73: "WRONG_BLOCK_SEQUENCE_COUNTER",
+    0x78: "REQUEST_CORRECTLY_RECEIVED_RESPONSE_PENDING",
+    0x7E: "SUB_FUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION",
+    0x7F: "SERVICE_NOT_SUPPORTED_IN_ACTIVE_SESSION",
+    0x81: "RPM_TOO_HIGH",
+    0x82: "RPM_TOO_LOW",
+    0x83: "ENGINE_IS_RUNNING",
+    0x84: "ENGINE_IS_NOT_RUNNING",
+    0x85: "ENGINE_RUN_TIME_TOO_LOW",
+    0x86: "TEMPERATURE_TOO_HIGH",
+    0x87: "TEMPERATURE_TOO_LOW",
+    0x88: "VEHICLE_SPEED_TOO_HIGH",
+    0x89: "VEHICLE_SPEED_TOO_LOW",
+    0x8A: "THROTTLE_PEDAL_TOO_HIGH",
+    0x8B: "THROTTLE_PEDAL_TOO_LOW",
+    0x8C: "TRANSMISSION_RANGE_NOT_IN_NEUTRAL",
+    0x8D: "TRANSMISSION_RANGE_NOT_IN_GEAR",
+    0x8F: "BRAKE_SWITCHES_NOT_CLOSED",
+    0x90: "SHIFT_LEVER_NOT_IN_PARK",
+    0x91: "TORQUE_CONVERTER_CLUTCH_LOCKED",
+    0x92: "VOLTAGE_TOO_HIGH",
+    0x93: "VOLTAGE_TOO_LOW"
+}
 
 REQUEST_DELAY = 0.01
 BYTE_MIN = 0x00
@@ -308,6 +350,87 @@ def tester_present_wrapper(args):
     tester_present(send_arb_id, delay, duration, suppress_positive_response)
 
 
+def ecu_reset(arb_id_request, arb_id_response, reset_type, timeout):
+    """
+    Sends an ECU Reset message
+
+    :return: list of response byte values on success, None otherwise
+    :param arb_id_request: int arbitration ID for requests
+    :param arb_id_response: int arbitration ID for responses
+    :param reset_type: int value corresponding to a reset type
+    :param timeout: float seconds to wait for response before timeout
+    """
+    # Sanity checks
+    if not BYTE_MIN <= reset_type <= BYTE_MAX:
+        raise ValueError("reset type must be within interval 0x{0:02x}-0x{1:02x}".format(BYTE_MIN, BYTE_MAX))
+    if isinstance(timeout, float) and timeout < 0.0:
+        raise ValueError("timeout value ({0}) cannot be negative".format(timeout))
+
+    with IsoTp(arb_id_request=arb_id_request, arb_id_response=arb_id_response) as tp:
+        # Setup filter for incoming messages
+        tp.set_filter_single_arbitration_id(arb_id_response)
+        with Iso14229_1(tp) as uds:
+            # Set timeout
+            if timeout is not None:
+                uds.P3_CLIENT = timeout
+
+            response = uds.ecu_reset(reset_type=reset_type)
+            return response
+
+
+def ecu_reset_wrapper(args):
+    """
+    Wrapper used to initiate ECUReset
+
+    :param args: argparse.Namespace instance
+    """
+    arb_id_request = int_from_str_base(args.src)
+    arb_id_response = int_from_str_base(args.dst)
+    reset_type = int_from_str_base(args.reset_type)
+    timeout = args.timeout
+
+    print("Sending ECU reset, type 0x{0:02x} to arbitration ID {1} (0x{1:02x})".format(reset_type, arb_id_request))
+    try:
+        response = ecu_reset(arb_id_request, arb_id_response, reset_type, timeout)
+    except ValueError as e:
+        print("ValueError: {0}".format(e))
+        return
+
+    # Decode response
+    if response is None:
+        print("No response was received")
+    else:
+        response_length = len(response)
+        if response_length == 0:
+            # Empty response
+            print("Received empty response")
+        elif response_length == 1:
+            # Invalid response length
+            print("Received response [{0:02x}] (1 byte), expected at least 2 bytes".format(response[0], len(response)))
+        elif Iso14229_1.is_positive_response(response):
+            # Positive response handling
+            response_service_id = response[0]
+            subfunction = response[1]
+            expected_response_id = Iso14229_1.get_service_response_id(Services.EcuReset.service_id)
+            if response_service_id == expected_response_id and subfunction == reset_type:
+                # Positive response
+                print("Received positive response")
+                if response_length > 2:
+                    # Additional data can be seconds left to reset (powerDownTime) or manufacturer specific
+                    additional_data = ",".join(["{0:02x}".format(b) for b in response[2:]])
+                    print("Response contains additional data: [{0}]".format(additional_data))
+            else:
+                # Service and/or subfunction mismatch
+                print("Response service ID 0x{0:02x} and subfunction 0x{1:02x} do not match expected values "
+                      "0x{2:02x} and 0x{3:02x}".format(response_service_id, subfunction, expected_response_id,
+                                                       reset_type))
+        else:
+            # Negative response handling
+            nrc = response[1]
+            nrc_description = NRC_NAMES.get(nrc, "Unknown NRC value")
+            print("Received negative response code (NRC) 0x{0:02x}: {1}".format(nrc, nrc_description))
+
+
 def parse_args(args):
     """
     Parser for diagnostics module arguments.
@@ -323,6 +446,7 @@ def parse_args(args):
   cc.py uds discovery -blacklist 0x123 0x456
   cc.py uds discovery -autoblacklist 10
   cc.py uds services 0x733 0x633
+  cc.py uds ecu_reset 1 0x733 0x633
   cc.py uds testerpresent 0x733""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
@@ -345,7 +469,18 @@ def parse_args(args):
     parser_info.add_argument("--delay", type=float, default=REQUEST_DELAY, help="delay between each message")
     parser_info.set_defaults(func=service_discovery_wrapper)
 
-    # Parser for Tester Present
+    # Parser for ECUReset
+    parser_ecu_reset = subparsers.add_parser("ecu_reset")
+    parser_ecu_reset.add_argument("reset_type", metavar="type",
+                                  help="Reset type: 1=hard, 2=key off/on, 3=soft, 4=enable rapid power shutdown, "
+                                       "5=disable rapid power shutdown")
+    parser_ecu_reset.add_argument("src", help="arbitration ID to transmit from")
+    parser_ecu_reset.add_argument("dst", help="arbitration ID to listen to")
+    parser_ecu_reset.add_argument("-t", "--timeout", type=float, metavar="T",
+                                  help="seconds to wait for response before timeout")
+    parser_ecu_reset.set_defaults(func=ecu_reset_wrapper)
+
+    # Parser for TesterPresent
     parser_tp = subparsers.add_parser("testerpresent")
     parser_tp.add_argument("src", help="arbitration ID to transmit from")
     parser_tp.add_argument("-delay", type=float, default=0.5, help="delay between each TesterPresent message")

@@ -50,7 +50,7 @@ def str_to_int_list(s):
     :return: list of ints
     :rtype: list
     """
-    return [int(s[i * 2:i * 2 + 2], 16) for i in range(len(s) / 2)]
+    return [int(s[i * 2:i * 2 + 2], 16) for i in range(len(s) // 2)]
 
 
 def int_from_byte_list(byte_values, start_index=0, length=None):

@@ -1,4 +1,5 @@
-from lib.can_actions import ARBITRATION_ID_MAX, CanActions, int_from_str_base, str_to_int_list
+from lib.can_actions import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED, CanActions, int_from_str_base,\
+    str_to_int_list
 from time import sleep
 from sys import exit
 import argparse
@@ -46,15 +47,18 @@ def parse_messages(msgs, delay, pad):
     try:
         for msg in msgs:
             msg_parts = msg.split("#", 1)
+            # Check arbitration ID
             arb_id = int_from_str_base(msg_parts[0])
             if arb_id is None:
                 raise ValueError("Invalid arbitration ID: '{0}'".format(msg_parts[0]))
-            msg_data = []
+            if arb_id > ARBITRATION_ID_MAX_EXTENDED:
+                raise ValueError("Arbitration ID too large (max is 0x{0:x})".format(ARBITRATION_ID_MAX_EXTENDED))
             # Check data length
             byte_list = msg_parts[1].split(".")
             if not 0 < len(byte_list) <= 8:
                 raise ValueError("Invalid data length: {0}".format(len(byte_list)))
             # Validate data bytes
+            msg_data = []
             for byte in byte_list:
                 byte_int = int(byte, 16)
                 if not 0x00 <= byte_int <= 0xff:

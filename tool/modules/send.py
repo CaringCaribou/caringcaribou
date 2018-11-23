@@ -1,4 +1,4 @@
-from lib.can_actions import CanActions, int_from_str_base, str_to_int_list
+from lib.can_actions import ARBITRATION_ID_MAX, CanActions, int_from_str_base, str_to_int_list
 from time import sleep
 from sys import exit
 import argparse
@@ -14,7 +14,7 @@ class CanMessage:
     Message wrapper class used by file parsers.
     """
 
-    def __init__(self, arb_id, data, delay, is_extended=False, is_error=False, is_remote=False):
+    def __init__(self, arb_id, data, delay, is_extended=None, is_error=False, is_remote=False):
         """
         :param arb_id: int - arbitration ID
         :param data: list of ints - data bytes
@@ -24,7 +24,10 @@ class CanMessage:
         self.data = data
         # Negative delays are not allowed
         self.delay = max([delay, 0.0])
-        self.is_extended = is_extended
+        if is_extended is None:
+            self.is_extended = arb_id > ARBITRATION_ID_MAX
+        else:
+            self.is_extended = is_extended
         self.is_error = is_error
         self.is_remote = is_remote
 

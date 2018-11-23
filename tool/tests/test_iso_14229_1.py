@@ -122,3 +122,33 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
                                                          start_address,
                                                          request_data_size)
         self.verify_negative_response(service_id, result, expected_nrc)
+
+    def test_ecu_reset_success(self):
+        service_id = iso14229_1.ServiceID.ECU_RESET
+        reset_type = iso14229_1.Services.EcuReset.ResetType.HARD_RESET
+        expected_response = [reset_type]
+        result = self.diagnostics.ecu_reset(reset_type)
+        self.verify_positive_response(service_id, result, expected_response)
+
+    def test_ecu_reset_failure_on_invalid_reset_type(self):
+        service_id = iso14229_1.ServiceID.ECU_RESET
+        expected_nrc = iso14229_1.NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED
+        # This reset type is ISO SAE Reserved and thus an invalid value
+        reset_type = 0x00
+        result = self.diagnostics.ecu_reset(reset_type)
+        self.verify_negative_response(service_id, result, expected_nrc)
+
+    def test_ecu_reset_success_suppress_positive_response(self):
+        reset_type = iso14229_1.Services.EcuReset.ResetType.SOFT_RESET
+        # Suppress positive response
+        reset_type |= 0x80
+        result = self.diagnostics.ecu_reset(reset_type)
+        self.assertIsNone(result)
+
+    def test_ecu_reset_failure_suppress_positive_response(self):
+        service_id = iso14229_1.ServiceID.ECU_RESET
+        expected_nrc = iso14229_1.NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED
+        # ISO SAE Reserved reset type 0x00, with suppress positive response bit set
+        reset_type = 0x80
+        result = self.diagnostics.ecu_reset(reset_type)
+        self.verify_negative_response(service_id, result, expected_nrc)

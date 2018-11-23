@@ -1,4 +1,4 @@
-from lib.can_actions import DEFAULT_INTERFACE
+from lib.can_actions import DEFAULT_INTERFACE, ARBITRATION_ID_MAX_EXTENDED
 import can
 import datetime
 import time
@@ -60,7 +60,7 @@ class IsoTp:
         self.bus.set_filters(filters)
 
     def set_filter_single_arbitration_id(self, arbitration_id):
-        arbitration_id_filter = [{"can_id": arbitration_id, "can_mask": 0x1fffffff}]
+        arbitration_id_filter = [{"can_id": arbitration_id, "can_mask": ARBITRATION_ID_MAX_EXTENDED}]
         self._set_filters(arbitration_id_filter)
 
     def send_message(self, data, arbitration_id):

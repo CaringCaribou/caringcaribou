@@ -384,7 +384,7 @@ def ecu_reset(arb_id_request, arb_id_response, reset_type, timeout):
 
 
 def __ecu_reset_wrapper(args):
-    """Wrapper used to initiate ECUReset"""
+    """Wrapper used to initiate ECU Reset"""
     arb_id_request = int_from_str_base(args.src)
     arb_id_response = int_from_str_base(args.dst)
     reset_type = int_from_str_base(args.reset_type)
@@ -465,7 +465,7 @@ def __parse_args(args):
     parser_info.add_argument("--delay", type=float, default=REQUEST_DELAY, help="delay between each message")
     parser_info.set_defaults(func=__service_discovery_wrapper)
 
-    # Parser for ECUReset
+    # Parser for ECU Reset
     parser_ecu_reset = subparsers.add_parser("ecu_reset")
     parser_ecu_reset.add_argument("reset_type", metavar="type",
                                   help="Reset type: 1=hard, 2=key off/on, 3=soft, 4=enable rapid power shutdown, "

@@ -1,4 +1,5 @@
 from __future__ import print_function
+from lib.iso14229_1 import ServiceID
 from tests.mock.mock_ecu_uds import MockEcuIso14229
 from modules import uds
 import unittest
@@ -38,8 +39,8 @@ class UdsModuleTestCase(unittest.TestCase):
 
     def test_service_discovery(self):
         # Service discovery arguments
-        range_start = 0x00
-        range_end = 0x10
+        range_start = 0x09
+        range_end = 0x13
         print_results = False
         # Perform service discovery
         result = uds.service_discovery(arb_id_request=self.ARB_ID_REQUEST,
@@ -48,5 +49,24 @@ class UdsModuleTestCase(unittest.TestCase):
                                        min_id=range_start,
                                        max_id=range_end,
                                        print_results=print_results)
-        # TODO Add assertion(s) here, once mock implementation is finished
-        #print(result)
+        # Supported services within specified range
+        expected_result = [ServiceID.DIAGNOSTIC_SESSION_CONTROL, ServiceID.ECU_RESET]
+        self.assertListEqual(result, expected_result, "UDS service discovery gave '{0}', expected '{1}'".format(
+            result, expected_result))
+
+    def test_service_discovery_empty_range(self):
+        # Service discovery arguments
+        range_start = 0x00
+        range_end = 0x05
+        print_results = False
+        # Perform service discovery
+        result = uds.service_discovery(arb_id_request=self.ARB_ID_REQUEST,
+                                       arb_id_response=self.ARB_ID_RESPONSE,
+                                       request_delay=self.BRUTEFORCE_DELAY,
+                                       min_id=range_start,
+                                       max_id=range_end,
+                                       print_results=print_results)
+        # No services should be found within range
+        expected_result = []
+        self.assertListEqual(result, expected_result, "UDS service discovery gave '{0}', expected no hits".format(
+            result))

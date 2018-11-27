@@ -252,7 +252,7 @@ def service_discovery(arb_id_request, arb_id_response, request_delay, min_id=BYT
             tp.send_request([service_id])
             if print_results:
                 print("\rProbing service 0x{0:02x} ({0}/{1}) found {2}".format(
-                    service_id, BYTE_MAX, len(found_services)), end="")
+                    service_id, max_id, len(found_services)), end="")
             stdout.flush()
             time.sleep(request_delay)
             # Get response

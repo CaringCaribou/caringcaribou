@@ -1,5 +1,5 @@
 from __future__ import print_function
-from lib.iso14229_1 import ServiceID
+from lib.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, ServiceID, Services
 from tests.mock.mock_ecu_uds import MockEcuIso14229
 from modules import uds
 import unittest
@@ -70,3 +70,34 @@ class UdsModuleTestCase(unittest.TestCase):
         expected_result = []
         self.assertListEqual(result, expected_result, "UDS service discovery gave '{0}', expected no hits".format(
             result))
+
+    def test_ecu_reset_hard_reset_success(self):
+        # ECU Reset arguments
+        reset_type = Services.EcuReset.ResetType.HARD_RESET
+        timeout = None
+        # Perform ECU Reset
+        result = uds.ecu_reset(arb_id_request=self.ARB_ID_REQUEST,
+                               arb_id_response=self.ARB_ID_RESPONSE,
+                               reset_type=reset_type,
+                               timeout=timeout)
+        # Expected response format for successful request
+        expected_response_id = Iso14229_1.get_service_response_id(Services.EcuReset.service_id)
+        expected_result = [expected_response_id, reset_type]
+        self.assertListEqual(result, expected_result, "ECU Reset gave '{0}', expected '{1}'".format(
+            result, expected_result))
+
+    def test_ecu_reset_unsupported_reset_type_failure(self):
+        # Invalid reset type
+        reset_type = 0x00
+        timeout = None
+        # Perform ECU Reset
+        result = uds.ecu_reset(arb_id_request=self.ARB_ID_REQUEST,
+                               arb_id_response=self.ARB_ID_RESPONSE,
+                               reset_type=reset_type,
+                               timeout=timeout)
+        # Expected response format for invalid request
+        expected_response_id = Services.EcuReset.service_id
+        expected_nrc = NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED
+        expected_result = [Constants.NR_SI, expected_response_id, expected_nrc]
+        self.assertListEqual(result, expected_result, "ECU Reset gave '{0}', expected '{1}'".format(
+            result, expected_result))

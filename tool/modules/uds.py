@@ -94,12 +94,17 @@ VALID_SESSION_CONTROL_RESPONSES = [0x50, 0x7F]
 
 
 def auto_blacklist(tp, duration, print_results):
-    """
-    Blacklists the arbitration ID of messages which could be misinterpreted as valid diagnostic responses
+    """Listens for messages which could be misinterpreted as valid diagnostic
+    responses for 'duration' seconds. Returns a list of their arbitration IDs.
 
-    :param tp: transport protocol
-    :param duration: int duration in seconds
-    :param print_results: bool indicating whether results should be printed to stdout
+    :param tp: transport protocol instance
+    :param duration: duration in seconds
+    :param print_results: whether results should be printed to stdout
+    :type tp: iso15765_2.IsoTp
+    :type duration: float
+    :type print_results: bool
+    :return list of arbitration IDs to blacklist
+    :rtype [int]
     """
     if print_results:
         print("Scanning for arbitration IDs to blacklist (-autoblacklist)")
@@ -123,16 +128,23 @@ def auto_blacklist(tp, duration, print_results):
 
 def uds_discovery(min_id=None, max_id=None, blacklist_args=None, auto_blacklist_duration=0, delay=0.01,
                   print_results=True):
-    """
-    Scans for diagnostics support by brute forcing session control messages to different arbitration IDs
+    """Scans for diagnostics support by brute forcing session control messages to different arbitration IDs.
+    Returns a list of all (client_arb_id, server_arb_id) pairs found.
 
     :param min_id: start arbitration ID value
     :param max_id: end arbitration ID value
     :param blacklist_args: blacklist for arbitration ID values
     :param auto_blacklist_duration: seconds to scan for interfering arbitration IDs to blacklist automatically
     :param delay: delay between each message
-    :param print_results: bool indicating whether results should be printed to stdout
+    :param print_results: whether results should be printed to stdout
+    :type min_id: int
+    :type max_id: int
+    :type blacklist_args: [int]
+    :type auto_blacklist_duration: float
+    :type delay: float
+    :type print_results: bool
     :return: list of (client_arbitration_id, server_arbitration_id) pairs
+    :rtype [(int, int)]
     """
     # Set defaults
     if min_id is None:
@@ -198,11 +210,7 @@ def uds_discovery(min_id=None, max_id=None, blacklist_args=None, auto_blacklist_
 
 
 def __uds_discovery_wrapper(args):
-    """
-    Wrapper used to initiate a UDS discovery scan
-
-    :param args: namespace containing min, max, blacklist, autoblacklist and delay
-    """
+    """Wrapper used to initiate a UDS discovery scan"""
     min_id = int_from_str_base(args.min)
     max_id = int_from_str_base(args.max)
     blacklist = [int_from_str_base(b) for b in args.blacklist]
@@ -231,16 +239,22 @@ def __uds_discovery_wrapper(args):
 
 def service_discovery(arb_id_request, arb_id_response, request_delay, min_id=BYTE_MIN, max_id=BYTE_MAX,
                       print_results=True):
-    """
-    Scans for supported UDS services on the specified arbitration ID
+    """Scans for supported UDS services on the specified arbitration ID. Returns a list of found service IDs.
 
+    :param arb_id_request: arbitration ID for requests
+    :param arb_id_response: arbitration ID for responses
+    :param request_delay: delay between each request sent
+    :param min_id: first service ID to scan
+    :param max_id: last service ID to scan
+    :param print_results: whether progress should be printed to stdout
+    :type arb_id_request: int
+    :type arb_id_response: int
+    :type request_delay: float
+    :type min_id: int
+    :type max_id: int
+    :type print_results: bool
     :return: list of supported service IDs
-    :param arb_id_request: int arbitration ID for requests
-    :param arb_id_response: int arbitration ID for responses
-    :param request_delay: float delay between each request sent
-    :param min_id: int first service ID to scan
-    :param max_id: int last service ID to scan
-    :param print_results: bool indicating whether progress should be printed to stdout
+    :rtype [int]
     """
     found_services = []
 
@@ -273,11 +287,7 @@ def service_discovery(arb_id_request, arb_id_response, request_delay, min_id=BYT
 
 
 def __service_discovery_wrapper(args):
-    """
-    Wrapper used to initiate a service discovery scan
-
-    :param args: A namespace containing src and dst
-    """
+    """Wrapper used to initiate a service discovery scan"""
     arb_id_request = int_from_str_base(args.src)
     arb_id_response = int_from_str_base(args.dst)
     request_delay = args.delay
@@ -289,16 +299,19 @@ def __service_discovery_wrapper(args):
         print("Supported service 0x{0:02x}: {1}".format(service_id, service_name))
 
 
-def tester_present(send_arb_id, delay, duration, suppress_positive_response):
-    """
-    Sends TesterPresent messages
+def tester_present(arb_id_request, delay, duration, suppress_positive_response):
+    """Sends TesterPresent messages to 'arb_id_request'. Stops automatically
+    after 'duration' seconds or runs forever if this is None.
 
-    :param send_arb_id: int arbitration ID for requests
-    :param delay: float seconds between each request
-    :param duration: float seconds before automatically stopping or None to continue until stopped manually
-    :param suppress_positive_response: bool indicating whether positive responses should be suppressed
+    :param arb_id_request: arbitration ID for requests
+    :param delay: seconds between each request
+    :param duration: seconds before automatically stopping, or None to continue forever
+    :param suppress_positive_response: whether positive responses should be suppressed
+    :type arb_id_request: int
+    :type delay: float
+    :type duration: float or None
+    :type suppress_positive_response: bool
     """
-
     # SPR simply tells the recipient not to send a positive response to each TesterPresent message
     if suppress_positive_response:
         sub_function = 0x80
@@ -313,9 +326,9 @@ def tester_present(send_arb_id, delay, duration, suppress_positive_response):
 
     service_id = Services.TesterPresent.service_id
     message_data = [service_id, sub_function]
-    print("Sending TesterPresent to arbitration ID {0} (0x{0:02x})".format(send_arb_id))
+    print("Sending TesterPresent to arbitration ID {0} (0x{0:02x})".format(arb_id_request))
     print("\nPress Ctrl+C to stop\n")
-    with IsoTp(send_arb_id, None) as can_wrap:
+    with IsoTp(arb_id_request, None) as can_wrap:
         counter = 1
         while True:
             can_wrap.send_request(message_data)
@@ -328,28 +341,29 @@ def tester_present(send_arb_id, delay, duration, suppress_positive_response):
 
 
 def __tester_present_wrapper(args):
-    """
-    Wrapper used to initiate a TesterPresent session
-
-    :param args: argparse.Namespace instance
-    """
-    send_arb_id = int_from_str_base(args.src)
+    """Wrapper used to initiate a TesterPresent session"""
+    arb_id_request = int_from_str_base(args.src)
     delay = args.delay
     duration = args.duration
     suppress_positive_response = args.spr
 
-    tester_present(send_arb_id, delay, duration, suppress_positive_response)
+    tester_present(arb_id_request, delay, duration, suppress_positive_response)
 
 
 def ecu_reset(arb_id_request, arb_id_response, reset_type, timeout):
-    """
-    Sends an ECU Reset message
+    """Sends an ECU Reset message to 'arb_id_request'. Returns the first response
+    received from 'arb_id_response' within 'timeout' seconds or None otherwise.
 
+    :param arb_id_request: arbitration ID for requests
+    :param arb_id_response: arbitration ID for responses
+    :param reset_type: value corresponding to a reset type
+    :param timeout: seconds to wait for response before timeout
+    :type arb_id_request: int
+    :type arb_id_response int
+    :type reset_type: int
+    :type timeout: float
     :return: list of response byte values on success, None otherwise
-    :param arb_id_request: int arbitration ID for requests
-    :param arb_id_response: int arbitration ID for responses
-    :param reset_type: int value corresponding to a reset type
-    :param timeout: float seconds to wait for response before timeout
+    :rtype [int] or None
     """
     # Sanity checks
     if not BYTE_MIN <= reset_type <= BYTE_MAX:
@@ -370,11 +384,7 @@ def ecu_reset(arb_id_request, arb_id_response, reset_type, timeout):
 
 
 def __ecu_reset_wrapper(args):
-    """
-    Wrapper used to initiate ECUReset
-
-    :param args: argparse.Namespace instance
-    """
+    """Wrapper used to initiate ECUReset"""
     arb_id_request = int_from_str_base(args.src)
     arb_id_response = int_from_str_base(args.dst)
     reset_type = int_from_str_base(args.reset_type)
@@ -422,13 +432,8 @@ def __ecu_reset_wrapper(args):
             print("Received negative response code (NRC) 0x{0:02x}: {1}".format(nrc, nrc_description))
 
 
-def parse_args(args):
-    """
-    Parser for diagnostics module arguments.
-
-    :return: Namespace containing action and action-specific arguments
-    :rtype: argparse.Namespace
-    """
+def __parse_args(args):
+    """Parser for module arguments"""
     parser = argparse.ArgumentParser(prog="cc.py uds",
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description="""Universal Diagnostic Services module for CaringCaribou""",
@@ -484,8 +489,9 @@ def parse_args(args):
 
 
 def module_main(arg_list):
+    """Module main wrapper"""
     try:
-        args = parse_args(arg_list)
+        args = __parse_args(arg_list)
         args.func(args)
     except KeyboardInterrupt:
         print("\n\nTerminated by user")

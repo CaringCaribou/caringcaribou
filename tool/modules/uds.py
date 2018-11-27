@@ -457,7 +457,7 @@ def parse_args(args):
 
     # Parser for diagnostics service discovery
     parser_info = subparsers.add_parser("services")
-    parser_info.add_argument("src", help="arbitration ID to transmit from")
+    parser_info.add_argument("src", help="arbitration ID to transmit to")
     parser_info.add_argument("dst", help="arbitration ID to listen to")
     parser_info.add_argument("--delay", type=float, default=REQUEST_DELAY, help="delay between each message")
     parser_info.set_defaults(func=service_discovery_wrapper)
@@ -467,7 +467,7 @@ def parse_args(args):
     parser_ecu_reset.add_argument("reset_type", metavar="type",
                                   help="Reset type: 1=hard, 2=key off/on, 3=soft, 4=enable rapid power shutdown, "
                                        "5=disable rapid power shutdown")
-    parser_ecu_reset.add_argument("src", help="arbitration ID to transmit from")
+    parser_ecu_reset.add_argument("src", help="arbitration ID to transmit to")
     parser_ecu_reset.add_argument("dst", help="arbitration ID to listen to")
     parser_ecu_reset.add_argument("-t", "--timeout", type=float, metavar="T",
                                   help="seconds to wait for response before timeout")
@@ -475,7 +475,7 @@ def parse_args(args):
 
     # Parser for TesterPresent
     parser_tp = subparsers.add_parser("testerpresent")
-    parser_tp.add_argument("src", help="arbitration ID to transmit from")
+    parser_tp.add_argument("src", help="arbitration ID to transmit to")
     parser_tp.add_argument("-delay", type=float, default=0.5, help="delay between each TesterPresent message")
     parser_tp.add_argument("-dur", "--duration", metavar="D", type=float, help="automatically stop after D seconds")
     parser_tp.add_argument("-spr", action="store_true", help="suppress positive response")

@@ -100,7 +100,7 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
                 response_data = self.handle_unsupported_service(data)
         except IndexError:
             # Parsing failed due to invalid message structure
-            response_data = None
+            response_data = self.handle_service_error(data)
 
         # This check makes it possible to support services where a response should not be sent
         if response_data is not None:
@@ -112,6 +112,13 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         """Provides a standard response for unmapped services, by responding with NRC Service Not Supported"""
         service_id = data[0]
         nrc = NegativeResponseCodes.SERVICE_NOT_SUPPORTED
+        response_data = self.create_negative_response(service_id, nrc)
+        return response_data
+
+    def handle_service_error(self, data):
+        """Provides a standard response for failed service requests"""
+        service_id = data[0]
+        nrc = NegativeResponseCodes.INCORRECT_MESSAGE_LENGTH_OR_INVALID_FORMAT
         response_data = self.create_negative_response(service_id, nrc)
         return response_data
 

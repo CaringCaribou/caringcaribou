@@ -197,11 +197,10 @@ def uds_discovery(min_id=None, max_id=None, blacklist_args=None, auto_blacklist_
     return found_arbitration_ids
 
 
-def uds_discovery_wrapper(args):
+def __uds_discovery_wrapper(args):
     """
     Wrapper used to initiate a UDS discovery scan
 
-    :return: list of (client_arbitration_id, server_arbitration_id) pairs
     :param args: namespace containing min, max, blacklist, autoblacklist and delay
     """
     min_id = int_from_str_base(args.min)
@@ -273,11 +272,10 @@ def service_discovery(arb_id_request, arb_id_response, request_delay, min_id=BYT
     return found_services
 
 
-def service_discovery_wrapper(args):
+def __service_discovery_wrapper(args):
     """
     Wrapper used to initiate a service discovery scan
 
-    :return: list of supported service IDs
     :param args: A namespace containing src and dst
     """
     arb_id_request = int_from_str_base(args.src)
@@ -329,7 +327,7 @@ def tester_present(send_arb_id, delay, duration, suppress_positive_response):
                 break
 
 
-def tester_present_wrapper(args):
+def __tester_present_wrapper(args):
     """
     Wrapper used to initiate a TesterPresent session
 
@@ -371,7 +369,7 @@ def ecu_reset(arb_id_request, arb_id_response, reset_type, timeout):
             return response
 
 
-def ecu_reset_wrapper(args):
+def __ecu_reset_wrapper(args):
     """
     Wrapper used to initiate ECUReset
 
@@ -453,14 +451,14 @@ def parse_args(args):
                                   help="scan for interfering signals for N seconds and blacklist matching "
                                        "arbitration IDs")
     parser_discovery.add_argument("--delay", type=float, default=REQUEST_DELAY, help="delay between each message")
-    parser_discovery.set_defaults(func=uds_discovery_wrapper)
+    parser_discovery.set_defaults(func=__uds_discovery_wrapper)
 
     # Parser for diagnostics service discovery
     parser_info = subparsers.add_parser("services")
     parser_info.add_argument("src", help="arbitration ID to transmit to")
     parser_info.add_argument("dst", help="arbitration ID to listen to")
     parser_info.add_argument("--delay", type=float, default=REQUEST_DELAY, help="delay between each message")
-    parser_info.set_defaults(func=service_discovery_wrapper)
+    parser_info.set_defaults(func=__service_discovery_wrapper)
 
     # Parser for ECUReset
     parser_ecu_reset = subparsers.add_parser("ecu_reset")
@@ -471,7 +469,7 @@ def parse_args(args):
     parser_ecu_reset.add_argument("dst", help="arbitration ID to listen to")
     parser_ecu_reset.add_argument("-t", "--timeout", type=float, metavar="T",
                                   help="seconds to wait for response before timeout")
-    parser_ecu_reset.set_defaults(func=ecu_reset_wrapper)
+    parser_ecu_reset.set_defaults(func=__ecu_reset_wrapper)
 
     # Parser for TesterPresent
     parser_tp = subparsers.add_parser("testerpresent")
@@ -479,7 +477,7 @@ def parse_args(args):
     parser_tp.add_argument("-delay", type=float, default=0.5, help="delay between each TesterPresent message")
     parser_tp.add_argument("-dur", "--duration", metavar="D", type=float, help="automatically stop after D seconds")
     parser_tp.add_argument("-spr", action="store_true", help="suppress positive response")
-    parser_tp.set_defaults(func=tester_present_wrapper)
+    parser_tp.set_defaults(func=__tester_present_wrapper)
 
     args = parser.parse_args(args)
     return args

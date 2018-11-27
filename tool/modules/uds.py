@@ -357,11 +357,11 @@ def ecu_reset(arb_id_request, arb_id_response, reset_type, timeout):
     :param arb_id_request: arbitration ID for requests
     :param arb_id_response: arbitration ID for responses
     :param reset_type: value corresponding to a reset type
-    :param timeout: seconds to wait for response before timeout
+    :param timeout: seconds to wait for response before timeout, or None for default UDS timeout
     :type arb_id_request: int
     :type arb_id_response int
     :type reset_type: int
-    :type timeout: float
+    :type timeout: float or None
     :return: list of response byte values on success, None otherwise
     :rtype [int] or None
     """

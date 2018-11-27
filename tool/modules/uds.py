@@ -129,7 +129,8 @@ def auto_blacklist(tp, duration, print_results):
     return ids_to_blacklist
 
 
-def uds_discovery(min_id=None, max_id=None, blacklist_args=None, auto_blacklist_duration=0, delay=0.01, print_results=True):
+def uds_discovery(min_id=None, max_id=None, blacklist_args=None, auto_blacklist_duration=0, delay=0.01,
+                  print_results=True):
     """
     Scans for diagnostics support by brute forcing session control messages to different arbitration IDs
 

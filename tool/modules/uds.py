@@ -90,40 +90,51 @@ NRC_NAMES = {
 REQUEST_DELAY = 0.01
 BYTE_MIN = 0x00
 BYTE_MAX = 0xFF
-VALID_SESSION_CONTROL_RESPONSES = [0x50, 0x7F]
 
 
-def auto_blacklist(tp, duration, print_results):
-    """Listens for messages which could be misinterpreted as valid diagnostic
-    responses for 'duration' seconds. Returns a list of their arbitration IDs.
+def auto_blacklist(bus, duration, classifier_function, print_results):
+    """Listens for false positives on the CAN bus and generates an arbitration ID blacklist.
 
-    :param tp: transport protocol instance
+    Finds all can.Message <msg> on 'bus' where 'classifier_function(msg)' evaluates to True.
+    Terminates after 'duration' seconds and returns a set of all matching arbitration IDs.
+    Prints progress, time countdown and list of results if 'print_results' is True.
+
+    :param bus: CAN bus instance
     :param duration: duration in seconds
-    :param print_results: whether results should be printed to stdout
-    :type tp: iso15765_2.IsoTp
+    :param classifier_function: function which, when called upon a can.Message instance,
+                                returns a bool indicating if it should be blacklisted
+    :param print_results: whether progress and results should be printed to stdout
+    :type bus: can.Bus
     :type duration: float
+    :type classifier_function: function
     :type print_results: bool
-    :return list of arbitration IDs to blacklist
-    :rtype [int]
+    :return set of matching arbitration IDs to blacklist
+    :rtype set(int)
     """
     if print_results:
-        print("Scanning for arbitration IDs to blacklist (-autoblacklist)")
-    ids_to_blacklist = set()
+        print("Scanning for arbitration IDs to blacklist")
+    blacklist = set()
     start_time = time.time()
     end_time = start_time + duration
     while time.time() < end_time:
         if print_results:
-            print("\r{0:> 5.1f} seconds left, {1} found".format(
-                end_time - time.time() + 0, len(ids_to_blacklist)), end="")  # Adding zero prevents negative zero "-0.0"
+            time_left = end_time - time.time()
+            num_matches = len(blacklist)
+            print("\r{0:> 5.1f} seconds left, {1} found".format(time_left, num_matches), end="")
             stdout.flush()
-        msg = tp.bus.recv(0.1)
+        # Receive message
+        msg = bus.recv(0.1)
         if msg is None:
             continue
-        if len(msg.data) >= 2 and msg.data[1] in VALID_SESSION_CONTROL_RESPONSES:
-            ids_to_blacklist.add(msg.arbitration_id)
+        # Classify
+        if classifier_function(msg):
+            # Add to blacklist
+            blacklist.add(msg.arbitration_id)
     if print_results:
-        print("\n  Detected IDs: {0}".format(" ".join(sorted(list(map(hex, ids_to_blacklist))))))
-    return ids_to_blacklist
+        num_matches = len(blacklist)
+        print("\r  0.0 seconds left, {0} found".format(num_matches), end="")
+        print("\n  Detected IDs: {0}".format(" ".join(sorted(list(map(hex, blacklist))))))
+    return blacklist
 
 
 def uds_discovery(min_id=None, max_id=None, blacklist_args=None, auto_blacklist_duration=0, delay=0.01,
@@ -170,15 +181,20 @@ def uds_discovery(min_id=None, max_id=None, blacklist_args=None, auto_blacklist_
     sub_function = Services.DiagnosticSessionControl.DiagnosticSessionType.DEFAULT_SESSION
     session_control_data = [service_id, sub_function]
 
+    valid_session_control_responses = [0x50, 0x7F]
+
+    def is_valid_response(message):
+        return len(message.data) >= 2 and message.data[1] in valid_session_control_responses
+
     found_arbitration_ids = []
 
     with IsoTp(None, None) as tp:
         blacklist = set(blacklist_args)
         # Perform automatic blacklist scan
         if auto_blacklist_duration > 0:
-            auto_blacklist_arb_ids = auto_blacklist(tp, auto_blacklist_duration, print_results)
+            auto_blacklist_arb_ids = auto_blacklist(tp.bus, auto_blacklist_duration, is_valid_response, print_results)
             blacklist |= auto_blacklist_arb_ids
-        
+
         # Prepare session control frame
         session_control_frames = tp.get_frames_from_message(session_control_data)
         for send_arbitration_id in range(min_id, max_id + 1):
@@ -197,7 +213,7 @@ def uds_discovery(min_id=None, max_id=None, blacklist_args=None, auto_blacklist_
                 if msg.arbitration_id in blacklist:
                     # Ignore blacklisted arbitration IDs
                     continue
-                if len(msg.data) >= 2 and msg.data[1] in VALID_SESSION_CONTROL_RESPONSES:
+                if is_valid_response(msg):
                     # Valid response
                     if print_results:
                         print("\nFound diagnostics at arbitration ID 0x{0:04x}, response at 0x{1:04x}".format(
@@ -449,12 +465,13 @@ def __parse_args(args):
 
     # Parser for diagnostics discovery
     parser_discovery = subparsers.add_parser("discovery")
-    parser_discovery.add_argument("-min", default=None)
-    parser_discovery.add_argument("-max", default=None)
-    parser_discovery.add_argument("-blacklist", metavar="B", default=[], nargs="+", help="arbitration IDs to ignore")
-    parser_discovery.add_argument("-autoblacklist", metavar="N", type=int, default=0,
-                                  help="scan for interfering signals for N seconds and blacklist matching "
-                                       "arbitration IDs")
+    parser_discovery.add_argument("-min", default=None, help="min arbitration ID to send request for")
+    parser_discovery.add_argument("-max", default=None, help="max arbitration ID to send request for")
+    parser_discovery.add_argument("-b", "--blacklist", metavar="B", default=[], nargs="+",
+                                  help="arbitration IDs to blacklist responses from")
+    parser_discovery.add_argument("-ab", "--autoblacklist", metavar="N", type=float, default=0,
+                                  help="listen for false positives for N seconds and blacklist matching "
+                                       "arbitration IDs before running discovery")
     parser_discovery.add_argument("--delay", type=float, default=REQUEST_DELAY, help="delay between each message")
     parser_discovery.set_defaults(func=__uds_discovery_wrapper)
 

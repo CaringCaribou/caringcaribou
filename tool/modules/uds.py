@@ -1,5 +1,6 @@
 from __future__ import print_function
-from lib.can_actions import int_from_str_base, ARBITRATION_ID_MIN, ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
+from lib.can_actions import auto_blacklist, int_from_str_base
+from lib.can_actions import ARBITRATION_ID_MIN, ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
 from lib.iso15765_2 import IsoTp
 from lib.iso14229_1 import Iso14229_1, NegativeResponseCodes, Services
 from sys import stdout, version_info
@@ -90,51 +91,6 @@ NRC_NAMES = {
 REQUEST_DELAY = 0.01
 BYTE_MIN = 0x00
 BYTE_MAX = 0xFF
-
-
-def auto_blacklist(bus, duration, classifier_function, print_results):
-    """Listens for false positives on the CAN bus and generates an arbitration ID blacklist.
-
-    Finds all can.Message <msg> on 'bus' where 'classifier_function(msg)' evaluates to True.
-    Terminates after 'duration' seconds and returns a set of all matching arbitration IDs.
-    Prints progress, time countdown and list of results if 'print_results' is True.
-
-    :param bus: CAN bus instance
-    :param duration: duration in seconds
-    :param classifier_function: function which, when called upon a can.Message instance,
-                                returns a bool indicating if it should be blacklisted
-    :param print_results: whether progress and results should be printed to stdout
-    :type bus: can.Bus
-    :type duration: float
-    :type classifier_function: function
-    :type print_results: bool
-    :return set of matching arbitration IDs to blacklist
-    :rtype set(int)
-    """
-    if print_results:
-        print("Scanning for arbitration IDs to blacklist")
-    blacklist = set()
-    start_time = time.time()
-    end_time = start_time + duration
-    while time.time() < end_time:
-        if print_results:
-            time_left = end_time - time.time()
-            num_matches = len(blacklist)
-            print("\r{0:> 5.1f} seconds left, {1} found".format(time_left, num_matches), end="")
-            stdout.flush()
-        # Receive message
-        msg = bus.recv(0.1)
-        if msg is None:
-            continue
-        # Classify
-        if classifier_function(msg):
-            # Add to blacklist
-            blacklist.add(msg.arbitration_id)
-    if print_results:
-        num_matches = len(blacklist)
-        print("\r  0.0 seconds left, {0} found".format(num_matches), end="")
-        print("\n  Detected IDs: {0}".format(" ".join(sorted(list(map(hex, blacklist))))))
-    return blacklist
 
 
 def uds_discovery(min_id=None, max_id=None, blacklist_args=None, auto_blacklist_duration=0, delay=0.01,

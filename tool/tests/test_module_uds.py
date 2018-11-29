@@ -37,6 +37,22 @@ class UdsModuleTestCase(unittest.TestCase):
         self.assertListEqual(result, expected_result, "UDS discovery gave '{0}', expected '{1}'".format(
             result, expected_result))
 
+    def test_uds_discovery_blacklist(self):
+        # Discovery arguments
+        start_arb_id = self.ARB_ID_REQUEST - 5
+        end_arb_id = self.ARB_ID_REQUEST + 5
+        # Blacklist the arbitration ID used for response
+        blacklist = [self.ARB_ID_RESPONSE]
+        auto_blacklist_duration = 0
+        delay = self.BRUTEFORCE_DELAY
+        print_results = False
+        # Perform UDS discovery
+        result = uds.uds_discovery(start_arb_id, end_arb_id, blacklist, auto_blacklist_duration, delay, print_results)
+        # No results expected due to blacklist
+        expected_result = []
+        self.assertListEqual(result, expected_result, "UDS discovery gave '{0}', expected '{1}'".format(
+            result, expected_result))
+
     def test_service_discovery(self):
         # Service discovery arguments
         range_start = 0x09

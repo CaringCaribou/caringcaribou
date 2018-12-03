@@ -81,20 +81,20 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             service_id = data[0]
             # Handle different services
             if service_id == ServiceID.DIAGNOSTIC_SESSION_CONTROL:
-                # Diagnostic session control
+                # 0x10 Diagnostic session control
                 response_data = self.handle_diagnostic_session_control(data)
-            elif service_id == ServiceID.READ_DATA_BY_IDENTIFIER:
-                # Read data by identifier
-                response_data = self.handle_read_data_by_identifier(data)
-            elif service_id == ServiceID.WRITE_DATA_BY_IDENTIFIER:
-                # Write data by identifier
-                response_data = self.handle_write_data_by_identifier(data)
-            elif service_id == ServiceID.READ_MEMORY_BY_ADDRESS:
-                # Read memory by address
-                response_data = self.handle_read_memory_by_address(data)
             elif service_id == ServiceID.ECU_RESET:
-                # ECU reset
+                # 0x11 ECU reset
                 response_data = self.handle_ecu_reset(data)
+            elif service_id == ServiceID.READ_DATA_BY_IDENTIFIER:
+                # 0x22 Read data by identifier
+                response_data = self.handle_read_data_by_identifier(data)
+            elif service_id == ServiceID.READ_MEMORY_BY_ADDRESS:
+                # 0x23 Read memory by address
+                response_data = self.handle_read_memory_by_address(data)
+            elif service_id == ServiceID.WRITE_DATA_BY_IDENTIFIER:
+                # 0x2E Write data by identifier
+                response_data = self.handle_write_data_by_identifier(data)
             else:
                 # Unsupported service
                 response_data = self.handle_unsupported_service(data)

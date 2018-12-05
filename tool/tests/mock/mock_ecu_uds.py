@@ -21,6 +21,10 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
     REQUEST_DATA_SIZE = 0x10
     DATA = list(range(0x14))
 
+    # TODO Use dynamic seed value and verify keys using a simple algorithm
+    SECURITY_ACCESS_SEED = [0x36, 0x57]
+    SECURITY_ACCESS_KEY = [0xC9, 0xA9]
+
     def __init__(self, arb_id_request, arb_id_response, bus=None):
         MockEcu.__init__(self, bus)
         self.ARBITRATION_ID_ISO_14229_REQUEST = arb_id_request
@@ -92,6 +96,9 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             elif service_id == ServiceID.READ_MEMORY_BY_ADDRESS:
                 # 0x23 Read memory by address
                 response_data = self.handle_read_memory_by_address(data)
+            elif service_id == ServiceID.SECURITY_ACCESS:
+                # 0x27 Security access
+                response_data = self.handle_security_access(data)
             elif service_id == ServiceID.WRITE_DATA_BY_IDENTIFIER:
                 # 0x2E Write data by identifier
                 response_data = self.handle_write_data_by_identifier(data)
@@ -230,6 +237,40 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             else:
                 response_data = self.create_positive_response(service_id, [reset_type])
         else:
+            nrc = NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED
+            response_data = self.create_negative_response(service_id, nrc)
+        return response_data
+
+    def handle_security_access(self, data):
+        """
+        Evaluates security access requests (both "Request seed" and "Send key") and returns the appropriate response
+
+        :param data: Data from incoming request
+        :return: Response to be sent
+        """
+        service_id = data[0]
+        subfunction = data[1]
+        level = subfunction & 0x7F
+
+        service_handler = Services.SecurityAccess.RequestSeedOrSendKey()
+        if service_handler.is_valid_request_seed_level(level):
+            # Request seed handling
+            payload = [level]
+            payload.extend(self.SECURITY_ACCESS_SEED)
+            response_data = self.create_positive_response(service_id, payload)
+        elif service_handler.is_valid_send_key_level(level):
+            # Send key handling
+            expected_key = self.SECURITY_ACCESS_KEY
+            received_key = data[2:]
+            if received_key == expected_key:
+                # Correct key
+                response_data = self.create_positive_response(service_id, [level])
+            else:
+                # Invalid key
+                nrc = NegativeResponseCodes.INVALID_KEY
+                response_data = self.create_negative_response(service_id, nrc)
+        else:
+            # Unsupported subfunction
             nrc = NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED
             response_data = self.create_negative_response(service_id, nrc)
         return response_data

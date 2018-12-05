@@ -117,3 +117,46 @@ class UdsModuleTestCase(unittest.TestCase):
         expected_result = [Constants.NR_SI, expected_response_id, expected_nrc]
         self.assertListEqual(result, expected_result, "ECU Reset gave '{0}', expected '{1}'".format(
             result, expected_result))
+
+    def test_security_access_request_seed_send_key_success(self):
+        level_seed = 0x01
+        data_record = []
+        timeout = None
+        expected_response_id = Iso14229_1.get_service_response_id(Services.SecurityAccess.service_id)
+        # Request seed
+        seed_result = uds.request_seed(arb_id_request=self.ARB_ID_REQUEST,
+                                       arb_id_response=self.ARB_ID_RESPONSE,
+                                       level=level_seed,
+                                       data_record=data_record,
+                                       timeout=timeout)
+        expected_seed = self.ecu.SECURITY_ACCESS_SEED
+        expected_seed_result = [expected_response_id, level_seed] + expected_seed
+        self.assertListEqual(seed_result,
+                             expected_seed_result,
+                             "Security Access: Request seed gave '{0}', expected '{1}'".format(
+                                 seed_result, expected_seed_result))
+        # Send key
+        level_key = uds.Services.SecurityAccess.RequestSeedOrSendKey().get_send_key_for_request_seed(level_seed)
+        key = self.ecu.SECURITY_ACCESS_KEY
+        key_result = uds.send_key(arb_id_request=self.ARB_ID_REQUEST,
+                                  arb_id_response=self.ARB_ID_RESPONSE,
+                                  level=level_key,
+                                  key=key,
+                                  timeout=timeout)
+        expected_key_result = [expected_response_id, level_key]
+        self.assertListEqual(key_result,
+                             expected_key_result,
+                             "Security Access: Send key gave '{0}', expected '{1}'".format(
+                                 key_result, expected_key_result))
+
+    def test_security_access_request_seed_invalid_level(self):
+        # Level 0x00 lies outside of allowed interval
+        level = 0x00
+        data_record = []
+        timeout = None
+        with self.assertRaises(ValueError):
+            uds.request_seed(arb_id_request=self.ARB_ID_REQUEST,
+                             arb_id_response=self.ARB_ID_RESPONSE,
+                             level=level,
+                             data_record=data_record,
+                             timeout=timeout)

@@ -140,6 +140,56 @@ class Services(object):
             # 0x60-0x7E System supplier specific
             # 0x7F ISO SAE Reserved
 
+    class SecurityAccess(BaseService):
+
+        service_id = ServiceID.SECURITY_ACCESS
+
+        class RequestSeedOrSendKey(object):
+            """
+            These are lined up so that value X "request seed level N" has a matching "send key level N" at value X+1.
+
+            0x01 is Request seed level 0x01
+            0x02 is Send key level 0x01
+            0x03 is Request seed level 0x02
+            0x04 is Send key level 0x02
+            (...)
+            0x41 is Request seed level 0x21
+            0x42 is Send key level 0x21
+
+            The security levels numbering is arbitrary and does not imply any relationship between the levels.
+            """
+
+            # 0x00 ISO SAE Reserved
+            # 0x01-0x42 Vehicle manufacturer specific request seed/send key pairs
+            # 0x43-0X5E ISO SAE Reserved
+            ISO_26021_2_VALUES = 0x5F
+            ISO_26021_2_SEND_KEY = 0x60
+            # 0x61-0x7E System supplier specific
+            # 0x7F ISO SAE Reserved
+
+            __REQUEST_SEED_MIN = 0x01
+            __REQUEST_SEED_MAX = 0x41
+            __SEND_KEY_MIN = 0x02
+            __SEND_KEY_MAX = 0x42
+
+            def is_valid_request_seed_level(self, sub_function):
+                """Returns True if 'sub_function' is a valid request seed value and False otherwise"""
+                value = sub_function & 0x7F
+                valid_interval = self.__REQUEST_SEED_MIN <= value <= self.__REQUEST_SEED_MAX
+                is_odd = value % 2 == 1
+                return valid_interval and is_odd
+
+            def is_valid_send_key_level(self, sub_function):
+                """Returns True if 'sub_function' is a valid send key value and False otherwise"""
+                value = sub_function & 0x7F
+                valid_interval = self.__SEND_KEY_MIN <= value <= self.__SEND_KEY_MAX
+                is_even = value % 2 == 0
+                return valid_interval and is_even
+
+            @staticmethod
+            def get_send_key_for_request_seed(seed):
+                return seed + 1
+
     class TesterPresent(BaseService):
 
         service_id = ServiceID.TESTER_PRESENT
@@ -397,6 +447,44 @@ class Iso14229_1(object):
         request = [0] * 2
         request[0] = ServiceID.ECU_RESET
         request[1] = reset_type
+
+        self.tp.send_request(request)
+        response = self.receive_response(self.P3_CLIENT)
+
+        return response
+
+    def security_access_request_seed(self, level, data_record):
+        """
+        Sends a Security Access "Request seed" message for 'level'
+
+        :param level: Security Access Type level to send request seed for
+        :param data_record: Optional data to transmit when requesting seed, e.g. client identification
+        :return: Response data (containing seed) if successful,
+                 None otherwise
+        """
+        service_id = ServiceID.SECURITY_ACCESS
+        request = [service_id, level]
+        for data_record in data_record:
+            request.append(data_record)
+
+        self.tp.send_request(request)
+        response = self.receive_response(self.P3_CLIENT)
+
+        return response
+
+    def security_access_send_key(self, level, key):
+        """
+        Sends a Security Access "Send key" message with 'key' for 'level'
+
+        :param level: Security Access Type level to send key for
+        :param key: Key to transmit
+        :return: Response data if successful,
+                 None otherwise
+        """
+        service_id = ServiceID.SECURITY_ACCESS
+        request = [service_id, level]
+        for key_byte in key:
+            request.append(key_byte)
 
         self.tp.send_request(request)
         response = self.receive_response(self.P3_CLIENT)

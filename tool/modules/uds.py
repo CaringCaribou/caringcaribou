@@ -404,6 +404,77 @@ def __ecu_reset_wrapper(args):
             print("Received negative response code (NRC) 0x{0:02x}: {1}".format(nrc, nrc_description))
 
 
+def request_seed(arb_id_request, arb_id_response, level, data_record, timeout):
+    """Sends an Request seed message to 'arb_id_request'. Returns the first response
+    received from 'arb_id_response' within 'timeout' seconds or None otherwise.
+
+    :param arb_id_request: arbitration ID for requests
+    :param arb_id_response: arbitration ID for responses
+    :param level: vehicle manufacturer specific access level to request seed for
+    :param data_record: optional vehicle manufacturer specific data to transmit when requesting seed
+    :param timeout: seconds to wait for response before timeout, or None for default UDS timeout
+    :type arb_id_request: int
+    :type arb_id_response: int
+    :type level: int
+    :type data_record: [int]
+    :type timeout: float or None
+    :return: list of response byte values on success, None otherwise
+    :rtype [int] or None
+    """
+    # Sanity checks
+    if not Services.SecurityAccess.RequestSeedOrSendKey().is_valid_request_seed_level(level):
+        raise ValueError("Invalid request seed level")
+    if isinstance(timeout, float) and timeout < 0.0:
+        raise ValueError("timeout value ({0}) cannot be negative".format(timeout))
+
+    with IsoTp(arb_id_request=arb_id_request, arb_id_response=arb_id_response) as tp:
+        # Setup filter for incoming messages
+        tp.set_filter_single_arbitration_id(arb_id_response)
+        with Iso14229_1(tp) as uds:
+            # Set timeout
+            if timeout is not None:
+                uds.P3_CLIENT = timeout
+
+            response = uds.security_access_request_seed(level, data_record)
+            return response
+
+
+def send_key(arb_id_request, arb_id_response, level, key, timeout):
+    """
+    Sends an Send key message to 'arb_id_request'. Returns the first response
+    received from 'arb_id_response' within 'timeout' seconds or None otherwise.
+
+    :param arb_id_request: arbitration ID for requests
+    :param arb_id_response: arbitration ID for responses
+    :param level: vehicle manufacturer specific access level to send key for
+    :param key: key to transmit
+    :param timeout: seconds to wait for response before timeout, or None for default UDS timeout
+    :type arb_id_request: int
+    :type arb_id_response: int
+    :type level: int
+    :type key: [int]
+    :type timeout: float or None
+    :return: list of response byte values on success, None otherwise
+    :rtype [int] or None
+    """
+    # Sanity checks
+    if not Services.SecurityAccess.RequestSeedOrSendKey().is_valid_send_key_level(level):
+        raise ValueError("Invalid send key level")
+    if isinstance(timeout, float) and timeout < 0.0:
+        raise ValueError("timeout value ({0}) cannot be negative".format(timeout))
+
+    with IsoTp(arb_id_request=arb_id_request, arb_id_response=arb_id_response) as tp:
+        # Setup filter for incoming messages
+        tp.set_filter_single_arbitration_id(arb_id_response)
+        with Iso14229_1(tp) as uds:
+            # Set timeout
+            if timeout is not None:
+                uds.P3_CLIENT = timeout
+
+            response = uds.security_access_send_key(level=level, key=key)
+            return response
+
+
 def __parse_args(args):
     """Parser for module arguments"""
     parser = argparse.ArgumentParser(prog="cc.py uds",

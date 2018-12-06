@@ -81,15 +81,15 @@ CARING CARIBOU v0.2
 
 Loaded module 'uds'
 
-usage: cc.py uds services [-h] [-d D] src dst
+usage: cc.py uds services [-h] [-t T] src dst
 
 positional arguments:
-  src              arbitration ID to transmit to
-  dst              arbitration ID to listen to
+  src                arbitration ID to transmit to
+  dst                arbitration ID to listen to
 
 optional arguments:
-  -h, --help       show this help message and exit
-  -d D, --delay D  D seconds delay between messages (default: 0.01)
+  -h, --help         show this help message and exit
+  -t T, --timeout T  wait T seconds for response before timeout (default: 0.2)
 ```
 
 ## ECU Reset
@@ -116,7 +116,7 @@ positional arguments:
 
 optional arguments:
   -h, --help         show this help message and exit
-  -t T, --timeout T  seconds to wait for response before timeout
+  -t T, --timeout T  wait T seconds for response before timeout
 ```
 
 ## Tester Present

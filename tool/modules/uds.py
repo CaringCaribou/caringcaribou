@@ -88,14 +88,15 @@ NRC_NAMES = {
     0x93: "VOLTAGE_TOO_LOW"
 }
 
-REQUEST_DELAY = 0.01
-TESTER_PRESENT_DELAY = 0.5
+DELAY_DISCOVERY = 0.01
+DELAY_TESTER_PRESENT = 0.5
+TIMEOUT_SERVICES = 0.2
+
 BYTE_MIN = 0x00
 BYTE_MAX = 0xFF
 
 
-def uds_discovery(min_id=None, max_id=None, blacklist_args=None, auto_blacklist_duration=0, delay=0.01,
-                  print_results=True):
+def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration, delay, print_results=True):
     """Scans for diagnostics support by brute forcing session control messages to different arbitration IDs.
     Returns a list of all (client_arb_id, server_arb_id) pairs found.
 
@@ -210,19 +211,19 @@ def __uds_discovery_wrapper(args):
         print("Discovery failed: {0}".format(e))
 
 
-def service_discovery(arb_id_request, arb_id_response, request_delay, min_id=BYTE_MIN, max_id=BYTE_MAX,
+def service_discovery(arb_id_request, arb_id_response, timeout, min_id=BYTE_MIN, max_id=BYTE_MAX,
                       print_results=True):
     """Scans for supported UDS services on the specified arbitration ID. Returns a list of found service IDs.
 
     :param arb_id_request: arbitration ID for requests
     :param arb_id_response: arbitration ID for responses
-    :param request_delay: delay between each request sent
+    :param timeout: delay between each request sent
     :param min_id: first service ID to scan
     :param max_id: last service ID to scan
     :param print_results: whether progress should be printed to stdout
     :type arb_id_request: int
     :type arb_id_response: int
-    :type request_delay: float
+    :type timeout: float
     :type min_id: int
     :type max_id: int
     :type print_results: bool
@@ -238,24 +239,24 @@ def service_discovery(arb_id_request, arb_id_response, request_delay, min_id=BYT
         for service_id in range(min_id, max_id + 1):
             tp.send_request([service_id])
             if print_results:
-                print("\rProbing service 0x{0:02x} ({0}/{1}) found {2}".format(
+                print("\rProbing service 0x{0:02x} ({0}/{1}): found {2}".format(
                     service_id, max_id, len(found_services)), end="")
             stdout.flush()
-            time.sleep(request_delay)
             # Get response
-            msg = tp.bus.recv(0.1)
+            msg = tp.bus.recv(timeout)
             if msg is None:
                 # No response received
                 continue
             # Parse response
             if len(msg.data) >= 3:
+                # Since service ID is included in the response, mapping is correct even if response is delayed
                 service_id = msg.data[2]
                 status = msg.data[3]
                 if status != NegativeResponseCodes.SERVICE_NOT_SUPPORTED:
                     # Any other response than "service not supported" counts
                     found_services.append(service_id)
         if print_results:
-            print("\n")
+            print("\nDone!\n")
     return found_services
 
 
@@ -263,9 +264,9 @@ def __service_discovery_wrapper(args):
     """Wrapper used to initiate a service discovery scan"""
     arb_id_request = int_from_str_base(args.src)
     arb_id_response = int_from_str_base(args.dst)
-    request_delay = args.delay
+    timeout = args.timeout
     # Probe services
-    found_services = service_discovery(arb_id_request, arb_id_response, request_delay)
+    found_services = service_discovery(arb_id_request, arb_id_response, timeout)
     # Print results
     for service_id in found_services:
         service_name = UDS_SERVICE_NAMES.get(service_id, "Unknown service")
@@ -500,16 +501,16 @@ def __parse_args(args):
     parser_discovery.add_argument("-ab", "--autoblacklist", metavar="N", type=float, default=0,
                                   help="listen for false positives for N seconds and blacklist matching "
                                        "arbitration IDs before running discovery")
-    parser_discovery.add_argument("-d", "--delay", metavar="D", type=float, default=REQUEST_DELAY,
-                                  help="D seconds delay between messages (default: {0})".format(REQUEST_DELAY))
+    parser_discovery.add_argument("-d", "--delay", metavar="D", type=float, default=DELAY_DISCOVERY,
+                                  help="D seconds delay between messages (default: {0})".format(DELAY_DISCOVERY))
     parser_discovery.set_defaults(func=__uds_discovery_wrapper)
 
     # Parser for diagnostics service discovery
     parser_info = subparsers.add_parser("services")
     parser_info.add_argument("src", help="arbitration ID to transmit to")
     parser_info.add_argument("dst", help="arbitration ID to listen to")
-    parser_info.add_argument("-d", "--delay", metavar="D", type=float, default=REQUEST_DELAY,
-                             help="D seconds delay between messages (default: {0})".format(REQUEST_DELAY))
+    parser_info.add_argument("-t", "--timeout", metavar="T", type=float, default=TIMEOUT_SERVICES,
+                             help="wait T seconds for response before timeout (default: {0})".format(TIMEOUT_SERVICES))
     parser_info.set_defaults(func=__service_discovery_wrapper)
 
     # Parser for ECU Reset
@@ -520,14 +521,14 @@ def __parse_args(args):
     parser_ecu_reset.add_argument("src", help="arbitration ID to transmit to")
     parser_ecu_reset.add_argument("dst", help="arbitration ID to listen to")
     parser_ecu_reset.add_argument("-t", "--timeout", type=float, metavar="T",
-                                  help="seconds to wait for response before timeout")
+                                  help="wait T seconds for response before timeout")
     parser_ecu_reset.set_defaults(func=__ecu_reset_wrapper)
 
     # Parser for TesterPresent
     parser_tp = subparsers.add_parser("testerpresent")
     parser_tp.add_argument("src", help="arbitration ID to transmit to")
-    parser_tp.add_argument("-d", "--delay", metavar="D", type=float, default=TESTER_PRESENT_DELAY,
-                           help="send TesterPresent every D seconds (default: {0})".format(TESTER_PRESENT_DELAY))
+    parser_tp.add_argument("-d", "--delay", metavar="D", type=float, default=DELAY_TESTER_PRESENT,
+                           help="send TesterPresent every D seconds (default: {0})".format(DELAY_TESTER_PRESENT))
     parser_tp.add_argument("-dur", "--duration", metavar="S", type=float, help="automatically stop after S seconds")
     parser_tp.add_argument("-spr", action="store_true", help="suppress positive response")
     parser_tp.set_defaults(func=__tester_present_wrapper)

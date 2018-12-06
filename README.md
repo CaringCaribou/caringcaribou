@@ -36,7 +36,7 @@ The `/tests` folder contains automated test suites and `/documentation` stores m
 ## List of Modules
 A clean installation of Caring Caribou includes the following modules:
 
-### dcm.py - Diagnostics ISO 14229
+### dcm - Diagnostics ISO 14229
 - discovery - ArbID Discovery. Tries to connect (02 10 01) to all possible ArbId (0x000-0x7FF) and collect valid responses (xx 7F or xx 50). Supports both manual and automatic blacklisting of arbitration IDs, in order to remove false positives.
 - services - Service Discovery. Brute force all Service Id's (SID) and report any responses (anything that is not xx F7 11)
 - subfunc - Sub-function Discovery. Brute force engine that takes SID and an index indicating which positions to brute force as input.
@@ -44,14 +44,14 @@ A clean installation of Caring Caribou includes the following modules:
 
 Detailed information on the [dcm-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/dcm.md).
 
-### xcp.py - Universal Measurement and Calibration Protocol (XCP)
+### xcp - Universal Measurement and Calibration Protocol (XCP)
 - discovery - ArbId Discovery. Tries to connect (FF) to all possible ArbId (0x000-0x7FF) and collect all valid responses (FF or FE)
 - info - XCP Get Basic Information. Connects and gets information about XCP abilities in the target environment
 - dump - XCP Upload. Used to dump ECU memory (SRAM, flash and bootloader) to file 
 
 Detailed information on the [xcp-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/xcp.md).
 
-### fuzzer.py - CAN fuzzer
+### fuzzer - CAN fuzzer
 - random - sends random CAN messages
 - brute - brute forces all possible messages matching a given bit mask
 - mutate - mutate selected nibbles of a given message
@@ -60,20 +60,20 @@ Detailed information on the [xcp-module](https://github.com/CaringCaribou/caring
 
 Detailed information on the [fuzzer-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/fuzzer.md).
 
-### listener.py - Listener
+### listener - Listener
 - ArbId listener - register all ArbIds heard on the CAN bus
 
 Detailed information on the [listener-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/listener.md).
 
-### send.py - Send CAN packets
+### send - Send CAN packets
 - Raw message transmission module, used to drive manual test cases
 
 Detailed information on the [send-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/send.md).
 
-### test.py - Run test suite
+### test - Run test suite
 - Runs the automated Caring Caribou test suites
 
-### dump.py - Dump CAN traffic
+### dump - Dump CAN traffic
 - Dump incoming traffic to stdout or file
 
 Detailed information on the [dump-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/dump.md).

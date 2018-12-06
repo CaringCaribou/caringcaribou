@@ -89,6 +89,7 @@ NRC_NAMES = {
 }
 
 REQUEST_DELAY = 0.01
+TESTER_PRESENT_DELAY = 0.5
 BYTE_MIN = 0x00
 BYTE_MAX = 0xFF
 
@@ -499,14 +500,16 @@ def __parse_args(args):
     parser_discovery.add_argument("-ab", "--autoblacklist", metavar="N", type=float, default=0,
                                   help="listen for false positives for N seconds and blacklist matching "
                                        "arbitration IDs before running discovery")
-    parser_discovery.add_argument("--delay", type=float, default=REQUEST_DELAY, help="delay between each message")
+    parser_discovery.add_argument("-d", "--delay", metavar="D", type=float, default=REQUEST_DELAY,
+                                  help="D seconds delay between messages (default: {0})".format(REQUEST_DELAY))
     parser_discovery.set_defaults(func=__uds_discovery_wrapper)
 
     # Parser for diagnostics service discovery
     parser_info = subparsers.add_parser("services")
     parser_info.add_argument("src", help="arbitration ID to transmit to")
     parser_info.add_argument("dst", help="arbitration ID to listen to")
-    parser_info.add_argument("--delay", type=float, default=REQUEST_DELAY, help="delay between each message")
+    parser_info.add_argument("-d", "--delay", metavar="D", type=float, default=REQUEST_DELAY,
+                             help="D seconds delay between messages (default: {0})".format(REQUEST_DELAY))
     parser_info.set_defaults(func=__service_discovery_wrapper)
 
     # Parser for ECU Reset
@@ -523,8 +526,9 @@ def __parse_args(args):
     # Parser for TesterPresent
     parser_tp = subparsers.add_parser("testerpresent")
     parser_tp.add_argument("src", help="arbitration ID to transmit to")
-    parser_tp.add_argument("-delay", type=float, default=0.5, help="delay between each TesterPresent message")
-    parser_tp.add_argument("-dur", "--duration", metavar="D", type=float, help="automatically stop after D seconds")
+    parser_tp.add_argument("-d", "--delay", metavar="D", type=float, default=TESTER_PRESENT_DELAY,
+                           help="send TesterPresent every D seconds (default: {0})".format(TESTER_PRESENT_DELAY))
+    parser_tp.add_argument("-dur", "--duration", metavar="S", type=float, help="automatically stop after S seconds")
     parser_tp.add_argument("-spr", action="store_true", help="suppress positive response")
     parser_tp.set_defaults(func=__tester_present_wrapper)
 

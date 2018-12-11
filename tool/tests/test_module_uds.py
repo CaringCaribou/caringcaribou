@@ -9,8 +9,8 @@ class UdsModuleTestCase(unittest.TestCase):
     ARB_ID_REQUEST = 0x300E
     ARB_ID_RESPONSE = 0x300F
 
-    # Delay (in seconds) to wait for response during bruteforce
-    BRUTEFORCE_DELAY = 0.01
+    # Timeout (in seconds) when waiting for response during bruteforce
+    BRUTEFORCE_TIMEOUT = 0.01
 
     def setUp(self):
         # Initialize mock ECU
@@ -29,10 +29,10 @@ class UdsModuleTestCase(unittest.TestCase):
         end_arb_id = self.ARB_ID_REQUEST + 5
         blacklist = []
         auto_blacklist_duration = 0
-        delay = self.BRUTEFORCE_DELAY
+        timeout = self.BRUTEFORCE_TIMEOUT
         print_results = False
         # Perform UDS discovery
-        result = uds.uds_discovery(start_arb_id, end_arb_id, blacklist, auto_blacklist_duration, delay, print_results)
+        result = uds.uds_discovery(start_arb_id, end_arb_id, blacklist, auto_blacklist_duration, timeout, print_results)
         expected_result = [(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE)]
         self.assertListEqual(result, expected_result, "UDS discovery gave '{0}', expected '{1}'".format(
             result, expected_result))
@@ -44,10 +44,10 @@ class UdsModuleTestCase(unittest.TestCase):
         # Blacklist the arbitration ID used for response
         blacklist = [self.ARB_ID_RESPONSE]
         auto_blacklist_duration = 0
-        delay = self.BRUTEFORCE_DELAY
+        timeout = self.BRUTEFORCE_TIMEOUT
         print_results = False
         # Perform UDS discovery
-        result = uds.uds_discovery(start_arb_id, end_arb_id, blacklist, auto_blacklist_duration, delay, print_results)
+        result = uds.uds_discovery(start_arb_id, end_arb_id, blacklist, auto_blacklist_duration, timeout, print_results)
         # No results expected due to blacklist
         expected_result = []
         self.assertListEqual(result, expected_result, "UDS discovery gave '{0}', expected '{1}'".format(
@@ -61,7 +61,7 @@ class UdsModuleTestCase(unittest.TestCase):
         # Perform service discovery
         result = uds.service_discovery(arb_id_request=self.ARB_ID_REQUEST,
                                        arb_id_response=self.ARB_ID_RESPONSE,
-                                       request_delay=self.BRUTEFORCE_DELAY,
+                                       timeout=self.BRUTEFORCE_TIMEOUT,
                                        min_id=range_start,
                                        max_id=range_end,
                                        print_results=print_results)
@@ -78,7 +78,7 @@ class UdsModuleTestCase(unittest.TestCase):
         # Perform service discovery
         result = uds.service_discovery(arb_id_request=self.ARB_ID_REQUEST,
                                        arb_id_response=self.ARB_ID_RESPONSE,
-                                       request_delay=self.BRUTEFORCE_DELAY,
+                                       timeout=self.BRUTEFORCE_TIMEOUT,
                                        min_id=range_start,
                                        max_id=range_end,
                                        print_results=print_results)

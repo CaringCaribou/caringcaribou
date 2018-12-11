@@ -103,11 +103,12 @@ class ServiceID(object):
 
 
 class BaseService(object):
-
+    """Base class for services"""
     service_id = None
 
 
 class Services(object):
+    """Class structure containing service specific constants, sub-function parameters and functions"""
 
     class DiagnosticSessionControl(BaseService):
 

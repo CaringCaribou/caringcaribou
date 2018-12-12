@@ -36,47 +36,53 @@ The `/tests` folder contains automated test suites and `/documentation` stores m
 ## List of Modules
 A clean installation of Caring Caribou includes the following modules:
 
-### dcm.py - Diagnostics ISO 14229
-- discovery - ArbID Discovery. Tries to connect (02 10 01) to all possible ArbId (0x000-0x7FF) and collect valid responses (xx 7F or xx 50). Supports both manual and automatic blacklisting of arbitration IDs, in order to remove false positives.
-- services - Service Discovery. Brute force all Service Id's (SID) and report any responses (anything that is not xx F7 11)
-- subfunc - Sub-function Discovery. Brute force engine that takes SID and an index indicating which positions to brute force as input.
-- dtc - Diagnostic Trouble Codes.  Fetches DTCs.  Can clear DTCs and MIL (Engine Light) as well.
+### uds - Universal Diagnostic Services
+Discovers and utilizes various ISO 14229-1 services.
+- discovery - Scans for ECUs supporting diagnostics services
+- services - Scans for diagnostics services supported by an ECU
+- ecu_reset - Reset an ECU
+- testerpresent - Force an elevated session against an ECU to stay active
 
-Detailed information on the [dcm-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/dcm.md).
+Details here: [uds module](documentation/uds.md)
 
-### xcp.py - Universal Measurement and Calibration Protocol (XCP)
-- discovery - ArbId Discovery. Tries to connect (FF) to all possible ArbId (0x000-0x7FF) and collect all valid responses (FF or FE)
-- info - XCP Get Basic Information. Connects and gets information about XCP abilities in the target environment
-- dump - XCP Upload. Used to dump ECU memory (SRAM, flash and bootloader) to file 
+### xcp - Universal Measurement and Calibration Protocol (XCP)
+- discovery - Scans for ECUs supporting XCP
+- info - XCP Get Basic Information. Retrieves information about XCP abilities of an ECU
+- dump - XCP Upload. Used to dump ECU memory (such as SRAM, flash and bootloader) to file 
 
-Detailed information on the [xcp-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/xcp.md).
+Details here: [xcp module](documentation/xcp.md)
 
-### fuzzer.py - CAN fuzzer
+### fuzzer - CAN fuzzer
 - random - sends random CAN messages
 - brute - brute forces all possible messages matching a given bit mask
 - mutate - mutate selected nibbles of a given message
 - replay - replay a log file from a previous fuzzing session
 - identify - replay a log file and identify message causing a specific event
 
-Detailed information on the [fuzzer-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/fuzzer.md).
+Details here: [fuzzer module](documentation/fuzzer.md)
 
-### listener.py - Listener
-- ArbId listener - register all ArbIds heard on the CAN bus
+### dump - Dump CAN traffic
+Dumps incoming traffic to stdout (terminal output) or file
 
-Detailed information on the [listener-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/listener.md).
+Details here: [dump module](documentation/dump.md)
 
-### send.py - Send CAN packets
-- Raw message transmission module, used to drive manual test cases
+### send - Send CAN packets
+Raw message transmission module, used to send messages manually from command line or replay dump files
 
-Detailed information on the [send-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/send.md).
+Details here:  [send module](documentation/send.md)
 
-### test.py - Run test suite
-- Runs the automated Caring Caribou test suites
+### listener - Listener
+Lists all distinct arbitration IDs being used on the CAN bus
 
-### dump.py - Dump CAN traffic
-- Dump incoming traffic to stdout or file
+Details here: [listener module](documentation/listener.md)
 
-Detailed information on the [dump-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/dump.md).
+### test - Run test suite
+Runs automated Caring Caribou test suites
+
+### dcm - [deprecated] Diagnostics Control Module
+**Note**: This module has been replaced by the [UDS](documentation/uds.md) module. It is still supported by CC due to legacy reasons.
+
+Details here: [dcm module](documentation/dcm.md)
 
 ## List of libraries
 The `/lib` folder contains the following libraries:
@@ -99,7 +105,7 @@ Some sort of CAN bus interface compatible with socketCAN (http://elinux.org/CAN_
 - a pretty modern linux kernel
 
 ## How to install
-Instructions available [here](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/howtoinstall.md)
+Instructions available [here](documentation/howtoinstall.md)
 
 ## Extending the project
 Create a python file with a function `module_main(args)` and put it in the ```tool/modules``` folder. Caring Caribou will automagically recognize it as a module and list it in the output of `./cc.py -h`

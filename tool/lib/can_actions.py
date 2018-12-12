@@ -1,6 +1,7 @@
+from __future__ import print_function
+from sys import stdout, version_info
 import can
 import time
-from sys import version_info
 
 # Handle large ranges efficiently in both python 2 and 3
 if version_info[0] == 2:
@@ -106,6 +107,54 @@ def insert_message_length(data, pad=False):
     if pad:
         full_data += [0x00] * (7-length)
     return full_data
+
+
+def auto_blacklist(bus, duration, classifier_function, print_results):
+    """Listens for false positives on the CAN bus and generates an arbitration ID blacklist.
+
+    Finds all can.Message <msg> on 'bus' where 'classifier_function(msg)' evaluates to True.
+    Terminates after 'duration' seconds and returns a set of all matching arbitration IDs.
+    Prints progress, time countdown and list of results if 'print_results' is True.
+
+    :param bus: CAN bus instance
+    :param duration: duration in seconds
+    :param classifier_function: function which, when called upon a can.Message instance,
+                                returns a bool indicating if it should be blacklisted
+    :param print_results: whether progress and results should be printed to stdout
+    :type bus: can.Bus
+    :type duration: float
+    :type classifier_function: function
+    :type print_results: bool
+    :return set of matching arbitration IDs to blacklist
+    :rtype set(int)
+    """
+    if print_results:
+        print("Scanning for arbitration IDs to blacklist")
+    blacklist = set()
+    start_time = time.time()
+    end_time = start_time + duration
+    while time.time() < end_time:
+        if print_results:
+            time_left = end_time - time.time()
+            num_matches = len(blacklist)
+            print("\r{0:> 5.1f} seconds left, {1} found".format(time_left, num_matches), end="")
+            stdout.flush()
+        # Receive message
+        msg = bus.recv(0.1)
+        if msg is None:
+            continue
+        # Classify
+        if classifier_function(msg):
+            # Add to blacklist
+            blacklist.add(msg.arbitration_id)
+    if print_results:
+        num_matches = len(blacklist)
+        print("\r  0.0 seconds left, {0} found".format(num_matches), end="")
+        if len(blacklist) > 0:
+            print("\n  Detected IDs: {0}".format(" ".join(sorted(list(map(hex, blacklist))))))
+        else:
+            print()
+    return blacklist
 
 
 class CanActions:

@@ -55,7 +55,7 @@ CARING CARIBOU v0.2
 Loaded module 'uds'
 
 usage: cc.py uds discovery [-h] [-min MIN] [-max MAX] [-b B [B ...]] [-ab N]
-                           [-d D]
+                           [-sv] [-d D]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -66,6 +66,7 @@ optional arguments:
   -ab N, --autoblacklist N
                         listen for false positives for N seconds and blacklist
                         matching arbitration IDs before running discovery
+  -sv, --skipverify     skip verification step (reduces result accuracy)
   -d D, --delay D       D seconds delay between messages (default: 0.01)
 ```
 

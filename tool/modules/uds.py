@@ -92,11 +92,16 @@ DELAY_DISCOVERY = 0.01
 DELAY_TESTER_PRESENT = 0.5
 TIMEOUT_SERVICES = 0.2
 
+# Max number of arbitration IDs to backtrack during verification
+VERIFICATION_BACKTRACK = 5
+# Extra time in seconds to wait for responses during verification
+VERIFICATION_EXTRA_DELAY = 0.5
+
 BYTE_MIN = 0x00
 BYTE_MAX = 0xFF
 
 
-def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration, delay, print_results=True):
+def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration, delay, verify, print_results=True):
     """Scans for diagnostics support by brute forcing session control messages to different arbitration IDs.
     Returns a list of all (client_arb_id, server_arb_id) pairs found.
 
@@ -105,12 +110,14 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration, delay
     :param blacklist_args: blacklist for arbitration ID values
     :param auto_blacklist_duration: seconds to scan for interfering arbitration IDs to blacklist automatically
     :param delay: delay between each message
+    :param verify: whether found arbitration IDs should be verified
     :param print_results: whether results should be printed to stdout
     :type min_id: int
     :type max_id: int
     :type blacklist_args: [int]
     :type auto_blacklist_duration: float
     :type delay: float
+    :type verify: bool
     :type print_results: bool
     :return: list of (client_arbitration_id, server_arbitration_id) pairs
     :rtype [(int, int)]
@@ -155,7 +162,9 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration, delay
 
         # Prepare session control frame
         session_control_frames = tp.get_frames_from_message(session_control_data)
-        for send_arbitration_id in range(min_id, max_id + 1):
+        send_arbitration_id = min_id - 1
+        while send_arbitration_id < max_id:
+            send_arbitration_id += 1
             if print_results:
                 print("\rSending Diagnostic Session Control to 0x{0:04x}".format(send_arbitration_id), end="")
                 stdout.flush()
@@ -173,9 +182,57 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration, delay
                     continue
                 if is_valid_response(msg):
                     # Valid response
+                    if verify:
+                        # Verification - backtrack the latest IDs and verify that the same response is received
+                        verified = False
+                        # Set filter to only receive messages for the arbitration ID being verified
+                        tp.set_filter_single_arbitration_id(msg.arbitration_id)
+                        if print_results:
+                            print("\n  Verifying potential response from 0x{0:04x}".format(send_arbitration_id))
+                        verify_id_range = range(send_arbitration_id, send_arbitration_id - VERIFICATION_BACKTRACK, -1)
+                        for verification_arbitration_id in verify_id_range:
+                            if print_results:
+                                print("    Resending 0x{0:0x}... ".format(verification_arbitration_id), end=" ")
+                            tp.transmit(session_control_frames, verification_arbitration_id, None)
+                            # Give some extra time for verification, in case of slow responses
+                            verification_end_time = time.time() + delay + VERIFICATION_EXTRA_DELAY
+                            while time.time() < verification_end_time:
+                                verification_msg = tp.bus.recv(0)
+                                if verification_msg is None:
+                                    continue
+                                if is_valid_response(verification_msg):
+                                    # Verified
+                                    verified = True
+                                    # Update send ID - if server responds slowly, the initial value may be faulty.
+                                    # It also ensures we resume searching on the next arbitration ID after the actual
+                                    # match, rather than the one after the last potential match (which could lead to
+                                    # false negatives if multiple servers listen to adjacent arbitration IDs and respond
+                                    # slowly)
+                                    send_arbitration_id = verification_arbitration_id
+                                    break
+                            if print_results:
+                                # Print result
+                                if verified:
+                                    print("Success")
+                                else:
+                                    print("No response")
+                            if verified:
+                                # Verification succeeded - stop checking
+                                break
+                        # Remove filter after verification
+                        tp.clear_filters()
+                        if not verified:
+                            # Verification failed - move on
+                            if print_results:
+                                print("  False match - skipping")
+                            continue
                     if print_results:
-                        print("\nFound diagnostics at arbitration ID 0x{0:04x}, response at 0x{1:04x}".format(
+                        if not verify:
+                            # Blank line needed
+                            print()
+                        print("Found diagnostics server listening at 0x{0:04x}, response at 0x{1:04x}".format(
                             send_arbitration_id, msg.arbitration_id))
+                    # Add found arbitration ID pair
                     found_arb_id_pair = (send_arbitration_id, msg.arbitration_id)
                     found_arbitration_ids.append(found_arb_id_pair)
         if print_results:
@@ -190,16 +247,17 @@ def __uds_discovery_wrapper(args):
     blacklist = [int_from_str_base(b) for b in args.blacklist]
     auto_blacklist_duration = args.autoblacklist
     delay = args.delay
+    verify = not args.skipverify
     print_results = True
 
     try:
-        arb_id_pairs = uds_discovery(min_id, max_id, blacklist, auto_blacklist_duration, delay, print_results)
+        arb_id_pairs = uds_discovery(min_id, max_id, blacklist, auto_blacklist_duration, delay, verify, print_results)
         if len(arb_id_pairs) == 0:
             # No UDS discovered
             print("\nDiagnostics service could not be found.")
         else:
             # Print result table
-            print()
+            print("\nIdentified diagnostics:\n")
             table_line = "+------------+------------+"
             print(table_line)
             print("| CLIENT ID  | SERVER ID  |")
@@ -501,6 +559,8 @@ def __parse_args(args):
     parser_discovery.add_argument("-ab", "--autoblacklist", metavar="N", type=float, default=0,
                                   help="listen for false positives for N seconds and blacklist matching "
                                        "arbitration IDs before running discovery")
+    parser_discovery.add_argument("-sv", "--skipverify", action="store_true",
+                                  help="skip verification step (reduces result accuracy)")
     parser_discovery.add_argument("-d", "--delay", metavar="D", type=float, default=DELAY_DISCOVERY,
                                   help="D seconds delay between messages (default: {0})".format(DELAY_DISCOVERY))
     parser_discovery.set_defaults(func=__uds_discovery_wrapper)

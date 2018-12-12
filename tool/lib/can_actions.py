@@ -150,7 +150,10 @@ def auto_blacklist(bus, duration, classifier_function, print_results):
     if print_results:
         num_matches = len(blacklist)
         print("\r  0.0 seconds left, {0} found".format(num_matches), end="")
-        print("\n  Detected IDs: {0}".format(" ".join(sorted(list(map(hex, blacklist))))))
+        if len(blacklist) > 0:
+            print("\n  Detected IDs: {0}".format(" ".join(sorted(list(map(hex, blacklist))))))
+        else:
+            print()
     return blacklist
 
 

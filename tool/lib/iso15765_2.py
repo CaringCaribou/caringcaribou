@@ -60,8 +60,13 @@ class IsoTp:
         self.bus.set_filters(filters)
 
     def set_filter_single_arbitration_id(self, arbitration_id):
+        """Set a filter to only receive incoming messages on 'arbitration_id'"""
         arbitration_id_filter = [{"can_id": arbitration_id, "can_mask": ARBITRATION_ID_MAX_EXTENDED}]
         self._set_filters(arbitration_id_filter)
+
+    def clear_filters(self):
+        """Remove arbitration ID filters"""
+        self._set_filters(None)
 
     def send_message(self, data, arbitration_id):
         """

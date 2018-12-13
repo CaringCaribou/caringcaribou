@@ -25,22 +25,22 @@ def initiate_dump(handler, whitelist, separator_seconds, candump_format):
         format_func = str
     separator_enabled = separator_seconds is not None
     last_message_timestamp = datetime.datetime.min
-    last_message_separator_printed = True
+    messages_since_last_separator = 0
 
     print("Dumping CAN traffic (press Ctrl+C to exit)".format(whitelist))
     with CanActions(notifier_enabled=False) as can_wrap:
         for msg in can_wrap.bus:
             # Separator handling
-            if separator_enabled and not last_message_separator_printed:
+            if separator_enabled and messages_since_last_separator > 0:
                 if (datetime.datetime.now() - last_message_timestamp).total_seconds() > separator_seconds:
                     # Print separator
-                    handler("---")
-                    last_message_separator_printed = True
+                    handler("--- Count: {0}".format(messages_since_last_separator))
+                    messages_since_last_separator = 0
             # Message handling
             if len(whitelist) == 0 or msg.arbitration_id in whitelist:
                 handler(format_func(msg))
                 last_message_timestamp = datetime.datetime.now()
-                last_message_separator_printed = False
+                messages_since_last_separator += 1
 
 
 def parse_args(args):

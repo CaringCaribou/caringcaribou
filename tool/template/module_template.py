@@ -14,62 +14,53 @@
 # 3. Run the following command to run module and show usage instructions:
 #      $ ./cc.py module_template -h
 #
-
-from can_actions import CanActions, int_from_str_base
-from time import sleep
+from __future__ import print_function
 import argparse
+import time
+from lib.can_actions import CanActions, int_from_str_base
 
 
-def foo(arb_id):
+def do_stuff(my_arbitration_id):
     """
     Performs some example operations, such as sending and receiving CAN messages.
 
-    :param arb_id: The arbitration id to use when sending message 1
+    :param my_arbitration_id: The default arbitration id to use when sending messages
+    :type my_arbitration_id: int
     """
-
-    # Define a callback function which will handle incoming messages
-    def example_response_handler(msg):
-        print("Callback handler: Incoming message!")
-        print(msg)
-        # Examples of how to filter data
-        if msg.data[0] > 0x0F:
-            print("First byte is not very small ({0})".format(msg.data[0]))
-        if msg.arbitration_id < 0x10:
-            print("Low arbitration ID on this one ({0})".format(msg.arbitration_id))
-        print("---")
-
-    print("Setting up")
-    # Create an instance of CanActions, which we can use to send and receive messages.
-    with CanActions(arb_id) as can_wrap:
-        # EXAMPLE 1 - SEND MESSAGE WITH CALLBACK
+    # The notifier should only be enabled when handling incoming traffic using callbacks
+    use_notifier = False
+    # Setup CanActions wrapper to use for receiving and sending messages
+    with CanActions(arb_id=my_arbitration_id, notifier_enabled=use_notifier) as can_wrap:
         # Define message contents
-        message1 = [0x11, 0x22, 0x33, 0x44]
-        # Number of seconds for callback handler to be active
-        callback_handler_duration = 3
-        print("Sending message 1 and adding callback function")
-        # Send the message on the CAN bus (using default arbitration ID) and register a callback
-        # handler for incoming messages
-        can_wrap.send_single_message_with_callback(message1, example_response_handler)
-        print("Letting callback handler be active for {0} seconds".format(callback_handler_duration))
-        # Wait for three seconds before closing the CanActions instance. This means we have three
-        # seconds to handle incoming messages through the callback function.
-        sleep(callback_handler_duration)
-        # Manually remove the callback function. This is only needed since we want to proceed
-        # without keeping the callback handler in the next example - otherwise it would be
-        # automatically removed once can_wrap is closed.
-        can_wrap.clear_listeners()
-        print("Removed callback handler")
+        my_message = [0x11, 0x22, 0x33, 0x44]
+        # Send message using the default arbitration ID for can_wrap
+        can_wrap.send(data=my_message)
 
-        # EXAMPLE 2 - SEND MESSAGE TO CUSTOM ARBITRATION ID
-        # Define message contents
-        message2 = [0x55, 0x66, 0x77, 0x88, 0x99, 0xAA]
-        # Define custom arbitration ID
-        my_arb_id = 0x123
-        print("Sending message 2")
-        # Send message on the CAN bus using the custom arbitration ID
-        can_wrap.send(message2, my_arb_id)
+        # Send the same message again, but on a custom arbitration ID this time
+        my_custom_arbitration_id = 0x123ABC
+        can_wrap.send(data=my_message, arb_id=my_custom_arbitration_id)
+
+        # Listen for incoming traffic for a while
+        duration_seconds = 1.0
+        start_time = time.time()
+        end_time = start_time + duration_seconds
+        while time.time() < end_time:
+            # Check if a message is available
+            msg = can_wrap.bus.recv(0)
+            if msg is None:
+                # No message was available right now - continue listening loop
+                continue
+            # If we reach here, a message was received. Let's print it!
+            print("Received a message on channel", msg.channel)
+            print("  Arb ID: 0x{0:x} ({0})".format(msg.arbitration_id))
+            data_string = ".".join(["{0:02x}".format(b) for b in msg.data])
+            print("  Data:  ", data_string)
+            # Module logic for message handling goes here
+            if msg.arbitration_id < 0x10:
+                print("  That was a low arbitration ID!")
+
     # When we reach here, can_wrap has been closed
-    print("Done!")
+    print("\nDone!")
 
 
 def parse_args(args):
@@ -84,11 +75,10 @@ def parse_args(args):
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description="Descriptive message for the template module",
                                      epilog="""Example usage:
-  cc.py module_template -arbId 123
-  cc.py module_template -arbId 0x1FF""")
-
-    parser.add_argument("-arbId", default="0", help="arbitration ID to use")
-
+  cc.py module_template
+  cc.py module_template -id 123
+  cc.py module_template -id 0x1FF""")
+    parser.add_argument("-id", default="0", help="arbitration ID to use")
     args = parser.parse_args(args)
     return args
 
@@ -103,8 +93,8 @@ def module_main(arg_list):
         # Parse arguments
         args = parse_args(arg_list)
         # Parse arbitration ID from the arguments (this function resolves both base 10 and hex values)
-        arbitration_id = int_from_str_base(args.arbId)
+        arbitration_id = int_from_str_base(args.id)
         # Time to actually do stuff
-        foo(arbitration_id)
+        do_stuff(arbitration_id)
     except KeyboardInterrupt:
         print("\n\nTerminated by user")

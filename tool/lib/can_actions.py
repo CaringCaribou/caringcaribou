@@ -92,23 +92,6 @@ def msg_to_candump_format(msg):
     return candump
 
 
-def insert_message_length(data, pad=False):
-    """
-    Inserts a message length byte before data
-
-    :param data: Message data
-    :param pad: If True, pads returned data to 8 bytes
-    :return:
-    """
-    length = len(data)
-    if length > 7:
-        raise IndexError("Data can only contain up to 7 bytes: {0}".format(len(data)))
-    full_data = [length] + data
-    if pad:
-        full_data += [0x00] * (7-length)
-    return full_data
-
-
 def auto_blacklist(bus, duration, classifier_function, print_results):
     """Listens for false positives on the CAN bus and generates an arbitration ID blacklist.
 

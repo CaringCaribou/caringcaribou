@@ -1,5 +1,5 @@
 from __future__ import print_function
-from lib.can_actions import CanActions, insert_message_length, int_from_str_base
+from lib.can_actions import CanActions, int_from_str_base
 from sys import stdout
 import argparse
 import time
@@ -68,6 +68,23 @@ NRC = {
     0x7E: "sub-FunctionNotSupportedInActiveSession",
     0x7F: "serviceNotSupportedInActiveSession"
 }
+
+
+def insert_message_length(data, pad=False):
+    """
+    Inserts a message length byte before data
+
+    :param data: Message data
+    :param pad: If True, pads returned data to 8 bytes
+    :return:
+    """
+    length = len(data)
+    if length > 7:
+        raise IndexError("Data can only contain up to 7 bytes: {0}".format(len(data)))
+    full_data = [length] + data
+    if pad:
+        full_data += [0x00] * (7-length)
+    return full_data
 
 
 def dcm_dtc(args):

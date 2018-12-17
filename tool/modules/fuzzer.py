@@ -4,7 +4,9 @@ import argparse
 import random
 
 from itertools import product
-from lib.can_actions import *
+from lib.can_actions import CanActions
+from lib.common import hex_str_to_nibble_list, int_from_byte_list, list_to_hex_str, parse_int_dec_or_hex
+from lib.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MIN, BYTE_MAX, BYTE_MIN
 from time import sleep
 
 # Python 2/3 compatibility
@@ -31,7 +33,7 @@ def directive_str(arb_id, data):
     :param data: message data bytes
     :return: str representing directive
     """
-    data = "".join(["{0:02X}".format(x) for x in data])
+    data = list_to_hex_str(data, "")
     directive = "{0:03X}#{1}".format(arb_id, data)
     return directive
 
@@ -56,46 +58,8 @@ def set_seed(seed=None):
     """
     if seed is None:
         seed = random.randint(0, DEFAULT_SEED_MAX)
-    else:
-        seed = int_from_str_base(seed)
     print("Seed: {0} (0x{0:x})".format(seed))
     random.seed(seed)
-
-
-def hex_str_to_nibble_list(data):
-    """
-    Converts a hexadecimal str values into a list of int nibbles.
-
-    Example:
-    hex_str_to_nibble_list("12ABF7")
-    gives
-    [0x1, 0x2, 0xA, 0xB, 0xF, 0x7]
-
-    :param data: str of hexadecimal values
-    :return: list of int nibbles
-    """
-    if data is None:
-        return None
-    data_ints = []
-    for nibble_str in data:
-        nibble_int = int(nibble_str, 16)
-        data_ints.append(nibble_int)
-    return data_ints
-
-
-def data_to_str(data):
-    """
-    Returns a str representation of 'data'
-
-    Example:
-    data_to_str([0x12, 0xFC, 0xA7]
-    gives
-    "12 fc a7"
-
-    :param data: list of int byte values
-    :return: str representing data
-    """
-    return " ".join(list(map("{0:02x}".format, data)))
 
 
 def parse_directive(directive):
@@ -418,7 +382,7 @@ def bruteforce_fuzz(arb_id, initial_data, data_bitmap, filename=None, start_inde
                 can_wrap.send(output_data)
                 message_count += 1
                 if show_progress:
-                    print("\rCurrent: {0} Index: {1}".format(data_to_str(output_data), message_count), end="")
+                    print("\rCurrent: {0} Index: {1}".format(list_to_hex_str(output_data, " "), message_count), end="")
                     stdout.flush()
                 # Log to file
                 if file_logging_enabled:
@@ -491,7 +455,7 @@ def mutate_fuzz(initial_arb_id, initial_data, arb_id_bitmap, data_bitmap, filena
                     data = apply_fuzzed_data(initial_data, fuzzed_nibbles_data, data_bitmap)
 
                 if show_status:
-                    print("\rSending {0:04x} # {1} ({2})".format(arb_id, data_to_str(data), message_count),
+                    print("\rSending {0:04x} # {1} ({2})".format(arb_id, list_to_hex_str(data, " "), message_count),
                           end="")
                     stdout.flush()
 
@@ -629,13 +593,12 @@ def identify_fuzz(all_composites, show_responses):
 
 
 def __handle_random(args):
-    arb_id = int_from_str_base(args.id)
     data = None
     if args.data is not None:
         data_nibbles = hex_str_to_nibble_list(args.data)
         padded_nibbles = pad_to_even_length(data_nibbles)
         data = nibbles_to_bytes(padded_nibbles)
-    random_fuzz(static_arb_id=arb_id, static_data=data, filename=args.file,
+    random_fuzz(static_arb_id=args.id, static_data=data, filename=args.file,
                 min_data_length=args.min, max_data_length=args.max, seed=args.seed)
 
 
@@ -677,10 +640,9 @@ def parse_hex_and_dot_indices(values, dot_index_marker="."):
 
 
 def __handle_bruteforce(args):
-    arb_id = int_from_str_base(args.arb_id)
     data, data_bitmap = parse_hex_and_dot_indices(args.data)
 
-    bruteforce_fuzz(arb_id=arb_id, initial_data=data, data_bitmap=data_bitmap, filename=args.file,
+    bruteforce_fuzz(arb_id=args.arb_id, initial_data=data, data_bitmap=data_bitmap, filename=args.file,
                     start_index=args.index, show_progress=True, show_responses=args.responses)
 
 
@@ -736,23 +698,23 @@ def parse_args(args):
 
     # Random fuzzer
     cmd_random = subparsers.add_parser("random", help="Random fuzzer for messages and arbitration IDs")
-    cmd_random.add_argument("-id", default=None, help="set static arbitration ID")
+    cmd_random.add_argument("-id", type=parse_int_dec_or_hex, default=None, help="set static arbitration ID")
     cmd_random.add_argument("-data", "-d", default=None, help="set static data")
     cmd_random.add_argument("-file", "-f", default=None, help="log file for cansend directives")
     cmd_random.add_argument("-min", type=int, default=MIN_DATA_LENGTH, help="minimum data length")
     cmd_random.add_argument("-max", type=int, default=MAX_DATA_LENGTH, help="maximum data length")
-    cmd_random.add_argument("-seed", "-s", metavar="S", default=None, help="set random seed")
+    cmd_random.add_argument("-seed", "-s", metavar="S", type=parse_int_dec_or_hex, default=None, help="set random seed")
     cmd_random.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
                             help="delay between messages")
     cmd_random.set_defaults(func=__handle_random)
 
     # Brute force fuzzer
     cmd_brute = subparsers.add_parser("brute", help="Brute force selected nibbles in a message")
-    cmd_brute.add_argument("arb_id", help="arbitration ID")
+    cmd_brute.add_argument("arb_id", type=parse_int_dec_or_hex, help="arbitration ID")
     cmd_brute.add_argument("data", help="hex data where dots mark indices to bruteforce, e.g. 123.AB..")
     cmd_brute.add_argument("-file", "-f", default=None, help="log file for cansend directives")
     cmd_brute.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
-    cmd_brute.add_argument("-index", "-i", metavar="I", type=int, default=0,
+    cmd_brute.add_argument("-index", "-i", metavar="I", type=parse_int_dec_or_hex, default=0,
                            help="start index (for resuming previous session)")
     cmd_brute.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
                            help="delay between messages")
@@ -764,7 +726,7 @@ def parse_args(args):
     cmd_mutate.add_argument("data", help="hex data where dots mark indices to mutate, e.g. 123.AB..")
     cmd_mutate.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
     cmd_mutate.add_argument("-file", "-f", default=None, help="log file for cansend directives")
-    cmd_mutate.add_argument("-seed", "-s", metavar="S", default=None, help="set random seed")
+    cmd_mutate.add_argument("-seed", "-s", metavar="S", type=parse_int_dec_or_hex, default=None, help="set random seed")
     cmd_mutate.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
                             help="delay between messages")
     cmd_mutate.set_defaults(func=__handle_mutate)

@@ -9,7 +9,7 @@ import importlib
 import traceback
 import os
 
-VERSION = "0.2"
+VERSION = "0.3"
 
 # Find the right "modules" directory, even if the script is run from another directory
 MODULES_DIR = "modules"

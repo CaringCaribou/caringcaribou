@@ -88,7 +88,13 @@ Details here: [dcm module](documentation/dcm.md)
 The `/lib` folder contains the following libraries:
 
 ### can_actions.py
-Contains various shared module functionality. Provides abstraction for access to the CAN bus, CAN bruteforce engines etc.
+Provides abstraction for access to the CAN bus, bruteforce engines etc.
+
+### common.py
+Contains various common functions, type converters etc.
+
+### constants.py
+Constant definitions
 
 ### iso14229_1.py
 Implementation of the ISO-14229-1 standard for Unified Diagnostic Services (UDS).

@@ -1,6 +1,7 @@
 from __future__ import print_function
-from lib.can_actions import auto_blacklist, int_from_str_base
-from lib.can_actions import ARBITRATION_ID_MIN, ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
+from lib.can_actions import auto_blacklist
+from lib.common import list_to_hex_str, parse_int_dec_or_hex
+from lib.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED, ARBITRATION_ID_MIN
 from lib.iso15765_2 import IsoTp
 from lib.iso14229_1 import Iso14229_1, NegativeResponseCodes, Services
 from sys import stdout, version_info
@@ -242,9 +243,9 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration, delay
 
 def __uds_discovery_wrapper(args):
     """Wrapper used to initiate a UDS discovery scan"""
-    min_id = int_from_str_base(args.min)
-    max_id = int_from_str_base(args.max)
-    blacklist = [int_from_str_base(b) for b in args.blacklist]
+    min_id = args.min
+    max_id = args.max
+    blacklist = args.blacklist
     auto_blacklist_duration = args.autoblacklist
     delay = args.delay
     verify = not args.skipverify
@@ -320,8 +321,8 @@ def service_discovery(arb_id_request, arb_id_response, timeout, min_id=BYTE_MIN,
 
 def __service_discovery_wrapper(args):
     """Wrapper used to initiate a service discovery scan"""
-    arb_id_request = int_from_str_base(args.src)
-    arb_id_response = int_from_str_base(args.dst)
+    arb_id_request = args.src
+    arb_id_response = args.dst
     timeout = args.timeout
     # Probe services
     found_services = service_discovery(arb_id_request, arb_id_response, timeout)
@@ -374,7 +375,7 @@ def tester_present(arb_id_request, delay, duration, suppress_positive_response):
 
 def __tester_present_wrapper(args):
     """Wrapper used to initiate a TesterPresent session"""
-    arb_id_request = int_from_str_base(args.src)
+    arb_id_request = args.src
     delay = args.delay
     duration = args.duration
     suppress_positive_response = args.spr
@@ -417,9 +418,9 @@ def ecu_reset(arb_id_request, arb_id_response, reset_type, timeout):
 
 def __ecu_reset_wrapper(args):
     """Wrapper used to initiate ECU Reset"""
-    arb_id_request = int_from_str_base(args.src)
-    arb_id_response = int_from_str_base(args.dst)
-    reset_type = int_from_str_base(args.reset_type)
+    arb_id_request = args.src
+    arb_id_response = args.dst
+    reset_type = args.reset_type
     timeout = args.timeout
 
     print("Sending ECU reset, type 0x{0:02x} to arbitration ID {1} (0x{1:02x})".format(reset_type, arb_id_request))
@@ -450,7 +451,7 @@ def __ecu_reset_wrapper(args):
                 print("Received positive response")
                 if response_length > 2:
                     # Additional data can be seconds left to reset (powerDownTime) or manufacturer specific
-                    additional_data = ",".join(["{0:02x}".format(b) for b in response[2:]])
+                    additional_data = list_to_hex_str(response[2:], ",")
                     print("Response contains additional data: [{0}]".format(additional_data))
             else:
                 # Service and/or subfunction mismatch
@@ -552,9 +553,11 @@ def __parse_args(args):
 
     # Parser for diagnostics discovery
     parser_discovery = subparsers.add_parser("discovery")
-    parser_discovery.add_argument("-min", default=None, help="min arbitration ID to send request for")
-    parser_discovery.add_argument("-max", default=None, help="max arbitration ID to send request for")
-    parser_discovery.add_argument("-b", "--blacklist", metavar="B", default=[], nargs="+",
+    parser_discovery.add_argument("-min", type=parse_int_dec_or_hex, default=None,
+                                  help="min arbitration ID to send request for")
+    parser_discovery.add_argument("-max", type=parse_int_dec_or_hex, default=None,
+                                  help="max arbitration ID to send request for")
+    parser_discovery.add_argument("-b", "--blacklist", metavar="B", type=parse_int_dec_or_hex, default=[], nargs="+",
                                   help="arbitration IDs to blacklist responses from")
     parser_discovery.add_argument("-ab", "--autoblacklist", metavar="N", type=float, default=0,
                                   help="listen for false positives for N seconds and blacklist matching "
@@ -567,26 +570,26 @@ def __parse_args(args):
 
     # Parser for diagnostics service discovery
     parser_info = subparsers.add_parser("services")
-    parser_info.add_argument("src", help="arbitration ID to transmit to")
-    parser_info.add_argument("dst", help="arbitration ID to listen to")
+    parser_info.add_argument("src", type=parse_int_dec_or_hex, help="arbitration ID to transmit to")
+    parser_info.add_argument("dst", type=parse_int_dec_or_hex, help="arbitration ID to listen to")
     parser_info.add_argument("-t", "--timeout", metavar="T", type=float, default=TIMEOUT_SERVICES,
                              help="wait T seconds for response before timeout (default: {0})".format(TIMEOUT_SERVICES))
     parser_info.set_defaults(func=__service_discovery_wrapper)
 
     # Parser for ECU Reset
     parser_ecu_reset = subparsers.add_parser("ecu_reset")
-    parser_ecu_reset.add_argument("reset_type", metavar="type",
+    parser_ecu_reset.add_argument("reset_type", metavar="type", type=parse_int_dec_or_hex,
                                   help="Reset type: 1=hard, 2=key off/on, 3=soft, 4=enable rapid power shutdown, "
                                        "5=disable rapid power shutdown")
-    parser_ecu_reset.add_argument("src", help="arbitration ID to transmit to")
-    parser_ecu_reset.add_argument("dst", help="arbitration ID to listen to")
+    parser_ecu_reset.add_argument("src", type=parse_int_dec_or_hex, help="arbitration ID to transmit to")
+    parser_ecu_reset.add_argument("dst", type=parse_int_dec_or_hex, help="arbitration ID to listen to")
     parser_ecu_reset.add_argument("-t", "--timeout", type=float, metavar="T",
                                   help="wait T seconds for response before timeout")
     parser_ecu_reset.set_defaults(func=__ecu_reset_wrapper)
 
     # Parser for TesterPresent
     parser_tp = subparsers.add_parser("testerpresent")
-    parser_tp.add_argument("src", help="arbitration ID to transmit to")
+    parser_tp.add_argument("src", type=parse_int_dec_or_hex, help="arbitration ID to transmit to")
     parser_tp.add_argument("-d", "--delay", metavar="D", type=float, default=DELAY_TESTER_PRESENT,
                            help="send TesterPresent every D seconds (default: {0})".format(DELAY_TESTER_PRESENT))
     parser_tp.add_argument("-dur", "--duration", metavar="S", type=float, help="automatically stop after S seconds")

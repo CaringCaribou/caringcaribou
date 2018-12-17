@@ -17,7 +17,8 @@
 from __future__ import print_function
 import argparse
 import time
-from lib.can_actions import CanActions, int_from_str_base
+from lib.can_actions import CanActions
+from lib.common import list_to_hex_str, parse_int_dec_or_hex
 
 
 def do_stuff(my_arbitration_id):
@@ -53,7 +54,7 @@ def do_stuff(my_arbitration_id):
             # If we reach here, a message was received. Let's print it!
             print("Received a message on channel", msg.channel)
             print("  Arb ID: 0x{0:x} ({0})".format(msg.arbitration_id))
-            data_string = ".".join(["{0:02x}".format(b) for b in msg.data])
+            data_string = list_to_hex_str(msg.data, ".")
             print("  Data:  ", data_string)
             # Module logic for message handling goes here
             if msg.arbitration_id < 0x10:
@@ -78,7 +79,7 @@ def parse_args(args):
   cc.py module_template
   cc.py module_template -id 123
   cc.py module_template -id 0x1FF""")
-    parser.add_argument("-id", default="0", help="arbitration ID to use")
+    parser.add_argument("-id", type=parse_int_dec_or_hex, default=0, help="arbitration ID to use")
     args = parser.parse_args(args)
     return args
 
@@ -92,8 +93,8 @@ def module_main(arg_list):
     try:
         # Parse arguments
         args = parse_args(arg_list)
-        # Parse arbitration ID from the arguments (this function resolves both base 10 and hex values)
-        arbitration_id = int_from_str_base(args.id)
+        # Parse arbitration ID from the arguments
+        arbitration_id = args.id
         # Time to actually do stuff
         do_stuff(arbitration_id)
     except KeyboardInterrupt:

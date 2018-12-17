@@ -1,5 +1,6 @@
 from __future__ import print_function
-from lib.can_actions import CanActions, int_from_str_base
+from lib.can_actions import CanActions
+from lib.common import list_to_hex_str, parse_int_dec_or_hex
 from datetime import datetime, timedelta
 from sys import stdout
 import argparse
@@ -180,9 +181,9 @@ def decode_get_status_response(response_message):
 def xcp_arbitration_id_discovery(args):
     """Scans for XCP support by brute forcing XCP connect messages against different arbitration IDs."""
     global hit_counter
-    min_id = int_from_str_base(args.min)
-    max_id = int_from_str_base(args.max)
-    blacklist = [int_from_str_base(b) for b in args.blacklist]
+    min_id = args.min
+    max_id = args.max
+    blacklist = args.blacklist
     hit_counter = 0
 
     def is_valid_response(data):
@@ -263,8 +264,8 @@ def xcp_arbitration_id_discovery(args):
 def xcp_command_discovery(args):
     """Attempts to call all XCP commands and lists which ones are supported."""
     global connect_reply, command_reply
-    send_arb_id = int_from_str_base(args.src)
-    rcv_arb_id = int_from_str_base(args.dst)
+    send_arb_id = args.src
+    rcv_arb_id = args.dst
     connect_message = [0xFF, 0, 0, 0, 0, 0, 0, 0]
 
     def connect_callback_handler(msg):
@@ -312,8 +313,8 @@ def xcp_command_discovery(args):
 
 
 def xcp_get_basic_information(args):
-    send_arb_id = int_from_str_base(args.src)
-    rcv_arb_id = int_from_str_base(args.dst)
+    send_arb_id = args.src
+    rcv_arb_id = args.dst
 
     def callback_wrapper(callback):
         """
@@ -343,11 +344,11 @@ def xcp_get_basic_information(args):
             self.callback = callback_wrapper(callback)
 
         def __str__(self):
-            return "{0}".format(["{0:02x}".format(a) for a in self.message_data])
+            return "[{0}]".format(list_to_hex_str(self.message_data, ", "))
 
     # Callback handler for GetId messages
     def print_msg_as_text(msg):
-        print("".join([chr(x) for x in msg.data[1:]]))
+        print(list_to_hex_str(msg.data[1:], ""))
 
     def handle_get_id_reply(msg):
         can_wrap.send_single_message_with_callback([0xf5, msg.data[4]], callback_wrapper(print_msg_as_text))
@@ -378,10 +379,10 @@ def xcp_memory_dump(args):
 
     :param args: A namespace containing src, dst, start, length and f
     """
-    send_arb_id = int_from_str_base(args.src)
-    rcv_arb_id = int_from_str_base(args.dst)
-    start_address = int_from_str_base(args.start)
-    length = int_from_str_base(args.length)
+    send_arb_id = args.src
+    rcv_arb_id = args.dst
+    start_address = args.start
+    length = args.length
     dump_file = args.f
     # TODO Implement support for larger segments against ECUs which support this (e.g. 0xfc for test board)
     max_segment_size = 0x7
@@ -410,7 +411,7 @@ def xcp_memory_dump(args):
                 with open(dump_file, "ab") as outfile:
                     outfile.write(bytearray(msg.data[1:end_index]))
             else:
-                print(" ".join(["{0:02x}".format(j) for j in msg.data[1:end_index]]))
+                print(list_to_hex_str(msg.data[1:end_index], " "))
             # Update counters
             byte_counter += max_segment_size
             bytes_left -= max_segment_size
@@ -521,32 +522,33 @@ def parse_args(args):
 
     # Parser for XCP discovery
     parser_disc = subparsers.add_parser("discovery")
-    parser_disc.add_argument("-min", default=None)
-    parser_disc.add_argument("-max", default=None)
-    parser_disc.add_argument("-blacklist", metavar="B", default=[], nargs="+", help="arbitration IDs to ignore")
+    parser_disc.add_argument("-min", type=parse_int_dec_or_hex, default=None)
+    parser_disc.add_argument("-max", type=parse_int_dec_or_hex, default=None)
+    parser_disc.add_argument("-blacklist", metavar="B", type=parse_int_dec_or_hex, default=[], nargs="+",
+                             help="arbitration IDs to ignore")
     parser_disc.add_argument("-autoblacklist", metavar="N", type=int, default=0,
                              help="scan for interfering signals for N seconds and blacklist matching arbitration IDs")
     parser_disc.set_defaults(func=xcp_arbitration_id_discovery)
 
     # Parser for XCP commands discovery
     parser_comm = subparsers.add_parser("commands")
-    parser_comm.add_argument("src", help="arbitration ID to transmit from")
-    parser_comm.add_argument("dst", help="arbitration ID to listen to")
+    parser_comm.add_argument("src", type=parse_int_dec_or_hex, help="arbitration ID to transmit from")
+    parser_comm.add_argument("dst", type=parse_int_dec_or_hex, help="arbitration ID to listen to")
     parser_comm.set_defaults(func=xcp_command_discovery)
 
     # Parser for XCP info
     parser_info = subparsers.add_parser("info")
-    parser_info.add_argument("src", help="arbitration ID to transmit from")
-    parser_info.add_argument("dst", help="arbitration ID to listen to")
+    parser_info.add_argument("src", type=parse_int_dec_or_hex, help="arbitration ID to transmit from")
+    parser_info.add_argument("dst", type=parse_int_dec_or_hex, help="arbitration ID to listen to")
     parser_info.set_defaults(func=xcp_get_basic_information)
 
     # Parser for XCP data dump
     parser_dump = subparsers.add_parser("dump")
-    parser_dump.add_argument("src", help="arbitration ID to transmit from")
-    parser_dump.add_argument("dst", help="arbitration ID to listen to")
-    parser_dump.add_argument("start", help="start address")
+    parser_dump.add_argument("src", type=parse_int_dec_or_hex, help="arbitration ID to transmit from")
+    parser_dump.add_argument("dst", type=parse_int_dec_or_hex, help="arbitration ID to listen to")
+    parser_dump.add_argument("start", type=parse_int_dec_or_hex, help="start address")
     # TODO: use length OR end address as mutually exclusive group?
-    parser_dump.add_argument("length", help="dump length")
+    parser_dump.add_argument("length", type=parse_int_dec_or_hex, help="dump length")
     parser_dump.add_argument("-f", "-file", help="output file", default=None)
     parser_dump.set_defaults(func=xcp_memory_dump)
 

@@ -1,4 +1,5 @@
-from lib.can_actions import DEFAULT_INTERFACE, ARBITRATION_ID_MAX_EXTENDED
+from lib.can_actions import DEFAULT_INTERFACE
+from lib.constants import ARBITRATION_ID_MAX_EXTENDED
 import can
 import datetime
 import time

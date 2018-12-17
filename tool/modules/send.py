@@ -1,5 +1,6 @@
-from lib.can_actions import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED, CanActions, int_from_str_base,\
-    str_to_int_list
+from lib.can_actions import CanActions
+from lib.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
+from lib.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
 from time import sleep
 from sys import exit
 import argparse
@@ -48,7 +49,7 @@ def parse_messages(msgs, delay, pad):
         for msg in msgs:
             msg_parts = msg.split("#", 1)
             # Check arbitration ID
-            arb_id = int_from_str_base(msg_parts[0])
+            arb_id = parse_int_dec_or_hex(msg_parts[0])
             if arb_id is None:
                 raise ValueError("Invalid arbitration ID: '{0}'".format(msg_parts[0]))
             if arb_id > ARBITRATION_ID_MAX_EXTENDED:
@@ -183,7 +184,7 @@ def send_messages(messages, loop):
                 msg = messages[i]
                 if i != 0 or loop_counter != 0:
                     sleep(msg.delay)
-                print("  Arb_id: 0x{0:08x}, data: {1}".format(msg.arb_id, ["{0:02x}".format(a) for a in msg.data]))
+                print("  Arb_id: 0x{0:08x}, data: {1}".format(msg.arb_id, list_to_hex_str(msg.data, ".")))
                 can_wrap.send(msg.data, msg.arb_id, msg.is_extended, msg.is_error, msg.is_remote)
             if not loop:
                 break

@@ -1,5 +1,6 @@
 from __future__ import print_function
-from lib.can_actions import CanActions, int_from_str_base, msg_to_candump_format
+from lib.can_actions import CanActions
+from lib.common import msg_to_candump_format, parse_int_dec_or_hex
 from modules.send import FILE_LINE_COMMENT_PREFIX
 from sys import argv, stdout
 import argparse
@@ -62,6 +63,7 @@ def parse_args(args):
                         metavar="F",
                         help="Write output to file F (default: stdout)")
     parser.add_argument("whitelist",
+                        type=parse_int_dec_or_hex,
                         metavar="W",
                         nargs="*",
                         help="Arbitration ID to whitelist")
@@ -75,14 +77,6 @@ def parse_args(args):
                         dest="separator_seconds",
                         help="Print separating line after SEC silent seconds")
     args = parser.parse_args(args)
-    # Parse whitelist
-    whitelist = []
-    for item in args.whitelist:
-        item_int = int_from_str_base(item)
-        if item_int is None:
-            raise ValueError("Invalid value passed in whitelist argument: '{0}'".format(item))
-        whitelist.append(item_int)
-    args.whitelist = whitelist
     return args
 
 

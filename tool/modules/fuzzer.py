@@ -256,7 +256,7 @@ def random_fuzz(static_arb_id=None, static_data=None, filename=None, min_id=ARBI
     def response_handler(msg):
         if msg.arbitration_id != arb_id or list(msg.data) != data:
             directive = directive_str(arb_id, data)
-            print("Directive: {0}".format(directive))
+            print("\rDirective: {0} (message {1})".format(directive, message_count))
             print("  Received message: {0}".format(msg))
 
     arb_id = None

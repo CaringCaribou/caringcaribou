@@ -30,9 +30,16 @@ class UdsModuleTestCase(unittest.TestCase):
         blacklist = []
         auto_blacklist_duration = 0
         timeout = self.BRUTEFORCE_TIMEOUT
+        verify = True
         print_results = False
         # Perform UDS discovery
-        result = uds.uds_discovery(start_arb_id, end_arb_id, blacklist, auto_blacklist_duration, timeout, print_results)
+        result = uds.uds_discovery(min_id=start_arb_id,
+                                   max_id=end_arb_id,
+                                   blacklist_args=blacklist,
+                                   auto_blacklist_duration=auto_blacklist_duration,
+                                   delay=timeout,
+                                   verify=verify,
+                                   print_results=print_results)
         expected_result = [(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE)]
         self.assertListEqual(result, expected_result, "UDS discovery gave '{0}', expected '{1}'".format(
             result, expected_result))
@@ -45,9 +52,16 @@ class UdsModuleTestCase(unittest.TestCase):
         blacklist = [self.ARB_ID_RESPONSE]
         auto_blacklist_duration = 0
         timeout = self.BRUTEFORCE_TIMEOUT
+        verify = True
         print_results = False
         # Perform UDS discovery
-        result = uds.uds_discovery(start_arb_id, end_arb_id, blacklist, auto_blacklist_duration, timeout, print_results)
+        result = uds.uds_discovery(min_id=start_arb_id,
+                                   max_id=end_arb_id,
+                                   blacklist_args=blacklist,
+                                   auto_blacklist_duration=auto_blacklist_duration,
+                                   delay=timeout,
+                                   verify=verify,
+                                   print_results=print_results)
         # No results expected due to blacklist
         expected_result = []
         self.assertListEqual(result, expected_result, "UDS discovery gave '{0}', expected '{1}'".format(

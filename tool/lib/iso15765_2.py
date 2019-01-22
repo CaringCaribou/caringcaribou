@@ -319,7 +319,8 @@ class IsoTp:
                     if number_of_frames_left_to_send_in_block > 0:
                         time.sleep(st_min / 1000)
 
-    def get_frames_from_message(self, message):
+    @staticmethod
+    def get_frames_from_message(message):
         """
         Returns a copy of 'message' split into frames,
         :param message: Message to split
@@ -327,37 +328,37 @@ class IsoTp:
         """
         frame_list = []
         message_length = len(message)
-        if message_length > self.MAX_MESSAGE_LENGTH:
+        if message_length > IsoTp.MAX_MESSAGE_LENGTH:
             error_msg = "Message too long for ISO-TP. Max allowed length is {0} bytes, received {1} bytes".format(
-                self.MAX_MESSAGE_LENGTH, message_length)
+                IsoTp.MAX_MESSAGE_LENGTH, message_length)
             raise ValueError(error_msg)
-        if message_length <= self.MAX_SF_LENGTH:
+        if message_length <= IsoTp.MAX_SF_LENGTH:
             # Single frame message
-            frame = [0] * self.MAX_FRAME_LENGTH
-            frame[0] = (self.SF_FRAME_ID << 4) | message_length
+            frame = [0] * IsoTp.MAX_FRAME_LENGTH
+            frame[0] = (IsoTp.SF_FRAME_ID << 4) | message_length
             for i in range(0, message_length):
                 frame[1 + i] = message[i]
             frame_list.append(frame)
         else:
             # Multiple frame message
             bytes_left_to_copy = message_length
-            frame = [0] * self.MAX_FRAME_LENGTH
+            frame = [0] * IsoTp.MAX_FRAME_LENGTH
             # Create first frame (FF)
-            frame[0] = (self.FF_FRAME_ID << 4) | (message_length >> 8)
+            frame[0] = (IsoTp.FF_FRAME_ID << 4) | (message_length >> 8)
             frame[1] = message_length & 0xFF
-            for i in range(0, self.MAX_FF_LENGTH):
+            for i in range(0, IsoTp.MAX_FF_LENGTH):
                 frame[2 + i] = message[i]
             frame_list.append(frame)
             # Create consecutive frames (CF)
-            bytes_copied = self.MAX_FF_LENGTH
+            bytes_copied = IsoTp.MAX_FF_LENGTH
             bytes_left_to_copy -= bytes_copied
             sn = 0
             while bytes_left_to_copy > 0:
                 sn = (sn + 1) % 16
-                frame = [0] * self.MAX_FRAME_LENGTH
-                frame[0] = (self.CF_FRAME_ID << 4) | sn
+                frame = [0] * IsoTp.MAX_FRAME_LENGTH
+                frame[0] = (IsoTp.CF_FRAME_ID << 4) | sn
                 # Fill current consecutive frame
-                for i in range(0, self.MAX_CF_LENGTH):
+                for i in range(0, IsoTp.MAX_CF_LENGTH):
                     if bytes_left_to_copy > 0:
                         frame[1 + i] = message[bytes_copied]
                         bytes_left_to_copy = bytes_left_to_copy - 1

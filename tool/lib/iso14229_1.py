@@ -108,7 +108,8 @@ class BaseService(object):
 
 
 class Services(object):
-    """Class structure containing service specific constants, sub-function parameters and functions"""
+    """Class structure containing service specific constants, sub-function
+    parameters and functions"""
 
     class DiagnosticSessionControl(BaseService):
 
@@ -122,8 +123,29 @@ class Services(object):
             SAFETY_SYSTEM_DIAGNOSTIC_SESSION = 0x04
             # 0x05-0x3F ISO SAE Reserved
             # 0x40-0x5F Vehicle manufacturer specific
+            VEHICLE_MANUFACTURER_SESSION_MIN = 0x40
+            VEHICLE_MANUFACTURER_SESSION_MAX = 0x5F
             # 0x60-0x7E System supplier specific
+            SYSTEM_SUPPLIER_SESSION_MIN = 0x60
+            SYSTEM_SUPPLIER_SESSION_MAX = 0x7E
             # 0x7F ISO SAE Reserved
+            def is_valid_session(self, sub_function):
+                """Returns True if 'sub_function' is a valid session type and
+                False otherwise"""
+                #Strip off the MSB which is used as flag to suppress responses
+                #so we don't care what it is
+                sub_function = 0x7f & sub_function
+                if (sub_function is self.DEFAULT_SESSION
+                    or sub_function is self.PROGRAMMING_SESSION
+                    or sub_function is self.EXTENDED_DIAGNOSTIC_SESSION
+                    or sub_function is self.SAFETY_SYSTEM_DIAGNOSTIC_SESSION
+                    or(sub_function <= self.VEHICLE_MANUFACTURER_SESSION_MAX and
+                        sub_function >= self.VEHICLE_MANUFACTURER_SESSION_MIN)
+                    or(sub_function <= self.SYSTEM_SUPPLIER_SESSION_MAX and
+                        sub_function >= self.SYSTEM_SUPPLIER_SESSION_MIN)):
+                    return True
+                else:
+                    return False
 
     class EcuReset(BaseService):
 
@@ -270,7 +292,7 @@ class Iso14229_1(object):
         """
         Returns a bool indicating whether 'response' is positive
 
-        :param response: Response data
+        :param response: Response data after CAN-TP layer has been removed
         :return: False if response is a NEGATIVE_RESPONSE,
                  True otherwise
         """
@@ -437,6 +459,24 @@ class Iso14229_1(object):
 
         return response
 
+    def diagnostic_session_control(self, session_type):
+        """
+        Sends a "DiagnosticSessionControl" request for specified session type
+
+        :param session_type: Indicates which kind of session should be requested
+        :return: Response data if successful,
+                 None otherwise
+        """
+        request = [0] * 2
+        request[0] = ServiceID.DIAGNOSTIC_SESSION_CONTROL
+        request[1] = session_type
+
+        self.tp.send_request(request)
+        response = self.receive_response(self.P3_CLIENT)
+
+        return response
+
+
     def ecu_reset(self, reset_type):
         """
         Sends an "ECU reset" request for specified reset type
@@ -454,7 +494,7 @@ class Iso14229_1(object):
 
         return response
 
-    def security_access_request_seed(self, level, data_record):
+    def security_access_request_seed(self, level, data_record=None):
         """
         Sends a Security Access "Request seed" message for 'level'
 
@@ -465,8 +505,9 @@ class Iso14229_1(object):
         """
         service_id = ServiceID.SECURITY_ACCESS
         request = [service_id, level]
-        for data_record in data_record:
-            request.append(data_record)
+        if data_record:
+            for data_record in data_record:
+                request.append(data_record)
 
         self.tp.send_request(request)
         response = self.receive_response(self.P3_CLIENT)

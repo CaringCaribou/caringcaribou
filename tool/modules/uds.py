@@ -452,22 +452,99 @@ def __ecu_reset_wrapper(args):
             expected_response_id = Iso14229_1.get_service_response_id(Services.EcuReset.service_id)
             if response_service_id == expected_response_id and subfunction == reset_type:
                 # Positive response
-                print("Received positive response")
+                pos_msg = "Received positive response"
                 if response_length > 2:
                     # Additional data can be seconds left to reset (powerDownTime) or manufacturer specific
                     additional_data = list_to_hex_str(response[2:], ",")
-                    print("Response contains additional data: [{0}]".format(additional_data))
+                    pos_msg += " with additional data: [{0}]".format(
+                                                            additional_data)
+                print(pos_msg)
             else:
                 # Service and/or subfunction mismatch
-                print("Response service ID 0x{0:02x} and subfunction 0x{1:02x} do not match expected values "
-                      "0x{2:02x} and 0x{3:02x}".format(response_service_id, subfunction, expected_response_id,
-                                                       reset_type))
+                print("Response service ID 0x{0:02x} and subfunction "
+                    "0x{1:02x} do not match expected values 0x{2:02x} "
+                    "and 0x{3:02x}".format(response_service_id,
+                    subfunction, Services.EcuReset.service_id, reset_type))
         else:
             # Negative response handling
-            nrc = response[1]
-            nrc_description = NRC_NAMES.get(nrc, "Unknown NRC value")
-            print("Received negative response code (NRC) 0x{0:02x}: {1}".format(nrc, nrc_description))
+            print_negative_response(response)
 
+def print_negative_response(response):
+    """
+    Helper function for decoding and printing a negative response received
+    from a UDS server.
+
+    :param response: Response data after CAN-TP layer has been removed
+    :type response: [int]
+
+    :return: Nothing
+    """
+    nrc = response[2]
+    nrc_description = NRC_NAMES.get(nrc, "Unknown NRC value")
+    print("Received negative response code (NRC) 0x{0:02x}: {1}"
+                .format(nrc, nrc_description))
+
+def __security_seed_wrapper(args):
+    """Wrapper used to initiate secuirty seed dump"""
+    arb_id_request = args.src
+    arb_id_response = args.dst
+    reset_type = args.reset
+    session_type = args.sess_type
+    level = args.sec_level
+    num_seeds = args.num
+
+    seed_list = []
+    try:
+        print("Security Seed dump started. To end, use Ctrl+C and a report "
+                "will be output to stdout.\n")
+        while num_seeds > len(seed_list) or num_seeds == 0:
+            #Extended diagnostics
+            response = extended_session(arb_id_request, arb_id_response,
+                                                                session_type)
+            if response is None:
+                #simple retry in-case bus wasn't awake for first request
+                response = extended_session(arb_id_request, arb_id_response,
+                                                                session_type)
+            #Request seed
+            response = request_seed(arb_id_request, arb_id_response,
+                            level, None, None)
+            if Iso14229_1.is_positive_response(response):
+                seed_list.append(list_to_hex_str(response[2:]))
+                print("Seed received: {}\t(Total captured: {})"
+			.format(list_to_hex_str(response[2:]),
+			len(seed_list)), end="\r")
+                stdout.flush()
+            else:
+                print_negative_response(response)
+                break
+            if reset_type:
+                ecu_reset(arb_id_request, arb_id_response, reset_type, None)
+                if reset_type == Services.EcuReset.ResetType.HARD_RESET:
+                    time.sleep(0.5)
+    except KeyboardInterrupt:
+        print("Interrupted by user.")
+    except ValueError as e:
+        print(e)
+        print("For help, use the '-h' flag")
+        return
+
+    if len(seed_list) > 0:
+        print("\n")
+        print("Security Access Seeds Captured:")
+        for seed in seed_list:
+            print(seed)
+
+def extended_session(arb_id_request, arb_id_response, session_type):
+    # Sanity checks
+    if not Services.DiagnosticSessionControl.DiagnosticSessionType().is_valid_session(session_type):
+        raise ValueError("Invalid extended session type: 0x{0:02x}".format(session_type))
+
+    with IsoTp(arb_id_request=arb_id_request, arb_id_response=arb_id_response) as tp:
+        # Setup filter for incoming messages
+        tp.set_filter_single_arbitration_id(arb_id_response)
+        with Iso14229_1(tp) as uds:
+            response = uds.diagnostic_session_control(session_type)
+            return response
 
 def request_seed(arb_id_request, arb_id_response, level, data_record, timeout):
     """Sends an Request seed message to 'arb_id_request'. Returns the first response
@@ -481,7 +558,7 @@ def request_seed(arb_id_request, arb_id_response, level, data_record, timeout):
     :type arb_id_request: int
     :type arb_id_response: int
     :type level: int
-    :type data_record: [int]
+    :type data_record: [int] or None
     :type timeout: float or None
     :return: list of response byte values on success, None otherwise
     :rtype [int] or None
@@ -551,7 +628,8 @@ def __parse_args(args):
   cc.py uds discovery -autoblacklist 10
   cc.py uds services 0x733 0x633
   cc.py uds ecu_reset 1 0x733 0x633
-  cc.py uds testerpresent 0x733""")
+  cc.py uds testerpresent 0x733
+  cc.py uds security_seed 0x3 0x1 0x733 0x633 -r 1""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 
@@ -583,8 +661,8 @@ def __parse_args(args):
     # Parser for ECU Reset
     parser_ecu_reset = subparsers.add_parser("ecu_reset")
     parser_ecu_reset.add_argument("reset_type", metavar="type", type=parse_int_dec_or_hex,
-                                  help="Reset type: 1=hard, 2=key off/on, 3=soft, 4=enable rapid power shutdown, "
-                                       "5=disable rapid power shutdown")
+                                  help="Reset type: 1=hard, 2=key off/on, 3=soft, "
+                                    "4=enable rapid power shutdown, 5=disable rapid power shutdown")
     parser_ecu_reset.add_argument("src", type=parse_int_dec_or_hex, help="arbitration ID to transmit to")
     parser_ecu_reset.add_argument("dst", type=parse_int_dec_or_hex, help="arbitration ID to listen to")
     parser_ecu_reset.add_argument("-t", "--timeout", type=float, metavar="T",
@@ -599,6 +677,35 @@ def __parse_args(args):
     parser_tp.add_argument("-dur", "--duration", metavar="S", type=float, help="automatically stop after S seconds")
     parser_tp.add_argument("-spr", action="store_true", help="suppress positive response")
     parser_tp.set_defaults(func=__tester_present_wrapper)
+
+
+    # Parser for SecuritySeedDump
+    parser_secseed = subparsers.add_parser("security_seed")
+    parser_secseed.add_argument("sess_type", metavar="stype",
+            type=parse_int_dec_or_hex, help="Session Type: 1=defaultSession "
+            "2=programmingSession 3=extendedSession 4=safetySession [0x40"
+            "-0x5F]=OEM [0x60-0x7E]=Supplier [0x0, 0x5-0x3F, 0x7F]=ISOSAE"
+            "Reserved")
+    parser_secseed.add_argument("sec_level", metavar="level",
+            type=parse_int_dec_or_hex, help="Security level: [0x1 - 0x41"
+            " (odd only)]=OEM 0x5F=EOLPyrotechnics [0x61-0x7E]=Supplier "
+            "[0x0, 0x43-0x5E, 0x7F]=ISOSAEReserved")
+    parser_secseed.add_argument("src", type=parse_int_dec_or_hex,
+            help="arbitration ID to transmit to")
+    parser_secseed.add_argument("dst", type=parse_int_dec_or_hex,
+            help="arbitration ID to listen to")
+    parser_secseed.add_argument("-r", "--reset", metavar="rtype",
+            type=parse_int_dec_or_hex, help="Enable reset between security "
+            "seed requests. Reset type: 1=hardReset, 2=key off/on, "
+            "3=softReset, 4=enable rapid power shutdown, 5=disable rapid "
+            "power shutdown")
+    parser_secseed.add_argument("-n", "--num", metavar="NUM", default=0,
+            type=parse_int_dec_or_hex, help="Specify a positive number of " 
+            "security seeds to capture before terminating. A '0' is "
+            "interpreted as infinity. (default: 0)")
+    parser_secseed.set_defaults(func=__security_seed_wrapper)
+
+
 
     args = parser.parse_args(args)
     return args

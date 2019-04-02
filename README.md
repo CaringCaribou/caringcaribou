@@ -6,6 +6,18 @@ We are lacking a security testing tool for automotive. A zero-knowledge tool tha
 
 This work was initiated as part of the research project HEAVENS (HEAling Vulnerabilities to ENhance Software Security and Safety), but lives on as a stand-alone project.
 
+## Hardware requirements
+Some sort of CAN bus interface compatible with socketCAN (http://elinux.org/CAN_Bus#CAN_Support_in_Linux) or supported directly by python-can (https://python-can.readthedocs.io/en/3.1.1/interfaces.html)
+
+## Software requirements
+- Python 2.7 or 3.x
+- python-can v3.1.1
+- a pretty modern linux kernel
+
+## How to install
+Instructions available [here](documentation/howtoinstall.md)
+
+
 ## How to use
 The best way to understand how to use Caring Caribou is to look at the help screen:
 
@@ -102,17 +114,6 @@ Implementation of the ISO-14229-1 standard for Unified Diagnostic Services (UDS)
 ### iso15765_2.py
 Implementation of the ISO-15765-2 standard (ISO-TP). This is a transport protocol which enables sending of messages longer than 8 bytes over CAN by splitting them into multiple data frames.
 
-## Hardware requirements
-Some sort of CAN bus interface compatible with socketCAN (http://elinux.org/CAN_Bus#CAN_Support_in_Linux)
-
-## Software requirements
-- Python 2.7 or 3.x
-- python-can
-- a pretty modern linux kernel
-
-## How to install
-Instructions available [here](documentation/howtoinstall.md)
-
 ## Extending the project
 Create a python file with a function `module_main(args)` and put it in the ```tool/modules``` folder. Caring Caribou will automagically recognize it as a module and list it in the output of `./cc.py -h`
 
@@ -134,3 +135,4 @@ The target ECU used for the development setup is an STM32F107 based dev-board fr
 * Craig Smith (OpenGarages.org)
 * internot
 * Mathijs Hubrechtsen
+* Lear Corporation

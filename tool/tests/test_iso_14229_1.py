@@ -1,5 +1,4 @@
 from __future__ import print_function
-from lib.can_actions import DEFAULT_INTERFACE
 from tests.mock.mock_ecu_uds import MockEcuIso14229
 from lib import iso14229_1
 from lib import iso15765_2
@@ -17,7 +16,7 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
         self.ecu = MockEcuIso14229(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE)
         self.ecu.start_server()
         # Initialize virtual CAN bus
-        can_bus = can.Bus(DEFAULT_INTERFACE, bustype="socketcan")
+        can_bus = can.Bus(bustype="socketcan")
         # Setup diagnostics on top of ISO-TP layer
         self.tp = iso15765_2.IsoTp(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE, bus=can_bus)
         self.diagnostics = iso14229_1.Iso14229_1(self.tp)

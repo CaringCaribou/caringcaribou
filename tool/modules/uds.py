@@ -308,7 +308,7 @@ def service_discovery(arb_id_request, arb_id_response, timeout, min_id=BYTE_MIN,
                     # No response received
                     continue
                 # Parse response
-                if len(msg.data) >= 3:
+                if len(msg.data) > 3:
                     # Since service ID is included in the response, mapping is correct even if response is delayed
                     service_id = msg.data[2]
                     status = msg.data[3]

@@ -295,27 +295,31 @@ def service_discovery(arb_id_request, arb_id_response, timeout, min_id=BYTE_MIN,
         # Setup filter for incoming messages
         tp.set_filter_single_arbitration_id(arb_id_response)
         # Send requests
-        for service_id in range(min_id, max_id + 1):
-            tp.send_request([service_id])
+        try:
+            for service_id in range(min_id, max_id + 1):
+                tp.send_request([service_id])
+                if print_results:
+                    print("\rProbing service 0x{0:02x} ({0}/{1}): found {2}".format(
+                        service_id, max_id, len(found_services)), end="")
+                stdout.flush()
+                # Get response
+                msg = tp.bus.recv(timeout)
+                if msg is None:
+                    # No response received
+                    continue
+                # Parse response
+                if len(msg.data) >= 3:
+                    # Since service ID is included in the response, mapping is correct even if response is delayed
+                    service_id = msg.data[2]
+                    status = msg.data[3]
+                    if status != NegativeResponseCodes.SERVICE_NOT_SUPPORTED:
+                        # Any other response than "service not supported" counts
+                        found_services.append(service_id)
             if print_results:
-                print("\rProbing service 0x{0:02x} ({0}/{1}): found {2}".format(
-                    service_id, max_id, len(found_services)), end="")
-            stdout.flush()
-            # Get response
-            msg = tp.bus.recv(timeout)
-            if msg is None:
-                # No response received
-                continue
-            # Parse response
-            if len(msg.data) >= 3:
-                # Since service ID is included in the response, mapping is correct even if response is delayed
-                service_id = msg.data[2]
-                status = msg.data[3]
-                if status != NegativeResponseCodes.SERVICE_NOT_SUPPORTED:
-                    # Any other response than "service not supported" counts
-                    found_services.append(service_id)
-        if print_results:
-            print("\nDone!\n")
+                print("\nDone!\n")
+        except KeyboardInterrupt:
+            if print_results:
+                print("\nInterrupted by user!\n")
     return found_services
 
 

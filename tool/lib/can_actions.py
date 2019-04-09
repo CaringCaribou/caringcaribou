@@ -122,7 +122,7 @@ class CanActions:
             is_extended = arb_id > ARBITRATION_ID_MAX
         msg = can.Message(arbitration_id=arb_id,
                           data=data,
-                          extended_id=is_extended,
+                          is_extended_id=is_extended,
                           is_error_frame=is_error,
                           is_remote_frame=is_remote)
         self.bus.send(msg)

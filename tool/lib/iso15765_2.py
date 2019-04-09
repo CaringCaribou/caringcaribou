@@ -77,11 +77,7 @@ class IsoTp:
         :param arbitration_id: Arbitration ID to use
         :return: None
         """
-        if arbitration_id <= ARBITRATION_ID_MAX:
-            is_extended = force_extended or False
-        else:
-            is_extended = True
-
+        is_extended = force_extended or arbitration_id > ARBITRATION_ID_MAX
         msg = can.Message(arbitration_id=arbitration_id, data=data, is_extended_id=is_extended)
         self.bus.send(msg)
 

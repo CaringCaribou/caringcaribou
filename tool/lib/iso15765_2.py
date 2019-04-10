@@ -1,5 +1,5 @@
 from lib.can_actions import DEFAULT_INTERFACE
-from lib.constants import ARBITRATION_ID_MAX_EXTENDED
+from lib.constants import ARBITRATION_ID_MAX_EXTENDED, ARBITRATION_ID_MAX
 import can
 import datetime
 import time
@@ -69,7 +69,7 @@ class IsoTp:
         """Remove arbitration ID filters"""
         self._set_filters(None)
 
-    def send_message(self, data, arbitration_id):
+    def send_message(self, data, arbitration_id, force_extended=False):
         """
         Transmits a message using 'arbitration_id' and 'data' on 'self.bus'
 
@@ -77,7 +77,8 @@ class IsoTp:
         :param arbitration_id: Arbitration ID to use
         :return: None
         """
-        msg = can.Message(arbitration_id=arbitration_id, data=data)
+        is_extended = force_extended or arbitration_id > ARBITRATION_ID_MAX
+        msg = can.Message(arbitration_id=arbitration_id, data=data, is_extended_id=is_extended)
         self.bus.send(msg)
 
     def decode_sf(self, frame):

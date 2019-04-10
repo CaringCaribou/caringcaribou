@@ -75,6 +75,7 @@ class IsoTp:
 
         :param data: Data to send
         :param arbitration_id: Arbitration ID to use
+        :param force_extended: Force extended arbitration ID
         :return: None
         """
         is_extended = force_extended or arbitration_id > ARBITRATION_ID_MAX

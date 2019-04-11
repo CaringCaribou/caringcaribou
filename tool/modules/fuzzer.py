@@ -409,8 +409,8 @@ def bruteforce_fuzz(arb_id, initial_data, data_bitmap, filename=None, start_inde
         print("Brute force finished")
 
 
-def mutate_fuzz(initial_arb_id, initial_data, arb_id_bitmap, data_bitmap, filename=None, show_status=True,
-                show_responses=False, seed=None):
+def mutate_fuzz(initial_arb_id, initial_data, arb_id_bitmap, data_bitmap, filename=None, start_index=0,
+                show_status=True, show_responses=False, seed=None):
     """
     Performs mutation based fuzzing of selected nibbles of a given arbitration ID and data.
     Nibble selection is controlled by bool lists 'arb_id_bitmap' and 'data_bitmap'.
@@ -420,10 +420,15 @@ def mutate_fuzz(initial_arb_id, initial_data, arb_id_bitmap, data_bitmap, filena
     :param arb_id_bitmap: list of bool values, representing which nibbles of 'initial_arb_id' to bruteforce
     :param data_bitmap: list of bool values, representing which nibbles of 'initial_data' to bruteforce
     :param filename: file to write cansend directives to
+    :param start_index: int index to start at (can be used to resume interrupted session)
     :param show_status: bool indicating whether current message and counter should be printed to stdout
     :param show_responses: bool indicating whether responses should be printed to stdout
     :param seed: use given seed instead of random seed
     """
+    # Sanity checks
+    if not 0 <= start_index:
+        raise ValueError("Invalid start index '{0}', must be 0 or larger".format(start_index))
+
     # Seed handling
     set_seed(seed)
 
@@ -451,9 +456,10 @@ def mutate_fuzz(initial_arb_id, initial_data, arb_id_bitmap, data_bitmap, filena
         if file_logging_enabled:
             output_file = open(filename, "a")
         with CanActions() as can_wrap:
+            current_index = 0
+            messages_sent = 0
             if show_responses:
                 can_wrap.add_listener(response_handler)
-            message_count = 0
             while True:
                 if number_of_nibbles_to_fuzz_arb_id > 0:
                     # Mutate arbitration ID
@@ -466,21 +472,23 @@ def mutate_fuzz(initial_arb_id, initial_data, arb_id_bitmap, data_bitmap, filena
                     fuzzed_nibbles_data = [random.randint(0, 0xF) for _ in range(number_of_nibbles_to_fuzz_data)]
                     data = apply_fuzzed_data(initial_data, fuzzed_nibbles_data, data_bitmap)
 
+                if current_index < start_index:
+                    current_index += 1
+                    continue
+
                 if show_status:
-                    print("\rSending {0:04x} # {1} ({2})".format(arb_id, list_to_hex_str(data, " "), message_count),
-                          end="")
+                    print("\rSending {0:04x} # {1} ({2} sent, index {3})".format(
+                        arb_id, list_to_hex_str(data, " "), messages_sent, current_index), end="")
                     stdout.flush()
 
                 can_wrap.send(data, arb_id)
-                message_count += 1
+                messages_sent += 1
 
                 # Log to file
                 if file_logging_enabled:
                     write_directive_to_file_handle(output_file, arb_id, data)
                 sleep(DELAY_BETWEEN_MESSAGES)
-    except KeyboardInterrupt:
-        if show_status:
-            print()
+                current_index += 1
     finally:
         if output_file is not None:
             output_file.close()
@@ -663,7 +671,8 @@ def __handle_mutate(args):
     data, data_bitmap = parse_hex_and_dot_indices(args.data)
 
     mutate_fuzz(initial_arb_id=arb_id, initial_data=data, arb_id_bitmap=id_bitmap,
-                data_bitmap=data_bitmap, filename=args.file, show_responses=args.responses, seed=args.seed)
+                data_bitmap=data_bitmap, filename=args.file, start_index=args.index,
+                show_responses=args.responses, seed=args.seed)
 
 
 def __handle_replay(args):
@@ -741,6 +750,8 @@ def parse_args(args):
     cmd_mutate.add_argument("-responses", "-r", action="store_true", help="print responses to stdout")
     cmd_mutate.add_argument("-file", "-f", default=None, help="log file for cansend directives")
     cmd_mutate.add_argument("-seed", "-s", metavar="S", type=parse_int_dec_or_hex, default=None, help="set random seed")
+    cmd_mutate.add_argument("-index", "-i", metavar="I", type=parse_int_dec_or_hex, default=0,
+                            help="start index (for resuming previous session)")
     cmd_mutate.add_argument("-delay", type=float, metavar="D", default=DELAY_BETWEEN_MESSAGES,
                             help="delay between messages")
     cmd_mutate.set_defaults(func=__handle_mutate)

@@ -511,8 +511,8 @@ def __security_seed_wrapper(args):
             if Iso14229_1.is_positive_response(response):
                 seed_list.append(list_to_hex_str(response[2:]))
                 print("Seed received: {}\t(Total captured: {})"
-			.format(list_to_hex_str(response[2:]),
-			len(seed_list)), end="\r")
+                        .format(list_to_hex_str(response[2:]),
+                        len(seed_list)), end="\r")
                 stdout.flush()
             else:
                 print_negative_response(response)

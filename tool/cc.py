@@ -69,7 +69,7 @@ def parse_arguments():
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=available_modules())
     parser.add_argument("-i", dest="interface", default=None,
-                        help="force interface, e.g. 'can1' or 'vcan0'")
+                        help="force SocketCAN interface, e.g. 'can1' or 'vcan0'")
     parser.add_argument("module",
                         help="Name of the module to run")
     parser.add_argument("module_args", metavar="...", nargs=argparse.REMAINDER,

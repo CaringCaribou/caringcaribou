@@ -14,7 +14,7 @@ DELAY_STEP = 0.02
 NOTIFIER_STOP_DURATION = 0.5
 
 # Global CAN interface setting, which can be set through the -i flag to cc.py
-# The value None corresponds to the default CAN interface (typically can0)
+# The value None corresponds to the CAN interface configured through python-can
 DEFAULT_INTERFACE = None
 
 
@@ -75,7 +75,10 @@ class CanActions:
         :param arb_id: int default arbitration ID for object or None
         :param notifier_enabled: bool indicating whether a notifier for incoming message callbacks should be enabled
         """
-        self.bus = can.Bus(DEFAULT_INTERFACE, "socketcan")
+        if DEFAULT_INTERFACE is not None:
+            self.bus = can.Bus(DEFAULT_INTERFACE, bustype="socketcan")
+        else:
+            self.bus = can.Bus()
         self.arb_id = arb_id
         self.bruteforce_running = False
         self.notifier = None

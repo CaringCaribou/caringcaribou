@@ -31,7 +31,7 @@ positional arguments:
 
 optional arguments:
   -h, --help    show this help message and exit
-  -i INTERFACE  force interface, e.g. 'can1' or 'vcan0'
+  -i INTERFACE  force SocketCAN interface, e.g. 'can1' or 'vcan0'
 
 available modules:
   dcm, dump, fuzzer, listener, send, test, xcp
@@ -94,21 +94,22 @@ optional arguments:
   --loop, -l       loop message sequence (re-send over and over)
 ```
 
-### Non-default interface
-In order to use a non-default CAN interface for any module, you can always provide the `-i INTERFACE` flag before the module name.
+### Non-default interface with SocketCAN
+In order to use a non-default SocketCAN interface for any module, you can always provide the `-i INTERFACE` flag before the module name. This forces the bustype to SocketCAN and channel to `INTERFACE` overriding the user configuration of `bustype` and `channel` for python-can.
 
-For instance, in oder to send the message `c0 ff ee` with arbitration ID `0xf00` on virtual CAN bus `vcan0`, you would run
+For instance, in oder to send the message `c0 ff ee` with arbitration ID `0xf00` on a SocketCAN virtual CAN bus `vcan0`, you would run
 
     $ ./cc.py -i vcan0 send message 0xf00#c0.ff.ee
 
 More information on the different modules is available here:
-+ [dcm-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/dcm.md)
++ [uds-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/uds.md)
++ [dcm-module (deprecated)](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/dcm.md)
 + [xcp-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/xcp.md)
 + [send-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/send.md)
 + [listener-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/listener.md)
 
-### Virtual CAN bus
-In order to communicate over CAN without access to a physical CAN bus, it is possible to use a virtual CAN bus instead. Doing this in Linux is generally as easy as running the following commands:
+### SocketCAN Virtual CAN bus
+In order to communicate over CAN without access to a physical CAN bus, it is possible to use a SocketCAN virtual CAN bus instead. Doing this in Linux is generally as easy as running the following commands:
 
     sudo modprobe vcan
     sudo ip link add dev vcan0 type vcan

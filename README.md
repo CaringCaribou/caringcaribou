@@ -103,7 +103,7 @@ Implementation of the ISO-14229-1 standard for Unified Diagnostic Services (UDS)
 Implementation of the ISO-15765-2 standard (ISO-TP). This is a transport protocol which enables sending of messages longer than 8 bytes over CAN by splitting them into multiple data frames.
 
 ## Hardware requirements
-Some sort of CAN bus interface compatible with socketCAN (http://elinux.org/CAN_Bus#CAN_Support_in_Linux)
+Some sort of CAN bus interface compatible with socketCAN (http://elinux.org/CAN_Bus#CAN_Support_in_Linux) or directly supported by python-can (https://python-can.readthedocs.io/en/3.1.1/interfaces.html).
 
 ## Software requirements
 - Python 2.7 or 3.x

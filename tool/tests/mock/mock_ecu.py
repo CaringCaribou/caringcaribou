@@ -11,7 +11,7 @@ class MockEcu:
     def __init__(self, bus=None):
         self.message_process = None
         if bus is None:
-            self.bus = can.Bus(DEFAULT_INTERFACE, bustype="socketcan")
+            self.bus = can.Bus(DEFAULT_INTERFACE)
         else:
             self.bus = bus
 

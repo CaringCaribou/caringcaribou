@@ -42,14 +42,11 @@ Tested with python-can 1.5.2 and 2.0.0a2.
 
 ##### Configure
 Python-Can uses a configuration file ```~/.canrc``` to specify a CAN interface.
-The contents of this file should be:
+The contents of this file might e.g. be:
 
     [default]
     interface = socketcan
     channel = can0
-
-*Note:* In case you are running an ancient version of python-can (from 2015-ish), you may need to set the interface to
-`socketcan_ctypes` instead.
 
 ##### Test it
 Go to the Caring Caribou directory and run the following command:

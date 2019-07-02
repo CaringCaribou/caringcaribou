@@ -16,7 +16,7 @@ class IsoTpTestCase(unittest.TestCase):
         self.ecu = MockEcuIsoTp(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE)
         self.ecu.start_server()
         # Initialize virtual CAN bus
-        can_bus = can.Bus(DEFAULT_INTERFACE, bustype="socketcan")
+        can_bus = can.Bus(DEFAULT_INTERFACE)
         # Setup ISO-TP layer
         self.tp = iso15765_2.IsoTp(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE, bus=can_bus)
 

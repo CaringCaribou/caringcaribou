@@ -151,7 +151,7 @@ class CanActions:
             extended = False
             if arb_id > ARBITRATION_ID_MAX:
                 extended = True
-            msg = can.Message(arbitration_id=arb_id, data=data, extended_id=extended)
+            msg = can.Message(arbitration_id=arb_id, data=data, is_extended_id=extended)
             self.bus.send(msg)
             time.sleep(MESSAGE_DELAY)
             # Return if stopped by calling module

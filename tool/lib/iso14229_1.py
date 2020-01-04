@@ -2,7 +2,8 @@ import time
 
 
 class DynamicallyDefinedIdentifierArg(object):
-    def __init__(self, source_data_identifier, position_in_source_data_record, memory_size):
+    def __init__(self, source_data_identifier,
+                 position_in_source_data_record, memory_size):
         self.sourceDataIdentifier = source_data_identifier
         self.positionInSourceDataRecord = position_in_source_data_record
         self.memorySize = memory_size
@@ -109,7 +110,7 @@ class BaseService(object):
 
 class Services(object):
     """Class structure containing service specific constants, sub-function
-    parameters and functions"""
+       parameters and functions"""
 
     class DiagnosticSessionControl(BaseService):
 
@@ -129,23 +130,6 @@ class Services(object):
             SYSTEM_SUPPLIER_SESSION_MIN = 0x60
             SYSTEM_SUPPLIER_SESSION_MAX = 0x7E
             # 0x7F ISO SAE Reserved
-            def is_valid_session(self, sub_function):
-                """Returns True if 'sub_function' is a valid session type and
-                False otherwise"""
-                #Strip off the MSB which is used as flag to suppress responses
-                #so we don't care what it is
-                sub_function = 0x7f & sub_function
-                if (sub_function is self.DEFAULT_SESSION
-                    or sub_function is self.PROGRAMMING_SESSION
-                    or sub_function is self.EXTENDED_DIAGNOSTIC_SESSION
-                    or sub_function is self.SAFETY_SYSTEM_DIAGNOSTIC_SESSION
-                    or(sub_function <= self.VEHICLE_MANUFACTURER_SESSION_MAX and
-                        sub_function >= self.VEHICLE_MANUFACTURER_SESSION_MIN)
-                    or(sub_function <= self.SYSTEM_SUPPLIER_SESSION_MAX and
-                        sub_function >= self.SYSTEM_SUPPLIER_SESSION_MIN)):
-                    return True
-                else:
-                    return False
 
     class EcuReset(BaseService):
 
@@ -169,7 +153,8 @@ class Services(object):
 
         class RequestSeedOrSendKey(object):
             """
-            These are lined up so that value X "request seed level N" has a matching "send key level N" at value X+1.
+            These are lined up so that value X "request seed level N" has
+            a matching "send key level N" at value X+1.
 
             0x01 is Request seed level 0x01
             0x02 is Send key level 0x01
@@ -179,11 +164,13 @@ class Services(object):
             0x41 is Request seed level 0x21
             0x42 is Send key level 0x21
 
-            The security levels numbering is arbitrary and does not imply any relationship between the levels.
+            The security levels numbering is arbitrary and does not imply
+            any relationship between the levels.
             """
 
             # 0x00 ISO SAE Reserved
-            # 0x01-0x42 Vehicle manufacturer specific request seed/send key pairs
+            # 0x01-0x42 Vehicle manufacturer specific request
+            #           seed/send key pairs
             # 0x43-0X5E ISO SAE Reserved
             ISO_26021_2_VALUES = 0x5F
             ISO_26021_2_SEND_KEY = 0x60
@@ -196,16 +183,20 @@ class Services(object):
             __SEND_KEY_MAX = 0x42
 
             def is_valid_request_seed_level(self, sub_function):
-                """Returns True if 'sub_function' is a valid request seed value and False otherwise"""
+                """Returns True if 'sub_function' is a valid request seed
+                   value and False otherwise"""
                 value = sub_function & 0x7F
-                valid_interval = self.__REQUEST_SEED_MIN <= value <= self.__REQUEST_SEED_MAX
+                valid_interval = self.__REQUEST_SEED_MIN \
+                    <= value <= self.__REQUEST_SEED_MAX
                 is_odd = value % 2 == 1
                 return valid_interval and is_odd
 
             def is_valid_send_key_level(self, sub_function):
-                """Returns True if 'sub_function' is a valid send key value and False otherwise"""
+                """Returns True if 'sub_function' is a valid send key value
+                   and False otherwise"""
                 value = sub_function & 0x7F
-                valid_interval = self.__SEND_KEY_MIN <= value <= self.__SEND_KEY_MAX
+                valid_interval = self.__SEND_KEY_MIN \
+                    <= value <= self.__SEND_KEY_MAX
                 is_even = value % 2 == 0
                 return valid_interval and is_even
 
@@ -219,9 +210,11 @@ class Services(object):
 
 
 class Constants(object):
-    # NR_SI (Negative Response Service Identifier) is a bit special, since it is not a service per se.
-    # From ISO-14229-1 specification: "The NR_SI value is co-ordinated with the SI values. The NR_SI
-    # value is not used as a SI value in order to make A_Data coding and decoding easier."
+    # NR_SI (Negative Response Service Identifier) is a bit special, since
+    # it is not a service per se.
+    # From ISO-14229-1 specification: "The NR_SI value is co-ordinated with
+    # the SI values. The NR_SI value is not used as a SI value in order to
+    # make A_Data coding and decoding easier."
     NR_SI = 0x7F
 
 
@@ -249,7 +242,8 @@ class Iso14229_1(object):
 
     def send_request(self, data):
         """
-        Sends a request message containing 'data' through the underlying TP layer
+        Sends a request message containing 'data' through the underlying
+        TP layer
 
         :param data: The data to send
         :return: None
@@ -258,7 +252,8 @@ class Iso14229_1(object):
 
     def send_response(self, data):
         """
-        Sends a response message containing 'data' through the underlying TP layer
+        Sends a response message containing 'data' through the underlying
+        TP layer
 
         :param data: The data to send
         :return: None
@@ -282,7 +277,8 @@ class Iso14229_1(object):
             response = self.tp.indication(wait_window)
             if response is not None and len(response) > 3:
                 if response[0] == Constants.NR_SI and \
-                        response[2] == NegativeResponseCodes.REQUEST_CORRECTLY_RECEIVED_RESPONSE_PENDING:
+                    response[2] == NegativeResponseCodes\
+                        .REQUEST_CORRECTLY_RECEIVED_RESPONSE_PENDING:
                     continue
             break
         return response
@@ -296,7 +292,9 @@ class Iso14229_1(object):
         :return: False if response is a NEGATIVE_RESPONSE,
                  True otherwise
         """
-        if response is not None and len(response) > 0 and response[0] != Constants.NR_SI:
+        if(response is not None and
+           len(response) > 0 and
+           response[0] != Constants.NR_SI):
             return True
         return False
 
@@ -320,7 +318,8 @@ class Iso14229_1(object):
             response = self.receive_response(self.P3_CLIENT)
         return response
 
-    def read_memory_by_address(self, address_and_length_format, memory_address, memory_size):
+    def read_memory_by_address(self, address_and_length_format,
+                               memory_address, memory_size):
         """
         Sends a "read memory by address" request for 'memory_address'
 
@@ -338,13 +337,15 @@ class Iso14229_1(object):
         request[1] = address_and_length_format
         offset = 2
         for i in (range(0, address_size_format)):
-            request[address_size_format + offset - i - 1] = (memory_address & 0xFF)
+            request[address_size_format + offset - i - 1] = \
+                (memory_address & 0xFF)
             memory_address = (memory_address >> 8)
 
         offset += address_size_format
 
         for i in (range(0, data_size_format)):
-            request[data_size_format + offset - i - 1] = (memory_size & 0xFF)
+            request[data_size_format + offset - i - 1] = \
+                (memory_size & 0xFF)
             memory_size = (memory_size >> 8)
 
         self.tp.send_request(request)
@@ -352,9 +353,11 @@ class Iso14229_1(object):
 
         return response
 
-    def write_memory_by_address(self, address_and_length_format, memory_address, memory_size, data):
+    def write_memory_by_address(self, address_and_length_format,
+                                memory_address, memory_size, data):
         """
-        Sends a "write memory by address" request to write 'data' to 'memory_address'
+        Sends a "write memory by address" request to write 'data' to
+        'memory_address'
 
         :param address_and_length_format: Address and length format
         :param memory_address: Memory address
@@ -371,13 +374,15 @@ class Iso14229_1(object):
         request[1] = address_and_length_format
         offset = 2
         for i in (range(0, address_size_format)):
-            request[address_size_format + offset - i - 1] = (memory_address & 0xFF)
+            request[address_size_format + offset - i - 1] = \
+                (memory_address & 0xFF)
             memory_address = (memory_address >> 8)
 
         offset += address_size_format
 
         for i in (range(0, data_size_format)):
-            request[data_size_format + offset - i - 1] = (memory_size & 0xFF)
+            request[data_size_format + offset - i - 1] = \
+                (memory_size & 0xFF)
             memory_size = (memory_size >> 8)
 
         request += data
@@ -388,7 +393,8 @@ class Iso14229_1(object):
 
     def write_data_by_identifier(self, identifier, data):
         """
-        Sends a "write data by identifier" request to write 'data' to 'identifier'
+        Sends a "write data by identifier" request to write 'data' to
+        'identifier'
 
         :param identifier: Data identifier
         :param data: Data to write to 'identifier'
@@ -408,7 +414,8 @@ class Iso14229_1(object):
 
     def input_output_control_by_identifier(self, identifier, data):
         """
-        Sends a "input output control by identifier" request for 'data' to 'identifier'
+        Sends a "input output control by identifier" request for 'data' to
+        'identifier'
 
         :param identifier: Data identifier
         :param data: Data
@@ -427,9 +434,11 @@ class Iso14229_1(object):
 
         return response
 
-    def dynamically_define_data_identifier(self, identifier, sub_function, sub_function_arg):
+    def dynamically_define_data_identifier(self, identifier,
+                                           sub_function, sub_function_arg):
         """
-        Sends a "dynamically define data identifier" request for 'identifier'
+        Sends a "dynamically define data identifier" request for
+        'identifier'
 
         :param identifier: DDDID to set
         :param sub_function: Sub function
@@ -437,7 +446,9 @@ class Iso14229_1(object):
         :return: Response data if successful,
                  None otherwise
         """
-        if identifier is None or sub_function is None or sub_function_arg is None:
+        if(identifier is None or
+           sub_function is None or
+           sub_function_arg is None):
             return None
 
         request = [0] * (1 + 1 + 2 + len(sub_function_arg) * 4)
@@ -461,9 +472,11 @@ class Iso14229_1(object):
 
     def diagnostic_session_control(self, session_type):
         """
-        Sends a "DiagnosticSessionControl" request for specified session type
+        Sends a "DiagnosticSessionControl" request for specified session
+        type
 
-        :param session_type: Indicates which kind of session should be requested
+        :param session_type: Indicates which kind of session should be
+                             requested
         :return: Response data if successful,
                  None otherwise
         """
@@ -475,7 +488,6 @@ class Iso14229_1(object):
         response = self.receive_response(self.P3_CLIENT)
 
         return response
-
 
     def ecu_reset(self, reset_type):
         """
@@ -499,7 +511,8 @@ class Iso14229_1(object):
         Sends a Security Access "Request seed" message for 'level'
 
         :param level: Security Access Type level to send request seed for
-        :param data_record: Optional data to transmit when requesting seed, e.g. client identification
+        :param data_record: Optional data to transmit when requesting seed,
+                            e.g. client identification
         :return: Response data (containing seed) if successful,
                  None otherwise
         """
@@ -533,7 +546,8 @@ class Iso14229_1(object):
 
         return response
 
-    def read_data_by_periodic_identifier(self, transmission_mode, identifier):
+    def read_data_by_periodic_identifier(self, transmission_mode,
+                                         identifier):
         """
         Sends a "read data by periodic identifier" request for 'identifier'
 
@@ -542,7 +556,9 @@ class Iso14229_1(object):
         :return: Response data if successful,
                  None otherwise
         """
-        if transmission_mode is None or identifier is None or len(identifier) == 0:
+        if(transmission_mode is None or
+           identifier is None or
+           len(identifier) == 0):
             return None
 
         request = [0] * (2 + len(identifier))

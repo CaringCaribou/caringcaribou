@@ -238,7 +238,7 @@ def parse_args(args):
   cc.py send file -d 0.2 can_dump.txt""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
-    
+
     # Parser for sending messages from command line
     cmd_msgs = subparsers.add_parser("message")
     cmd_msgs.add_argument("msg", nargs="+",

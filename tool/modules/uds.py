@@ -818,20 +818,21 @@ def __parse_args(args):
     parser_secseed.add_argument("dst",
                                 type=parse_int_dec_or_hex,
                                 help="arbitration ID to listen to")
-    parser_secseed.add_argument("-r", "--reset", metavar="rtype",
+    parser_secseed.add_argument("-r", "--reset", metavar="RTYPE",
                                 type=parse_int_dec_or_hex,
                                 help="Enable reset between security "
-                                "seed requests. Reset type: 1=hardReset, "
-                                "2=key off/on, 3=softReset, 4=enable rapid "
-                                "power shutdown, 5=disable rapid "
-                                "power shutdown")
+                                "seed requests. Valid RTYPE integers are: "
+                                "1=hardReset, 2=key off/on, 3=softReset, "
+                                "4=enable rapid power shutdown, "
+                                "5=disable rapid power shutdown. "
+                                "(default: None)")
     parser_secseed.add_argument("-d", "--delay", metavar="D",
                                 type=float, default=DELAY_SECSEED_RESET,
                                 help="Wait D seconds between reset and "
                                 "security seed request. You'll likely need "
-                                "to increase this when using reset type "
-                                "1=hardReset. Does nothing if no reset type"
-                                "is used. (default: {0})"
+                                "to increase this when using RTYPE: "
+                                "1=hardReset. Does nothing if RTYPE is None"
+                                ". (default: {0})"
                                 .format(DELAY_SECSEED_RESET))
     parser_secseed.add_argument("-n", "--num", metavar="NUM", default=0,
                                 type=parse_int_dec_or_hex,

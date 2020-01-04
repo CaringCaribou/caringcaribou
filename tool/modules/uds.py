@@ -92,6 +92,7 @@ NRC_NAMES = {
 
 DELAY_DISCOVERY = 0.01
 DELAY_TESTER_PRESENT = 0.5
+DELAY_SECSEED_RESET = 0.01
 TIMEOUT_SERVICES = 0.2
 
 # Max number of arbitration IDs to backtrack during verification
@@ -551,28 +552,28 @@ def print_negative_response(response):
 
 
 def __security_seed_wrapper(args):
-    """Wrapper used to initiate secuirty seed dump"""
+    """Wrapper used to initiate security seed dump"""
     arb_id_request = args.src
     arb_id_response = args.dst
     reset_type = args.reset
     session_type = args.sess_type
     level = args.sec_level
     num_seeds = args.num
+    reset_delay = args.delay
 
     seed_list = []
     try:
-        print("Security Seed dump started. To end, use Ctrl+C and a report "
+        print("Security seed dump started. To end, use Ctrl+C and a report "
               "will be output to stdout.\n")
         while num_seeds > len(seed_list) or num_seeds == 0:
             # Extended diagnostics
             response = extended_session(arb_id_request,
                                         arb_id_response,
                                         session_type)
-            if response is None:
-                # Simple retry in-case bus wasn't awake for first request
-                response = extended_session(arb_id_request,
-                                            arb_id_response,
-                                            session_type)
+            if not Iso14229_1.is_positive_response(response):
+                print("Unable to enter extended session. Retrying..\n")
+                continue
+
             # Request seed
             response = request_seed(arb_id_request, arb_id_response,
                                     level, None, None)
@@ -587,8 +588,7 @@ def __security_seed_wrapper(args):
                 break
             if reset_type:
                 ecu_reset(arb_id_request, arb_id_response, reset_type, None)
-                if reset_type == Services.EcuReset.ResetType.HARD_RESET:
-                    time.sleep(0.5)
+                time.sleep(reset_delay)
     except KeyboardInterrupt:
         print("Interrupted by user.")
     except ValueError as e:
@@ -604,12 +604,6 @@ def __security_seed_wrapper(args):
 
 
 def extended_session(arb_id_request, arb_id_response, session_type):
-    # Sanity checks
-    if(not Services.DiagnosticSessionControl.DiagnosticSessionType()
-       .is_valid_session(session_type)):
-        raise ValueError("Invalid extended session type: 0x{0:02x}"
-                         .format(session_type))
-
     with IsoTp(arb_id_request=arb_id_request,
                arb_id_response=arb_id_response) as tp:
         # Setup filter for incoming messages
@@ -717,7 +711,7 @@ def __parse_args(args):
                 cc.py uds services 0x733 0x633
                 cc.py uds ecu_reset 1 0x733 0x633
                 cc.py uds testerpresent 0x733
-                cc.py uds security_seed 0x3 0x1 0x733 0x633 -r 1""")
+                cc.py uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 
@@ -831,6 +825,14 @@ def __parse_args(args):
                                 "2=key off/on, 3=softReset, 4=enable rapid "
                                 "power shutdown, 5=disable rapid "
                                 "power shutdown")
+    parser_secseed.add_argument("-d", "--delay", metavar="D",
+                                type=float, default=DELAY_SECSEED_RESET,
+                                help="Wait D seconds between reset and "
+                                "security seed request. You'll likely need "
+                                "to increase this when using reset type "
+                                "1=hardReset. Does nothing if no reset type"
+                                "is used. (default: {0})"
+                                .format(DELAY_SECSEED_RESET))
     parser_secseed.add_argument("-n", "--num", metavar="NUM", default=0,
                                 type=parse_int_dec_or_hex,
                                 help="Specify a positive number of security"

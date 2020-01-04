@@ -288,7 +288,7 @@ class Iso14229_1(object):
         """
         Returns a bool indicating whether 'response' is positive
 
-        :param response: Response data after CAN-TP layer has been removed
+        :param response: ISO-14229-1 response data
         :return: False if response is a NEGATIVE_RESPONSE,
                  True otherwise
         """

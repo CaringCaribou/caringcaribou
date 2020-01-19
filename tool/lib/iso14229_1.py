@@ -186,8 +186,8 @@ class Services(object):
                 """Returns True if 'sub_function' is a valid request seed
                    value and False otherwise"""
                 value = sub_function & 0x7F
-                valid_interval = self.__REQUEST_SEED_MIN \
-                    <= value <= self.__REQUEST_SEED_MAX
+                valid_interval = (self.__REQUEST_SEED_MIN
+                                  <= value <= self.__REQUEST_SEED_MAX)
                 is_odd = value % 2 == 1
                 return valid_interval and is_odd
 
@@ -195,8 +195,8 @@ class Services(object):
                 """Returns True if 'sub_function' is a valid send key value
                    and False otherwise"""
                 value = sub_function & 0x7F
-                valid_interval = self.__SEND_KEY_MIN \
-                    <= value <= self.__SEND_KEY_MAX
+                valid_interval = (self.__SEND_KEY_MIN
+                                  <= value <= self.__SEND_KEY_MAX)
                 is_even = value % 2 == 0
                 return valid_interval and is_even
 
@@ -275,10 +275,11 @@ class Iso14229_1(object):
                 return None
 
             response = self.tp.indication(wait_window)
+            NRC = NegativeResponseCodes
+            NRC_RCRRP = NRC.REQUEST_CORRECTLY_RECEIVED_RESPONSE_PENDING
             if response is not None and len(response) > 3:
-                if response[0] == Constants.NR_SI and \
-                    response[2] == NegativeResponseCodes\
-                        .REQUEST_CORRECTLY_RECEIVED_RESPONSE_PENDING:
+                if (response[0] == Constants.NR_SI and
+                   response[2] == NRC_RCRRP):
                     continue
             break
         return response
@@ -292,7 +293,7 @@ class Iso14229_1(object):
         :return: False if response is a NEGATIVE_RESPONSE,
                  True otherwise
         """
-        if(response is not None and
+        if (response is not None and
            len(response) > 0 and
            response[0] != Constants.NR_SI):
             return True
@@ -329,23 +330,21 @@ class Iso14229_1(object):
         :return: Response data if successful,
                  None otherwise
         """
-        address_size_format = (address_and_length_format >> 4) & 0xF
-        data_size_format = (address_and_length_format & 0xF)
+        addr_sz_fmt = (address_and_length_format >> 4) & 0xF
+        data_sz_fmt = (address_and_length_format & 0xF)
 
-        request = [0] * (1 + 1 + address_size_format + data_size_format)
+        request = [0] * (1 + 1 + addr_sz_fmt + data_sz_fmt)
         request[0] = ServiceID.READ_MEMORY_BY_ADDRESS
         request[1] = address_and_length_format
         offset = 2
-        for i in (range(0, address_size_format)):
-            request[address_size_format + offset - i - 1] = \
-                (memory_address & 0xFF)
+        for i in (range(0, addr_sz_fmt)):
+            request[addr_sz_fmt + offset - i - 1] = (memory_address & 0xFF)
             memory_address = (memory_address >> 8)
 
-        offset += address_size_format
+        offset += addr_sz_fmt
 
-        for i in (range(0, data_size_format)):
-            request[data_size_format + offset - i - 1] = \
-                (memory_size & 0xFF)
+        for i in (range(0, data_sz_fmt)):
+            request[data_sz_fmt + offset - i - 1] = (memory_size & 0xFF)
             memory_size = (memory_size >> 8)
 
         self.tp.send_request(request)
@@ -366,23 +365,21 @@ class Iso14229_1(object):
         :return: Response data if successful,
                  None otherwise
         """
-        address_size_format = (address_and_length_format >> 4) & 0xF
-        data_size_format = (address_and_length_format & 0xF)
+        addr_sz_fmt = (address_and_length_format >> 4) & 0xF
+        data_sz_fmt = (address_and_length_format & 0xF)
 
-        request = [0] * (1 + 1 + address_size_format + data_size_format)
+        request = [0] * (1 + 1 + addr_sz_fmt + data_sz_fmt)
         request[0] = ServiceID.WRITE_MEMORY_BY_ADDRESS
         request[1] = address_and_length_format
         offset = 2
-        for i in (range(0, address_size_format)):
-            request[address_size_format + offset - i - 1] = \
-                (memory_address & 0xFF)
+        for i in (range(0, addr_sz_fmt)):
+            request[addr_sz_fmt + offset - i - 1] = (memory_address & 0xFF)
             memory_address = (memory_address >> 8)
 
-        offset += address_size_format
+        offset += addr_sz_fmt
 
-        for i in (range(0, data_size_format)):
-            request[data_size_format + offset - i - 1] = \
-                (memory_size & 0xFF)
+        for i in (range(0, data_sz_fmt)):
+            request[data_sz_fmt + offset - i - 1] = (memory_size & 0xFF)
             memory_size = (memory_size >> 8)
 
         request += data
@@ -446,7 +443,7 @@ class Iso14229_1(object):
         :return: Response data if successful,
                  None otherwise
         """
-        if(identifier is None or
+        if (identifier is None or
            sub_function is None or
            sub_function_arg is None):
             return None
@@ -556,7 +553,7 @@ class Iso14229_1(object):
         :return: Response data if successful,
                  None otherwise
         """
-        if(transmission_mode is None or
+        if (transmission_mode is None or
            identifier is None or
            len(identifier) == 0):
             return None

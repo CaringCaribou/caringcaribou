@@ -160,8 +160,8 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
     valid_session_control_responses = [0x50, 0x7F]
 
     def is_valid_response(message):
-        return len(message.data) >= 2 and message.data[1] in \
-          valid_session_control_responses
+        return (len(message.data) >= 2 and
+                message.data[1] in valid_session_control_responses)
 
     found_arbitration_ids = []
 
@@ -169,14 +169,14 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
         blacklist = set(blacklist_args)
         # Perform automatic blacklist scan
         if auto_blacklist_duration > 0:
-            auto_blacklist_arb_ids = auto_blacklist(
-              tp.bus, auto_blacklist_duration,
-              is_valid_response, print_results)
-            blacklist |= auto_blacklist_arb_ids
+            auto_bl_arb_ids = auto_blacklist(tp.bus,
+                                             auto_blacklist_duration,
+                                             is_valid_response,
+                                             print_results)
+            blacklist |= auto_bl_arb_ids
 
         # Prepare session control frame
-        session_control_frames = tp.get_frames_from_message(
-          session_control_data)
+        sess_ctrl_frm = tp.get_frames_from_message(session_control_data)
         send_arb_id = min_id - 1
         while send_arb_id < max_id:
             send_arb_id += 1
@@ -185,7 +185,7 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
                       .format(send_arb_id), end="")
                 stdout.flush()
             # Send Diagnostic Session Control
-            tp.transmit(session_control_frames, send_arb_id, None)
+            tp.transmit(sess_ctrl_frm, send_arb_id, None)
             end_time = time.time() + delay
             # Listen for response
             while time.time() < end_time:
@@ -204,25 +204,25 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
                         verified = False
                         # Set filter to only receive messages for the
                         # arbitration ID being verified
-                        tp.set_filter_single_arbitration_id(
-                          msg.arbitration_id)
+                        tp.set_filter_single_arbitration_id(msg.arbitration_id)
                         if print_results:
                             print("\n  Verifying potential response from "
                                   "0x{0:04x}".format(send_arb_id))
                         verify_id_range = range(send_arb_id,
-                                                send_arb_id
-                                                - VERIFICATION_BACKTRACK,
+                                                send_arb_id - VERIFICATION_BACKTRACK,
                                                 -1)
                         for verify_arb_id in verify_id_range:
                             if print_results:
-                                print("    Resending 0x{0:0x}... ".format(
-                                  verify_arb_id), end=" ")
-                            tp.transmit(session_control_frames,
-                                        verify_arb_id, None)
+                                print("    Resending 0x{0:0x}... "
+                                      .format(verify_arb_id), end=" ")
+                            tp.transmit(sess_ctrl_frm,
+                                        verify_arb_id,
+                                        None)
                             # Give some extra time for verification, in
                             # case of slow responses
-                            verification_end_time = time.time()
-                            + delay + VERIFICATION_EXTRA_DELAY
+                            verification_end_time = (time.time()
+                                                     + delay
+                                                     + VERIFICATION_EXTRA_DELAY)
                             while time.time() < verification_end_time:
                                 verification_msg = tp.bus.recv(0)
                                 if verification_msg is None:
@@ -261,9 +261,10 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
                         if not verify:
                             # Blank line needed
                             print()
-                        print("Found diagnostics server listening at "
-                              "0x{0:04x}, response at 0x{1:04x}".format(
-                                send_arb_id, msg.arbitration_id))
+                        print("Found diagnostics server "
+                              "listening at 0x{0:04x}, "
+                              "response at 0x{1:04x}"
+                              .format(send_arb_id, msg.arbitration_id))
                     # Add found arbitration ID pair
                     found_arb_id_pair = (send_arb_id,
                                          msg.arbitration_id)
@@ -298,8 +299,8 @@ def __uds_discovery_wrapper(args):
             print("| CLIENT ID  | SERVER ID  |")
             print(table_line)
             for (client_id, server_id) in arb_id_pairs:
-                print("| 0x{0:08x} | 0x{1:08x} |".format(
-                  client_id, server_id))
+                print("| 0x{0:08x} | 0x{1:08x} |"
+                      .format(client_id, server_id))
             print(table_line)
     except ValueError as e:
         print("Discovery failed: {0}".format(e))
@@ -351,7 +352,7 @@ def service_discovery(arb_id_request, arb_id_response, timeout,
                     # is correct even if response is delayed
                     service_id = msg.data[2]
                     status = msg.data[3]
-                    if(status !=
+                    if (status !=
                        NegativeResponseCodes.SERVICE_NOT_SUPPORTED):
                         # Any other response than "service not supported"
                         # counts
@@ -407,8 +408,8 @@ def tester_present(arb_id_request, delay, duration,
     auto_stop = duration is not None
     end_time = None
     if auto_stop:
-        end_time = datetime.datetime.now()
-        + datetime.timedelta(seconds=duration)
+        end_time = (datetime.datetime.now()
+                    + datetime.timedelta(seconds=duration))
 
     service_id = Services.TesterPresent.service_id
     message_data = [service_id, sub_function]
@@ -458,7 +459,8 @@ def ecu_reset(arb_id_request, arb_id_response, reset_type, timeout):
     # Sanity checks
     if not BYTE_MIN <= reset_type <= BYTE_MAX:
         raise ValueError("reset type must be within interval "
-                         "0x{0:02x}-0x{1:02x}".format(BYTE_MIN, BYTE_MAX))
+                         "0x{0:02x}-0x{1:02x}"
+                         .format(BYTE_MIN, BYTE_MAX))
     if isinstance(timeout, float) and timeout < 0.0:
         raise ValueError("timeout value ({0}) cannot be negative"
                          .format(timeout))
@@ -503,7 +505,7 @@ def __ecu_reset_wrapper(args):
         elif response_length == 1:
             # Invalid response length
             print("Received response [{0:02x}] (1 byte), expected at least "
-                  " 2 bytes".format(response[0], len(response)))
+                  "2 bytes".format(response[0], len(response)))
         elif Iso14229_1.is_positive_response(response):
             # Positive response handling
             response_service_id = response[0]
@@ -511,7 +513,7 @@ def __ecu_reset_wrapper(args):
             expected_response_id = \
                 Iso14229_1.get_service_response_id(
                                                Services.EcuReset.service_id)
-            if(response_service_id == expected_response_id
+            if (response_service_id == expected_response_id
                and subfunction == reset_type):
                 # Positive response
                 pos_msg = "Received positive response"
@@ -519,8 +521,8 @@ def __ecu_reset_wrapper(args):
                     # Additional data can be seconds left to reset
                     # (powerDownTime) or manufacturer specific
                     additional_data = list_to_hex_str(response[2:], ",")
-                    pos_msg += " with additional data: [{0}]"\
-                               .format(additional_data)
+                    pos_msg += (" with additional data: [{0}]"
+                                .format(additional_data))
                 print(pos_msg)
             else:
                 # Service and/or subfunction mismatch
@@ -636,7 +638,7 @@ def request_seed(arb_id_request, arb_id_response, level,
     :rtype [int] or None
     """
     # Sanity checks
-    if(not Services.SecurityAccess.RequestSeedOrSendKey()
+    if (not Services.SecurityAccess.RequestSeedOrSendKey()
        .is_valid_request_seed_level(level)):
         raise ValueError("Invalid request seed level")
     if isinstance(timeout, float) and timeout < 0.0:
@@ -677,7 +679,7 @@ def send_key(arb_id_request, arb_id_response, level, key, timeout):
     :rtype [int] or None
     """
     # Sanity checks
-    if(not Services.SecurityAccess.RequestSeedOrSendKey()
+    if (not Services.SecurityAccess.RequestSeedOrSendKey()
        .is_valid_send_key_level(level)):
         raise ValueError("Invalid send key level")
     if isinstance(timeout, float) and timeout < 0.0:
@@ -702,16 +704,16 @@ def __parse_args(args):
     parser = argparse.ArgumentParser(
                 prog="cc.py uds",
                 formatter_class=argparse.RawDescriptionHelpFormatter,
-                description="Universal Diagnostic Services module for"
+                description="Universal Diagnostic Services module for "
                 "CaringCaribou",
-                epilog="""Example usage:
-                cc.py uds discovery
-                cc.py uds discovery -blacklist 0x123 0x456
-                cc.py uds discovery -autoblacklist 10
-                cc.py uds services 0x733 0x633
-                cc.py uds ecu_reset 1 0x733 0x633
-                cc.py uds testerpresent 0x733
-                cc.py uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5""")
+                epilog="Example usage:\n"
+                "cc.py uds discovery\n"
+                "cc.py uds discovery -blacklist 0x123 0x456\n"
+                "cc.py uds discovery -autoblacklist 10\n"
+                "cc.py uds services 0x733 0x633\n"
+                "cc.py uds ecu_reset 1 0x733 0x633\n"
+                "cc.py uds testerpresent 0x733\n"
+                "cc.py uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5\n")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 
@@ -719,31 +721,30 @@ def __parse_args(args):
     parser_discovery = subparsers.add_parser("discovery")
     parser_discovery.add_argument("-min",
                                   type=parse_int_dec_or_hex, default=None,
-                                  help="min arbitration ID to send request "
-                                  "for")
+                                  help="min arbitration ID "
+                                       "to send request for")
     parser_discovery.add_argument("-max",
                                   type=parse_int_dec_or_hex, default=None,
-                                  help="max arbitration ID to send request "
-                                  "for")
+                                  help="max arbitration ID "
+                                       "to send request for")
     parser_discovery.add_argument("-b", "--blacklist", metavar="B",
                                   type=parse_int_dec_or_hex, default=[],
                                   nargs="+",
                                   help="arbitration IDs to blacklist "
-                                  "responses from")
+                                       "responses from")
     parser_discovery.add_argument("-ab", "--autoblacklist", metavar="N",
                                   type=float, default=0,
-                                  help="listen for false positives for N "
-                                  "seconds and blacklist matching "
-                                  "arbitration IDs before running discovery"
-                                  )
+                                  help="listen for false positives for N seconds "
+                                       "and blacklist matching arbitration "
+                                       "IDs before running discovery")
     parser_discovery.add_argument("-sv", "--skipverify",
                                   action="store_true",
                                   help="skip verification step (reduces "
-                                  "result accuracy)")
+                                       "result accuracy)")
     parser_discovery.add_argument("-d", "--delay", metavar="D",
                                   type=float, default=DELAY_DISCOVERY,
                                   help="D seconds delay between messages "
-                                  "(default: {0})".format(DELAY_DISCOVERY))
+                                       "(default: {0})".format(DELAY_DISCOVERY))
     parser_discovery.set_defaults(func=__uds_discovery_wrapper)
 
     # Parser for diagnostics service discovery
@@ -757,17 +758,18 @@ def __parse_args(args):
     parser_info.add_argument("-t", "--timeout", metavar="T",
                              type=float, default=TIMEOUT_SERVICES,
                              help="wait T seconds for response before "
-                             "timeout (default: {0})"
-                             .format(TIMEOUT_SERVICES))
+                                  "timeout (default: {0})"
+                                  .format(TIMEOUT_SERVICES))
     parser_info.set_defaults(func=__service_discovery_wrapper)
 
     # Parser for ECU Reset
     parser_ecu_reset = subparsers.add_parser("ecu_reset")
     parser_ecu_reset.add_argument("reset_type", metavar="type",
                                   type=parse_int_dec_or_hex,
-                                  help="Reset type: 1=hard, 2=key off/on,"
-                                  " 3=soft, 4=enable rapid power shutdown,"
-                                  " 5=disable rapid power shutdown")
+                                  help="Reset type: 1=hard, 2=key off/on, "
+                                       "3=soft, "
+                                       "4=enable rapid power shutdown, "
+                                       "5=disable rapid power shutdown")
     parser_ecu_reset.add_argument("src",
                                   type=parse_int_dec_or_hex,
                                   help="arbitration ID to transmit to")
@@ -777,7 +779,7 @@ def __parse_args(args):
     parser_ecu_reset.add_argument("-t", "--timeout",
                                   type=float, metavar="T",
                                   help="wait T seconds for response before "
-                                  "timeout")
+                                       "timeout")
     parser_ecu_reset.set_defaults(func=__ecu_reset_wrapper)
 
     # Parser for TesterPresent
@@ -788,7 +790,7 @@ def __parse_args(args):
     parser_tp.add_argument("-d", "--delay", metavar="D",
                            type=float, default=DELAY_TESTER_PRESENT,
                            help="send TesterPresent every D seconds "
-                           "(default: {0})".format(DELAY_TESTER_PRESENT))
+                                "(default: {0})".format(DELAY_TESTER_PRESENT))
     parser_tp.add_argument("-dur", "--duration", metavar="S",
                            type=float,
                            help="automatically stop after S seconds")
@@ -801,17 +803,17 @@ def __parse_args(args):
     parser_secseed.add_argument("sess_type", metavar="stype",
                                 type=parse_int_dec_or_hex,
                                 help="Session Type: 1=defaultSession "
-                                "2=programmingSession 3=extendedSession "
-                                "4=safetySession [0x40-0x5F]=OEM "
-                                "[0x60-0x7E]=Supplier "
-                                "[0x0, 0x5-0x3F, 0x7F]=ISOSAEReserved")
+                                     "2=programmingSession 3=extendedSession "
+                                     "4=safetySession [0x40-0x5F]=OEM "
+                                     "[0x60-0x7E]=Supplier "
+                                     "[0x0, 0x5-0x3F, 0x7F]=ISOSAEReserved")
     parser_secseed.add_argument("sec_level", metavar="level",
                                 type=parse_int_dec_or_hex,
                                 help="Security level: "
-                                "[0x1-0x41 (odd only)]=OEM "
-                                "0x5F=EOLPyrotechnics "
-                                "[0x61-0x7E]=Supplier "
-                                "[0x0, 0x43-0x5E, 0x7F]=ISOSAEReserved")
+                                     "[0x1-0x41 (odd only)]=OEM "
+                                     "0x5F=EOLPyrotechnics "
+                                     "[0x61-0x7E]=Supplier "
+                                     "[0x0, 0x43-0x5E, 0x7F]=ISOSAEReserved")
     parser_secseed.add_argument("src",
                                 type=parse_int_dec_or_hex,
                                 help="arbitration ID to transmit to")
@@ -820,26 +822,26 @@ def __parse_args(args):
                                 help="arbitration ID to listen to")
     parser_secseed.add_argument("-r", "--reset", metavar="RTYPE",
                                 type=parse_int_dec_or_hex,
-                                help="Enable reset between security "
-                                "seed requests. Valid RTYPE integers are: "
-                                "1=hardReset, 2=key off/on, 3=softReset, "
-                                "4=enable rapid power shutdown, "
-                                "5=disable rapid power shutdown. "
-                                "(default: None)")
+                                help="Enable reset between security seed "
+                                     "requests. Valid RTYPE integers are: "
+                                     "1=hardReset, 2=key off/on, 3=softReset, "
+                                     "4=enable rapid power shutdown, "
+                                     "5=disable rapid power shutdown. "
+                                     "(default: None)")
     parser_secseed.add_argument("-d", "--delay", metavar="D",
                                 type=float, default=DELAY_SECSEED_RESET,
                                 help="Wait D seconds between reset and "
-                                "security seed request. You'll likely need "
-                                "to increase this when using RTYPE: "
-                                "1=hardReset. Does nothing if RTYPE is None"
-                                ". (default: {0})"
-                                .format(DELAY_SECSEED_RESET))
+                                     "security seed request. You'll likely "
+                                     "need to increase this when using RTYPE: "
+                                     "1=hardReset. Does nothing if RTYPE "
+                                     "is None. (default: {0})"
+                                     .format(DELAY_SECSEED_RESET))
     parser_secseed.add_argument("-n", "--num", metavar="NUM", default=0,
                                 type=parse_int_dec_or_hex,
                                 help="Specify a positive number of security"
-                                " seeds to capture before terminating. "
-                                "A '0' is interpreted as infinity. "
-                                "(default: 0)")
+                                     " seeds to capture before terminating. "
+                                     "A '0' is interpreted as infinity. "
+                                     "(default: 0)")
     parser_secseed.set_defaults(func=__security_seed_wrapper)
 
     args = parser.parse_args(args)

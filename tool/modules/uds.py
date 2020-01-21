@@ -579,7 +579,9 @@ def __security_seed_wrapper(args):
             # Request seed
             response = request_seed(arb_id_request, arb_id_response,
                                     level, None, None)
-            if Iso14229_1.is_positive_response(response):
+            if response is None:
+                print("\nInvalid response")
+            elif Iso14229_1.is_positive_response(response):
                 seed_list.append(list_to_hex_str(response[2:]))
                 print("Seed received: {}\t(Total captured: {})"
                       .format(list_to_hex_str(response[2:]),

@@ -706,14 +706,14 @@ def __parse_args(args):
                 formatter_class=argparse.RawDescriptionHelpFormatter,
                 description="Universal Diagnostic Services module for "
                 "CaringCaribou",
-                epilog="Example usage:\n"
-                "cc.py uds discovery\n"
-                "cc.py uds discovery -blacklist 0x123 0x456\n"
-                "cc.py uds discovery -autoblacklist 10\n"
-                "cc.py uds services 0x733 0x633\n"
-                "cc.py uds ecu_reset 1 0x733 0x633\n"
-                "cc.py uds testerpresent 0x733\n"
-                "cc.py uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5\n")
+                epilog="""Example usage:"
+  cc.py uds discovery
+  cc.py uds discovery -blacklist 0x123 0x456
+  cc.py uds discovery -autoblacklist 10
+  cc.py uds services 0x733 0x633
+  cc.py uds ecu_reset 1 0x733 0x633
+  cc.py uds testerpresent 0x733
+  cc.py uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 

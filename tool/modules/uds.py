@@ -573,7 +573,7 @@ def __security_seed_wrapper(args):
                                         arb_id_response,
                                         session_type)
             if not Iso14229_1.is_positive_response(response):
-                print("Unable to enter extended session. Retrying..\n")
+                print("Unable to enter extended session. Retrying...\n")
                 continue
 
             # Request seed
@@ -600,7 +600,7 @@ def __security_seed_wrapper(args):
 
     if len(seed_list) > 0:
         print("\n")
-        print("Security Access Seeds Captured:")
+        print("Security Access Seeds captured:")
         for seed in seed_list:
             print(seed)
 
@@ -642,7 +642,7 @@ def request_seed(arb_id_request, arb_id_response, level,
        .is_valid_request_seed_level(level)):
         raise ValueError("Invalid request seed level")
     if isinstance(timeout, float) and timeout < 0.0:
-        raise ValueError("timeout value ({0}) cannot be negative"
+        raise ValueError("Timeout value ({0}) cannot be negative"
                          .format(timeout))
 
     with IsoTp(arb_id_request=arb_id_request,
@@ -683,7 +683,7 @@ def send_key(arb_id_request, arb_id_response, level, key, timeout):
        .is_valid_send_key_level(level)):
         raise ValueError("Invalid send key level")
     if isinstance(timeout, float) and timeout < 0.0:
-        raise ValueError("timeout value ({0}) cannot be negative"
+        raise ValueError("Timeout value ({0}) cannot be negative"
                          .format(timeout))
 
     with IsoTp(arb_id_request=arb_id_request,

@@ -565,8 +565,7 @@ def __security_seed_wrapper(args):
 
     seed_list = []
     try:
-        print("Security seed dump started. To end, use Ctrl+C and a report "
-              "will be output to stdout.\n")
+        print("Security seed dump started. Press Ctrl+C to stop.\n")
         while num_seeds > len(seed_list) or num_seeds == 0:
             # Extended diagnostics
             response = extended_session(arb_id_request,

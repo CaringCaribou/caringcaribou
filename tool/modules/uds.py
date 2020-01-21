@@ -597,7 +597,6 @@ def __security_seed_wrapper(args):
         print("Interrupted by user.")
     except ValueError as e:
         print(e)
-        print("For help, use the '-h' flag")
         return
 
     if len(seed_list) > 0:

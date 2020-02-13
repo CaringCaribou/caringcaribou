@@ -660,7 +660,7 @@ def request_seed(arb_id_request, arb_id_response, level,
 
 def send_key(arb_id_request, arb_id_response, level, key, timeout):
     """
-    Sends an Send key message to 'arb_id_request'.
+    Sends a Send key message to 'arb_id_request'.
     Returns the first response received from 'arb_id_response' within
     'timeout' seconds or None otherwise.
 

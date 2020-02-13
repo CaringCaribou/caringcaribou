@@ -42,4 +42,3 @@ class SendFileParserTestCase(unittest.TestCase):
         line = "Timestamp:        0.000000    ID: 00000000    X   R            DLC:  4    de ad ca fe"
         message, timestamp = send.parse_pythoncan_line(line, None, None)
         self.assertListEqual(message.data, self.RESULT_DATA_DEAD_CAFE)
-

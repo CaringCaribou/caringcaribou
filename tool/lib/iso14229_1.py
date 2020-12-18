@@ -268,9 +268,9 @@ class Iso14229_1(object):
         :return: The received response if successful,
                  None otherwise
         """
-        start_time = time.clock()
+        start_time = time.process_time()
         while True:
-            current_time = time.clock()
+            current_time = time.process_time()
             if (current_time - start_time) > wait_window:
                 return None
 

@@ -1,4 +1,10 @@
 import time
+# Fix for backward compatibility with Python versions older than 3.3,
+# where time.process_time is not available
+try:
+    time.process_time
+except AttributeError:
+    time.process_time = time.clock
 
 
 class DynamicallyDefinedIdentifierArg(object):
@@ -268,9 +274,9 @@ class Iso14229_1(object):
         :return: The received response if successful,
                  None otherwise
         """
-        start_time = time.clock()
+        start_time = time.process_time()
         while True:
-            current_time = time.clock()
+            current_time = time.process_time()
             if (current_time - start_time) > wait_window:
                 return None
 

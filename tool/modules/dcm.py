@@ -371,7 +371,10 @@ def subfunc_discovery(args):
 
         try:
             # Message to bruteforce - [length, session control, default session]
-            message = insert_message_length([service_id, 0x00, 0x00], pad=True)
+            payload = [service_id]
+            for ind in range(max(bruteforce_indices) - 1):
+                payload.append(0x00)
+            message = insert_message_length(payload, pad=True)
             can_wrap.bruteforce_data_new(message, bruteforce_indices=bruteforce_indices,
                                          callback=response_analyser_wrapper,
                                          callback_done=finished)

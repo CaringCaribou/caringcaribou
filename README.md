@@ -6,6 +6,12 @@ We are lacking a security testing tool for automotive. A zero-knowledge tool tha
 
 This work was initiated as part of the research project HEAVENS (HEAling Vulnerabilities to ENhance Software Security and Safety), but lives on as a stand-alone project.
 
+## How to install
+Instructions available [here](documentation/howtoinstall.md)
+
+## Troubleshooting
+See common errors and solutions [here](documentation/troubleshooting.md)
+
 ## How to use
 The best way to understand how to use Caring Caribou is to look at the help screen:
 
@@ -109,9 +115,6 @@ Some sort of CAN bus interface (http://elinux.org/CAN_Bus#CAN_Support_in_Linux)
 - Python 2.7 or 3.x
 - python-can
 - a pretty modern linux kernel
-
-## How to install
-Instructions available [here](documentation/howtoinstall.md)
 
 ## Extending the project
 Create a python file with a function `module_main(args)` and put it in the ```tool/modules``` folder. Caring Caribou will automagically recognize it as a module and list it in the output of `./cc.py -h`

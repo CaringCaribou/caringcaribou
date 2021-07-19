@@ -768,7 +768,7 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
             print('Identified DIDs:')
             print('DID    Value (hex)')
             for response in responses:
-                print(hex(response[0]), list_to_hex_str(response[1]))
+                print('0x{:04x}'.format(response[0]), list_to_hex_str(response[1]))
             return responses
 
 

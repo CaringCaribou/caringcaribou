@@ -174,3 +174,28 @@ class UdsModuleTestCase(unittest.TestCase):
                              level=level,
                              data_record=data_record,
                              timeout=timeout)
+
+    def test_dump_dids(self):
+        # mock ECU responds to DIDs 0x0001, 0x0101, 0x0201...0xff01
+        # response data is always 6272
+        # so after scanning through 0x0000 - 0xffff there should be 256 responses
+        # and each response will contain 6272
+        timeout = None
+        min_did = 0x0000
+        max_did = 0xffff
+        print_results = False
+        expected_response_cnt = 256
+        expected_response = [0x62, 0x72]
+        responses = uds.dump_dids(arb_id_request=self.ARB_ID_REQUEST,
+                      arb_id_response=self.ARB_ID_RESPONSE,
+                      timeout=timeout,
+                      min_did=min_did,
+                      max_did=max_did,
+                      print_results=print_results)
+
+        # first check there are 256 responses
+        self.assertEqual(expected_response_cnt, len(responses))
+
+        # next check the responses contain the proper data
+        for response in responses:
+            self.assertListEqual(expected_response, response[1])

@@ -731,8 +731,8 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
     :type timeout: float or None
     :type min_did: int
     :type max_did: int
-    :return: list of response byte values on success, None otherwise
-    :rtype [int] or None
+    :return: list of tuples containing DID and response bytes on success, empty list if no responses
+    :rtype [(int, [int]] or []
     """
     # sanity checks
     if isinstance(timeout, float) and timeout < 0.0:
@@ -754,10 +754,19 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
             if timeout is not None:
                 uds.P3_CLIENT = timeout
 
+            # TODO: set delay
+            # TODO: check if response is valid - current simulator doesn't fully adhere to UDS spec
+
             print('Dumping DIDs in range 0x{:04x}-0x{:04x}\n'.format(min_did, max_did))
             for identifier in range(min_did, max_did + 1):
                 response = uds.read_data_by_identifier(identifier=[identifier])
-                if response:
+
+                # keep the response if we get a positive response
+                # otherwise ignore negative responses
+                # negative responses look like 7f 22 <NRC>
+                if response and Iso14229_1.is_positive_response(response):
+                    # keep the response if we get a positive response
+                    # otherwise ignore negative responses
                     responses.append((identifier, response))
 
             # print result table

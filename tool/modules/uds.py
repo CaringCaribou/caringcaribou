@@ -714,11 +714,11 @@ def __dump_dids_wrapper(args):
                      
 
 def dump_dids(arb_id_request, arb_id_response, timeout,
-                  min_did=0x0000, max_did=0xffff):
+                  min_did=DUMP_DID_MIN, max_did=DUMP_DID_MAX):
     """
-    Sends a read data by identifier message to 'arb_id_request'.
-    Returns the first response received from 'arb_id_response' within
-    'timeout' seconds or None otherwise.
+    Sends read data by identifier (DID) messages to 'arb_id_request'.
+    Returns a list of positive responses received from 'arb_id_response' within
+    'timeout' seconds or an empty list if no positive responses were received.
 
     :param arb_id_request: arbitration ID for requests
     :param arb_id_response: arbitration ID for responses
@@ -732,7 +732,7 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
     :type min_did: int
     :type max_did: int
     :return: list of tuples containing DID and response bytes on success, empty list if no responses
-    :rtype [(int, [int]] or []
+    :rtype [(int, [int])] or []
     """
     # sanity checks
     if isinstance(timeout, float) and timeout < 0.0:
@@ -754,9 +754,6 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
             if timeout is not None:
                 uds.P3_CLIENT = timeout
 
-            # TODO: set delay
-            # TODO: check if response is valid - current simulator doesn't fully adhere to UDS spec
-
             print('Dumping DIDs in range 0x{:04x}-0x{:04x}\n'.format(min_did, max_did))
             for identifier in range(min_did, max_did + 1):
                 response = uds.read_data_by_identifier(identifier=[identifier])
@@ -765,8 +762,6 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                 # otherwise ignore negative responses
                 # negative responses look like 7f 22 <NRC>
                 if response and Iso14229_1.is_positive_response(response):
-                    # keep the response if we get a positive response
-                    # otherwise ignore negative responses
                     responses.append((identifier, response))
 
             # print result table

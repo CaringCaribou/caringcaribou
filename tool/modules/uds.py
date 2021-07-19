@@ -709,12 +709,13 @@ def __dump_dids_wrapper(args):
     timeout = args.timeout
     min_did = args.min_did
     max_did = args.max_did
+    print_results=True
     dids = dump_dids(arb_id_request, arb_id_response,
-                     timeout, min_did, max_did)
+                     timeout, min_did, max_did, print_results)
                      
 
 def dump_dids(arb_id_request, arb_id_response, timeout,
-                  min_did=DUMP_DID_MIN, max_did=DUMP_DID_MAX):
+                  min_did=DUMP_DID_MIN, max_did=DUMP_DID_MAX, print_results=True):
     """
     Sends read data by identifier (DID) messages to 'arb_id_request'.
     Returns a list of positive responses received from 'arb_id_response' within
@@ -726,11 +727,13 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                     for default UDS timeout
     :param min_did: minimum device identifier to read
     :param max_did: maximum device identifier to read
+    :param print_results: whether progress should be printed to stdout
     :type arb_id_request: int
     :type arb_id_response: int
     :type timeout: float or None
     :type min_did: int
     :type max_did: int
+    :type print_results: bool
     :return: list of tuples containing DID and response bytes on success, empty list if no responses
     :rtype [(int, [int])] or []
     """
@@ -754,7 +757,8 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
             if timeout is not None:
                 uds.P3_CLIENT = timeout
 
-            print('Dumping DIDs in range 0x{:04x}-0x{:04x}\n'.format(min_did, max_did))
+            if print_results:
+                print('Dumping DIDs in range 0x{:04x}-0x{:04x}\n'.format(min_did, max_did))
             for identifier in range(min_did, max_did + 1):
                 response = uds.read_data_by_identifier(identifier=[identifier])
 
@@ -765,10 +769,11 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                     responses.append((identifier, response))
 
             # print result table
-            print('Identified DIDs:')
-            print('DID    Value (hex)')
-            for response in responses:
-                print('0x{:04x}'.format(response[0]), list_to_hex_str(response[1]))
+            if print_results:
+                print('Identified DIDs:')
+                print('DID    Value (hex)')
+                for response in responses:
+                    print('0x{:04x}'.format(response[0]), list_to_hex_str(response[1]))
             return responses
 
 

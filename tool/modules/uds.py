@@ -352,15 +352,15 @@ def service_discovery(arb_id_request, arb_id_response, timeout,
                     continue
                 # Parse response
                 if len(msg.data) > 3:
-                    # Since service ID is included in the response, mapping
-                    # is correct even if response is delayed
-                    service_id = msg.data[2]
+                    # Since service ID is included in the response, mapping is correct even if response is delayed
+                    response_id = msg.data[1]
+                    response_service_id = msg.data[2]
                     status = msg.data[3]
-                    if (status !=
-                       NegativeResponseCodes.SERVICE_NOT_SUPPORTED):
-                        # Any other response than "service not supported"
-                        # counts
-                        found_services.append(service_id)
+                    if response_id != 0x7F:
+                        found_services.append(response_id - 0x40)
+                    elif status != NegativeResponseCodes.SERVICE_NOT_SUPPORTED:
+                        # Any other response than "service not supported" counts
+                        found_services.append(response_service_id)
             if print_results:
                 print("\nDone!\n")
         except KeyboardInterrupt:

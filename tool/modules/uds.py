@@ -4,7 +4,7 @@ from lib.common import list_to_hex_str, parse_int_dec_or_hex
 from lib.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
 from lib.constants import ARBITRATION_ID_MIN
 from lib.iso15765_2 import IsoTp
-from lib.iso14229_1 import Iso14229_1, NegativeResponseCodes, Services
+from lib.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, Services
 from sys import stdout, version_info
 import argparse
 import datetime
@@ -356,8 +356,9 @@ def service_discovery(arb_id_request, arb_id_response, timeout,
                     response_id = msg.data[1]
                     response_service_id = msg.data[2]
                     status = msg.data[3]
-                    if response_id != 0x7F:
-                        found_services.append(response_id - 0x40)
+                    if response_id != Constants.NR_SI:
+                        request_id = Iso14229_1.get_service_request_id(response_id)
+                        found_services.append(request_id)
                     elif status != NegativeResponseCodes.SERVICE_NOT_SUPPORTED:
                         # Any other response than "service not supported" counts
                         found_services.append(response_service_id)

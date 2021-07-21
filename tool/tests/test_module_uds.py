@@ -188,11 +188,11 @@ class UdsModuleTestCase(unittest.TestCase):
         expected_response_cnt = 2
         expected_response = [0x62, 0x72]
         responses = uds.dump_dids(arb_id_request=self.ARB_ID_REQUEST,
-                      arb_id_response=self.ARB_ID_RESPONSE,
-                      timeout=timeout,
-                      min_did=min_did,
-                      max_did=max_did,
-                      print_results=print_results)
+                                  arb_id_response=self.ARB_ID_RESPONSE,
+                                  timeout=timeout,
+                                  min_did=min_did,
+                                  max_did=max_did,
+                                  print_results=print_results)
 
         # first check there are proper number of responses
         self.assertEqual(expected_response_cnt, len(responses))

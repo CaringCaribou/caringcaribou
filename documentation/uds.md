@@ -16,17 +16,19 @@ As always, module help can be shown by adding the `-h` flag (as shown below). Yo
 $ ./cc.py uds -h
 
 -------------------
-CARING CARIBOU v0.2
+CARING CARIBOU v0.3
 -------------------
 
 Loaded module 'uds'
 
-usage: cc.py uds [-h] {discovery,services,ecu_reset,testerpresent} ...
+usage: cc.py uds [-h]
+                 {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids}
+                 ...
 
 Universal Diagnostic Services module for CaringCaribou
 
 positional arguments:
-  {discovery,services,ecu_reset,testerpresent}
+  {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids}
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -38,6 +40,9 @@ Example usage:
   cc.py uds services 0x733 0x633
   cc.py uds ecu_reset 1 0x733 0x633
   cc.py uds testerpresent 0x733
+  cc.py uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
+  cc.py uds dump_dids 0x733 0x633
+  cc.py uds dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1
 ```
 
 ## Discovery
@@ -49,7 +54,7 @@ The ID of both the request and the matching response are printed. These are typi
 $ ./cc.py uds discovery -h
 
 -------------------
-CARING CARIBOU v0.2
+CARING CARIBOU v0.3
 -------------------
 
 Loaded module 'uds'
@@ -77,7 +82,7 @@ Scans an ECU (or rather, a given pair of request/response arbitration IDs) for s
 $ ./cc.py uds services -h
 
 -------------------
-CARING CARIBOU v0.2
+CARING CARIBOU v0.3
 -------------------
 
 Loaded module 'uds'
@@ -102,7 +107,7 @@ It is common for an ECU to support multiple reset types.
 $ ./cc.py uds ecu_reset -h
 
 -------------------
-CARING CARIBOU v0.2
+CARING CARIBOU v0.3
 -------------------
 
 Loaded module 'uds'
@@ -131,7 +136,7 @@ By continuing to send Tester Present messages after a server (ECU) has been unlo
 $ ./cc.py uds testerpresent -h
 
 -------------------
-CARING CARIBOU v0.2
+CARING CARIBOU v0.3
 -------------------
 
 Loaded module 'uds'
@@ -146,4 +151,30 @@ optional arguments:
   -d D, --delay D       send TesterPresent every D seconds (default: 0.5)
   -dur S, --duration S  automatically stop after S seconds
   -spr                  suppress positive response
+```
+
+## Dump DIDs
+Scans a range of Dynamic Data Identifiers (DIDs) and dumps their values.
+
+```
+$ ./cc.py uds dump_dids -h
+
+-------------------
+CARING CARIBOU v0.3
+-------------------
+
+Loaded module 'uds'
+
+usage: cc.py uds dump_dids [-h] [-t T] [--min_did MIN_DID] [--max_did MAX_DID]
+                           src dst
+
+positional arguments:
+  src                arbitration ID to transmit to
+  dst                arbitration ID to listen to
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -t T, --timeout T  wait T seconds for response before timeout
+  --min_did MIN_DID  minimum device identifier (DID) to read (default: 0x0000)
+  --max_did MAX_DID  maximum device identifier (DID) to read (default: 0xFFFF)
 ```

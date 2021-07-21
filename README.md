@@ -48,6 +48,7 @@ Discovers and utilizes various ISO 14229-1 services.
 - services - Scans for diagnostics services supported by an ECU
 - ecu_reset - Reset an ECU
 - testerpresent - Force an elevated session against an ECU to stay active
+- dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
 
 Details here: [uds module](documentation/uds.md)
 

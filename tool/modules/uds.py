@@ -703,7 +703,7 @@ def send_key(arb_id_request, arb_id_response, level, key, timeout):
             return response
 
 def __dump_dids_wrapper(args):
-    """Wrapper used to initiate device identifier dump"""
+    """Wrapper used to initiate data identifier dump"""
     arb_id_request = args.src
     arb_id_response = args.dst
     timeout = args.timeout

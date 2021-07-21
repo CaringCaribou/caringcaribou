@@ -140,3 +140,4 @@ The target ECU used for the development setup is an STM32F107 based dev-board fr
 * Lear Corporation
 * sigttou
 * FearfulSpoon
+* Alex DeTrano

@@ -103,6 +103,10 @@ VERIFICATION_EXTRA_DELAY = 0.5
 BYTE_MIN = 0x00
 BYTE_MAX = 0xFF
 
+DUMP_DID_MIN = 0x0000
+DUMP_DID_MAX = 0xFFFF
+DUMP_DID_TIMEOUT = 0.2
+
 
 def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
                   delay, verify, print_results=True):
@@ -698,6 +702,81 @@ def send_key(arb_id_request, arb_id_response, level, key, timeout):
             response = uds.security_access_send_key(level=level, key=key)
             return response
 
+def __dump_dids_wrapper(args):
+    """Wrapper used to initiate data identifier dump"""
+    arb_id_request = args.src
+    arb_id_response = args.dst
+    timeout = args.timeout
+    min_did = args.min_did
+    max_did = args.max_did
+    print_results=True
+    dids = dump_dids(arb_id_request, arb_id_response,
+                     timeout, min_did, max_did, print_results)
+                     
+
+def dump_dids(arb_id_request, arb_id_response, timeout,
+                  min_did=DUMP_DID_MIN, max_did=DUMP_DID_MAX, print_results=True):
+    """
+    Sends read data by identifier (DID) messages to 'arb_id_request'.
+    Returns a list of positive responses received from 'arb_id_response' within
+    'timeout' seconds or an empty list if no positive responses were received.
+
+    :param arb_id_request: arbitration ID for requests
+    :param arb_id_response: arbitration ID for responses
+    :param timeout: seconds to wait for response before timeout, or None
+                    for default UDS timeout
+    :param min_did: minimum device identifier to read
+    :param max_did: maximum device identifier to read
+    :param print_results: whether progress should be printed to stdout
+    :type arb_id_request: int
+    :type arb_id_response: int
+    :type timeout: float or None
+    :type min_did: int
+    :type max_did: int
+    :type print_results: bool
+    :return: list of tuples containing DID and response bytes on success, empty list if no responses
+    :rtype [(int, [int])] or []
+    """
+    # sanity checks
+    if isinstance(timeout, float) and timeout < 0.0:
+        raise ValueError("Timeout value ({0}) cannot be negative"
+                         .format(timeout))
+
+    if max_did < min_did:
+        raise ValueError("max_did must not be smaller than min_did -"
+                         " got min:0x{0:x}, max:0x{1:x}".format(
+                          min_did, max_did))
+
+    responses = []
+    with IsoTp(arb_id_request=arb_id_request,
+               arb_id_response=arb_id_response) as tp:
+        # Setup filter for incoming messages
+        tp.set_filter_single_arbitration_id(arb_id_response)
+        with Iso14229_1(tp) as uds:
+            # Set timeout
+            if timeout is not None:
+                uds.P3_CLIENT = timeout
+
+            if print_results:
+                print('Dumping DIDs in range 0x{:04x}-0x{:04x}\n'.format(min_did, max_did))
+            for identifier in range(min_did, max_did + 1):
+                response = uds.read_data_by_identifier(identifier=[identifier])
+
+                # keep the response if we get a positive response
+                # otherwise ignore negative responses
+                # negative responses look like 7f 22 <NRC>
+                if response and Iso14229_1.is_positive_response(response):
+                    responses.append((identifier, response))
+
+            # print result table
+            if print_results:
+                print('Identified DIDs:')
+                print('DID    Value (hex)')
+                for response in responses:
+                    print('0x{:04x}'.format(response[0]), list_to_hex_str(response[1]))
+            return responses
+
+
 
 def __parse_args(args):
     """Parser for module arguments"""
@@ -843,6 +922,29 @@ def __parse_args(args):
                                      "A '0' is interpreted as infinity. "
                                      "(default: 0)")
     parser_secseed.set_defaults(func=__security_seed_wrapper)
+
+    # Parser for dump_did
+    parser_did = subparsers.add_parser("dump_dids")
+    parser_did.add_argument("src",
+                                type=parse_int_dec_or_hex,
+                                help="arbitration ID to transmit to")
+    parser_did.add_argument("dst",
+                                type=parse_int_dec_or_hex,
+                                help="arbitration ID to listen to")
+    parser_did.add_argument("-t", "--timeout",
+                                  type=float, metavar="T",
+                                  default=DUMP_DID_TIMEOUT,
+                                  help="wait T seconds for response before "
+                                       "timeout")
+    parser_did.add_argument("--min_did",
+                                type=parse_int_dec_or_hex,
+                                default=DUMP_DID_MIN,
+                                help="minimum device identifier (DID) to read (default: 0x0000)")
+    parser_did.add_argument("--max_did",
+                                type=parse_int_dec_or_hex,
+                                default=DUMP_DID_MAX,
+                                help="maximum device identifier (DID) to read (default: 0xFFFF)")
+    parser_did.set_defaults(func=__dump_dids_wrapper)
 
     args = parser.parse_args(args)
     return args

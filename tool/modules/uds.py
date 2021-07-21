@@ -762,6 +762,8 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
             if print_results:
                 print('Dumping DIDs in range 0x{:04x}-0x{:04x}\n'.format(
                     min_did, max_did))
+                print('Identified DIDs:')
+                print('DID    Value (hex)')
             for identifier in range(min_did, max_did + 1):
                 response = uds.read_data_by_identifier(identifier=[identifier])
 
@@ -770,14 +772,10 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                 # negative responses look like 7f 22 <NRC>
                 if response and Iso14229_1.is_positive_response(response):
                     responses.append((identifier, response))
-
-            # Print result table
+                    if print_results:
+                        print('0x{:04x}'.format(identifier), list_to_hex_str(response))
             if print_results:
-                print('Identified DIDs:')
-                print('DID    Value (hex)')
-                for response in responses:
-                    print('0x{:04x}'.format(response[0]),
-                          list_to_hex_str(response[1]))
+                print("\nDone!")
             return responses
 
 

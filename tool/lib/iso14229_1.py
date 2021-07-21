@@ -237,14 +237,24 @@ class Iso14229_1(object):
         pass
 
     @staticmethod
-    def get_service_response_id(identifier):
+    def get_service_response_id(request_id):
         """
-        Returns the service response ID for 'identifier'
+        Returns the service response ID for the given request ID
 
-        :param identifier: Identifier
-        :return: Service response ID for 'identifier'
+        :param request_id: Request service ID
+        :return: Corresponding response service ID
         """
-        return identifier + 0x40
+        return request_id + 0x40
+
+    @staticmethod
+    def get_service_request_id(response_id):
+        """
+        Returns the service request ID for the given response ID
+
+        :param response_id: Response service ID
+        :return: Corresponding request service ID
+        """
+        return response_id - 0x40
 
     def send_request(self, data):
         """

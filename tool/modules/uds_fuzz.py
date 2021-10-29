@@ -149,6 +149,7 @@ def seed_randomness_fuzzer(args):
     iterations = args.iter
     reset_delay = args.delay
     reset_method = args.reset_method
+    inter = args.inter_delay
 
     seed_list = []
     try: 
@@ -168,6 +169,8 @@ def seed_randomness_fuzzer(args):
                     if not Iso14229_1.is_positive_response(response):
                         print("Unable to enter session. Retrying...\n")
                         break
+                    if inter:
+                        time.sleep(inter)
 
                 elif session_type[y] == "2" and session_type[y+1] == "7":
                 
@@ -184,6 +187,8 @@ def seed_randomness_fuzzer(args):
                                     len(seed_list)), end="\r")
 
                         stdout.flush()
+                    if inter:
+                        time.sleep(inter)
 
                     else:
                         print_negative_response(response)
@@ -223,6 +228,7 @@ def delay_fuzzer(args):
     target = args.target_seed
     reset_delay = args.delay
     loop = True
+
     seed_list = []
     try:
         print("Security seed dump started. Press Ctrl+C to stop.\n")
@@ -271,6 +277,7 @@ def delay_fuzzer(args):
                     time.sleep(reset_delay)
                 else:
                     break
+
 
             if reset_type:
                 ecu_reset(arb_id_request, arb_id_response, reset_type, None)
@@ -439,6 +446,10 @@ def __parse_args(args):
                                      "This attack is based on hard ECUReset (1) "
                                      "as it targets seed randomness based on "
                                      "the system clock. (default: hardReset)")
+    parser_randomness_fuzzer.add_argument("-id", "--inter_delay", metavar="RTYPE", default=0.1,
+                                type=float,
+                                help="Intermidiate delay between messages:"
+                                     "(default: 0.1)")
     parser_randomness_fuzzer.add_argument("-m", "--reset_method", metavar="RMETHOD", default=1,
                                 type=parse_int_dec_or_hex,
                                 help="The method that the ECUReset will happen: "

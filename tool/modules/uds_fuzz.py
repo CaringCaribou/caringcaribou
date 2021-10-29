@@ -4,7 +4,7 @@
 
 from __future__ import print_function
 from lib.can_actions import auto_blacklist
-from lib.common import list_to_hex_str, parse_int_dec_or_hex
+from lib.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
 from lib.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
 from lib.constants import ARBITRATION_ID_MIN
 from lib.iso15765_2 import IsoTp
@@ -146,7 +146,6 @@ def seed_randomness_fuzzer(args):
     arb_id_response = args.dst
     reset_type = args.reset
     session_type = args.sess_type
-    level = args.sec_level
     iterations = args.iter
     reset_delay = args.delay
     reset_method = args.reset_method
@@ -159,36 +158,47 @@ def seed_randomness_fuzzer(args):
         for i in range(iterations):
 
             # Extended diagnostics
-            response = extended_session(arb_id_request,
-                                        arb_id_response,
-                                        session_type)
-            if not Iso14229_1.is_positive_response(response):
-                print("Unable to enter extended session. Retrying...\n")
-                continue
+            for y in range(1, len(session_type), 4):
 
-            # Request seed
-            response = request_seed(arb_id_request, arb_id_response,
-                                    level, None, None)
-            if response is None:
-                print("\nInvalid response")
-            elif Iso14229_1.is_positive_response(response):
-                seed_list.append(list_to_hex_str(response[2:]))
-                print("Seed received: {}\t(Total captured: {})"
-                    .format(list_to_hex_str(response[2:]),
-                            len(seed_list)), end="\r")
-                stdout.flush()
-            else:
-                print_negative_response(response)
+                if session_type[y] == "1" and session_type[y+1] == "0":
+                    session = str_to_hex(y, session_type)
+                    response = extended_session(arb_id_request,
+                                                arb_id_response,
+                                                session)
+                    if not Iso14229_1.is_positive_response(response):
+                        print("Unable to enter session. Retrying...\n")
+                        break
 
-            if reset_method == 1:
-                ecu_reset(arb_id_request, arb_id_response, reset_type, None)
-                time.sleep(reset_delay)
-            elif reset_method == 0:
-                continue
-            else:
-                print("Not a valid reset method: " , reset_method)
+                elif session_type[y] == "2" and session_type[y+1] == "7":
+                
+                    # Request seed
+                    session = str_to_hex(y, session_type)
+                    response = request_seed(arb_id_request, arb_id_response,
+                                            session, None, None)
+                    if response is None:
+                        print("\nInvalid response")
+                    elif Iso14229_1.is_positive_response(response):
+                        seed_list.append(list_to_hex_str(response[2:]))
+                        print("Seed received: {}\t(Total captured: {})"
+                            .format(list_to_hex_str(response[2:]),
+                                    len(seed_list)), end="\r")
 
-        print("Duplicates found: \n", find_duplicates(seed_list))
+                        stdout.flush()
+
+                    else:
+                        print_negative_response(response)
+                        break
+                
+                elif (session_type[y] == 1 and session_type[y+1] == 1) or reset_method == 1:
+                    if reset_method == 1:
+                        ecu_reset(arb_id_request, arb_id_response, reset_type, None)
+                        time.sleep(reset_delay)
+                    elif reset_method == 0:
+                        continue
+                    else:
+                        print("Not a valid reset method: " , reset_method)
+                else:
+                    break
 
     except KeyboardInterrupt:
         print("Interrupted by user.")
@@ -201,6 +211,7 @@ def seed_randomness_fuzzer(args):
         print("Security Access Seeds captured:")
         for seed in seed_list:
             print(seed)
+        print("\nDuplicates found: \n", find_duplicates(seed_list))
 
 
 def delay_fuzzer(args):
@@ -209,45 +220,63 @@ def delay_fuzzer(args):
     arb_id_response = args.dst
     reset_type = args.reset
     session_type = args.sess_type
-    level = args.sec_level
-    seed = args.seed
+    target = args.target_seed
     reset_delay = args.delay
-
+    loop = True
     seed_list = []
     try:
         print("Security seed dump started. Press Ctrl+C to stop.\n")
-        while num_seeds > len(seed_list) or num_seeds == 0:
+        while loop:
             # Extended diagnostics
             ecu_reset(arb_id_request, arb_id_response, reset_type, None)
             time.sleep(reset_delay)
-            response = extended_session(arb_id_request,
-                                        arb_id_response,
-                                        session_type)
-            if not Iso14229_1.is_positive_response(response):
-                print("Unable to enter extended session. Retrying...\n")
-                continue
+            for i in range(1, len(session_type), 4):
 
-            # Request seed
-            response = request_seed(arb_id_request, arb_id_response,
-                                    level, None, None)
-            if response is None:
-                print("\nInvalid response")
-            elif Iso14229_1.is_positive_response(response):
-                seed_list.append(list_to_hex_str(response[2:]))
-                print("Seed received: {}\t(Total captured: {})"
-                      .format(list_to_hex_str(response[2:]),
-                              len(seed_list)), end="\r")
-                stdout.flush()
-                if seed in seed_list:
-                    print("\nSeed found with delay: ", reset_delay)
+                if session_type[i] == "1" and session_type[i+1] == "0":
+                    session = str_to_hex(i, session_type)
+                    response = extended_session(arb_id_request,
+                                                arb_id_response,
+                                                session)
+                    if not Iso14229_1.is_positive_response(response):
+                        print("Unable to enter session. Retrying...\n")
+                        break
+
+                elif session_type[i] == "2" and session_type[i+1] == "7":
+                
+                    # Request seed
+                    session = str_to_hex(i, session_type)
+                    response = request_seed(arb_id_request, arb_id_response,
+                                            session, None, None)
+                    if response is None:
+                        print("\nInvalid response")
+                    elif Iso14229_1.is_positive_response(response):
+                        seed_list.append(list_to_hex_str(response[2:]))
+                        print("Seed received: {}\t(Total captured: {}, Delay used: {})"
+                            .format(list_to_hex_str(response[2:]),
+                                    len(seed_list),reset_delay), end="\r")
+
+                        if list_to_hex_str(response[2:]) == list_to_hex_str(str_to_int_list(target[1:-1])):
+                            print("\n\nTarget seed found with delay: ", reset_delay)
+                            loop = False
+                            break
+
+                        stdout.flush()
+
+                    else:
+                        print_negative_response(response)
+                        break
+                
+                elif session_type[i] == 1 and session_type[i+1] == 1:
+                    ecu_reset(arb_id_request, arb_id_response, reset_type, None)
+                    time.sleep(reset_delay)
+                else:
                     break
-            else:
-                print_negative_response(response)
-                break
+
             if reset_type:
                 ecu_reset(arb_id_request, arb_id_response, reset_type, None)
                 time.sleep(reset_delay)
                 reset_delay += 0.001
+
     except KeyboardInterrupt:
         print("Interrupted by user.")
     except ValueError as e:
@@ -259,6 +288,15 @@ def delay_fuzzer(args):
         print("Security Access Seeds captured:")
         for seed in seed_list:
             print(seed)
+
+def str_to_hex(i, session_type):
+    session = []
+    session.append('0x')
+    session.append(session_type[i+2])
+    session.append(session_type[i+3])
+    session = ''.join(session)
+    session = int(session, 16)
+    return session
 
 
 def extended_session(arb_id_request, arb_id_response, session_type):
@@ -318,33 +356,30 @@ def __parse_args(args):
     parser = argparse.ArgumentParser(
                 prog="cc.py uds_fuzz",
                 formatter_class=argparse.RawDescriptionHelpFormatter,
-                description="UDS seed randomness fuzzer module for "
+                description="UDS seed randomness fuzzer and tester module for "
                 "CaringCaribou",
                 epilog="""Example usage:
-  cc.py uds_fuzz seed_randomness_fuzzer -t 10 -d 3 3 0x03 0x733 0x633""")
+  cc.py uds_fuzz seed_randomness_fuzzer -t 10 -d 3 3 0x03 0x733 0x633
+  cc.py uds_fuzz delay_fuzzer 100311022701 0x03 0x733 0x633""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 
     # Parser for Delay fuzz testing
     parser_delay_fuzzer = subparsers.add_parser("delay_fuzzer")
     parser_delay_fuzzer.add_argument("sess_type", metavar="stype",
-                                type=parse_int_dec_or_hex,
-                                help="Session Type: 1=defaultSession "
-                                     "2=programmingSession 3=extendedSession "
-                                     "4=safetySession [0x40-0x5F]=OEM "
-                                     "[0x60-0x7E]=Supplier "
-                                     "[0x0, 0x5-0x3F, 0x7F]=ISOSAEReserved")
-    parser_delay_fuzzer.add_argument("sec_level", metavar="level",
-                                type=parse_int_dec_or_hex,
-                                help="Security level: "
-                                     "[0x1-0x41 (odd only)]=OEM "
-                                     "0x5F=EOLPyrotechnics "
-                                     "[0x61-0x7E]=Supplier "
-                                     "[0x0, 0x43-0x5E, 0x7F]=ISOSAEReserved")
-    parser_delay_fuzzer.add_argument("seed", metavar="SEED", 
-                                type=parse_int_dec_or_hex,
-                                help="Specify the target seed you want to intercept."
-                                     "e.g. 0x0767034141414141 ")
+                                type=ascii,
+                                help="Describe the session sequence followed by "
+                                     "the trarget ECU."
+                                     "e.g. if the following sequence is needed in order to request a seed: "
+                                     "Request 1 - 0310030000000000, "
+                                     "Request 2 - 0311020000000000, "
+                                     "Request 3 - 0310050000000000, "
+                                     "Request 4 - 0327050000000000. "
+                                     "The option should be: 1003110210052705\n")
+    parser_delay_fuzzer.add_argument("target_seed", metavar="target",
+                                type=ascii,
+                                help="Seed that is targeted for the delay attack. "
+                                     "e.g. 41414141414141")
     parser_delay_fuzzer.add_argument("src",
                                 type=parse_int_dec_or_hex,
                                 help="arbitration ID to transmit to")
@@ -358,33 +393,30 @@ def __parse_args(args):
                                      "1=hardReset, 2=key off/on, 3=softReset, "
                                      "4=enable rapid power shutdown, "
                                      "5=disable rapid power shutdown. "
-                                     "(default: hardReset)")
+                                     "This attack is based on hard ECUReset (1) "
+                                     "as it targets seed randomness based on "
+                                     "the system clock. (default: hardReset)")
     parser_delay_fuzzer.add_argument("-d", "--delay", metavar="D",
                                 type=float, default=DELAY_SECSEED_RESET,
-                                help="Wait D seconds between reset and "
-                                     "security seed request. You'll likely "
-                                     "need to increase this when using RTYPE: "
-                                     "1=hardReset. Does nothing if RTYPE "
-                                     "is None. (default: {0})"
+                                help="Wait D seconds between the different "
+                                     "iterations of security seed request. You'll "
+                                     "likely need to increase this when using RTYPE: "
+                                     "1=hardReset. (default: {0})"
                                      .format(DELAY_SECSEED_RESET))
     parser_delay_fuzzer.set_defaults(func=delay_fuzzer)
 
     # Parser for Delay fuzz testing
     parser_randomness_fuzzer = subparsers.add_parser("seed_randomness_fuzzer")
     parser_randomness_fuzzer.add_argument("sess_type", metavar="stype",
-                                type=parse_int_dec_or_hex,
-                                help="Session Type: 1=defaultSession "
-                                     "2=programmingSession 3=extendedSession "
-                                     "4=safetySession [0x40-0x5F]=OEM "
-                                     "[0x60-0x7E]=Supplier "
-                                     "[0x0, 0x5-0x3F, 0x7F]=ISOSAEReserved")
-    parser_randomness_fuzzer.add_argument("sec_level", metavar="level",
-                                type=parse_int_dec_or_hex,
-                                help="Security level: "
-                                     "[0x1-0x41 (odd only)]=OEM "
-                                     "0x5F=EOLPyrotechnics "
-                                     "[0x61-0x7E]=Supplier "
-                                     "[0x0, 0x43-0x5E, 0x7F]=ISOSAEReserved")
+                                type=ascii,
+                                help="Describe the session sequence followed by "
+                                     "the trarget ECU."
+                                     "e.g. if the following sequence is needed in order to request a seed: "
+                                     "Request 1 - 0310030000000000, "
+                                     "Request 2 - 0311020000000000, "
+                                     "Request 3 - 0310050000000000, "
+                                     "Request 4 - 0327050000000000. "
+                                     "The option should be: 1003110210052705\n")
     parser_randomness_fuzzer.add_argument("src",
                                 type=parse_int_dec_or_hex,
                                 help="arbitration ID to transmit to")

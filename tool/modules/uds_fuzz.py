@@ -168,7 +168,6 @@ def seed_randomness_fuzzer(args):
                                                 session)
                     if not Iso14229_1.is_positive_response(response):
                         print("Unable to enter session. Retrying...\n")
-                        break
                     if inter:
                         time.sleep(inter)
 

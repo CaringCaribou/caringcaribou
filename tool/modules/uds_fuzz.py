@@ -195,15 +195,11 @@ def seed_randomness_fuzzer(args):
                         print_negative_response(response)
                         break
                 
-                elif session_type[y] == 1 and session_type[y+1] == 1:
-                    if reset_method == 1:
-                        ecu_reset(arb_id_request, arb_id_response, reset_type, None)
-                        time.sleep(reset_delay)
-                    elif reset_method == 0:
-                        continue
-                    else:
-                        print("Not a valid reset method: " , reset_method)
+                elif session_type[y] == "1" and session_type[y+1] == "1":
+                    ecu_reset(arb_id_request, arb_id_response, int(session_type[y+3]), None)
+                    time.sleep(reset_delay)
                 else:
+                    print("\nPlease check your supplied sequence...")
                     break
 
     except KeyboardInterrupt:

@@ -85,7 +85,6 @@ def find_duplicates(sequence):
   duplicates = set(i for i in sequence if i in first_seen or first_seen_add(i) )
   return duplicates 
 
-
 def ecu_reset(arb_id_request, arb_id_response, reset_type, timeout):
     """Sends an ECU Reset message to 'arb_id_request'. Returns the first
         response received from 'arb_id_response' within 'timeout' seconds
@@ -157,9 +156,12 @@ def seed_randomness_fuzzer(args):
         ecu_reset(arb_id_request, arb_id_response, reset_type, None)
         time.sleep(reset_delay)
         for i in range(iterations):
+            if  reset_method == 1 and i > 0:
+                ecu_reset(arb_id_request, arb_id_response, reset_type, None)
+                time.sleep(reset_delay)
 
             # Extended diagnostics
-            for y in range(1, len(session_type), 4):
+            for y in range(0, len(session_type), 4):
 
                 if session_type[y] == "1" and session_type[y+1] == "0":
                     session = str_to_hex(y, session_type)
@@ -193,7 +195,7 @@ def seed_randomness_fuzzer(args):
                         print_negative_response(response)
                         break
                 
-                elif (session_type[y] == 1 and session_type[y+1] == 1) or reset_method == 1:
+                elif session_type[y] == 1 and session_type[y+1] == 1:
                     if reset_method == 1:
                         ecu_reset(arb_id_request, arb_id_response, reset_type, None)
                         time.sleep(reset_delay)
@@ -235,7 +237,7 @@ def delay_fuzzer(args):
             # Extended diagnostics
             ecu_reset(arb_id_request, arb_id_response, reset_type, None)
             time.sleep(reset_delay)
-            for i in range(1, len(session_type), 4):
+            for i in range(0, len(session_type), 4):
 
                 if session_type[i] == "1" and session_type[i+1] == "0":
                     session = str_to_hex(i, session_type)
@@ -260,7 +262,7 @@ def delay_fuzzer(args):
                             .format(list_to_hex_str(response[2:]),
                                     len(seed_list),reset_delay), end="\r")
 
-                        if list_to_hex_str(response[2:]) == list_to_hex_str(str_to_int_list(target[1:-1])):
+                        if list_to_hex_str(response[2:]) == list_to_hex_str(str_to_int_list(target)):
                             print("\n\nTarget seed found with delay: ", reset_delay)
                             loop = False
                             break
@@ -373,7 +375,6 @@ def __parse_args(args):
     # Parser for Delay fuzz testing
     parser_delay_fuzzer = subparsers.add_parser("delay_fuzzer")
     parser_delay_fuzzer.add_argument("sess_type", metavar="stype",
-                                type=ascii,
                                 help="Describe the session sequence followed by "
                                      "the trarget ECU."
                                      "e.g. if the following sequence is needed in order to request a seed: "
@@ -383,7 +384,6 @@ def __parse_args(args):
                                      "Request 4 - 0327050000000000. "
                                      "The option should be: 1003110210052705\n")
     parser_delay_fuzzer.add_argument("target_seed", metavar="target",
-                                type=ascii,
                                 help="Seed that is targeted for the delay attack. "
                                      "e.g. 41414141414141")
     parser_delay_fuzzer.add_argument("src",
@@ -414,7 +414,6 @@ def __parse_args(args):
     # Parser for Delay fuzz testing
     parser_randomness_fuzzer = subparsers.add_parser("seed_randomness_fuzzer")
     parser_randomness_fuzzer.add_argument("sess_type", metavar="stype",
-                                type=ascii,
                                 help="Describe the session sequence followed by "
                                      "the trarget ECU."
                                      "e.g. if the following sequence is needed in order to request a seed: "

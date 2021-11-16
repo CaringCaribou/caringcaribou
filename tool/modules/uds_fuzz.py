@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# Released under GNU General Public License v3
-# https://github.com/Cr0wTom/UDS-Seed-Randomness-Fuzzer
-
 from __future__ import print_function
 from lib.can_actions import auto_blacklist
 from lib.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
@@ -9,60 +5,12 @@ from lib.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
 from lib.constants import ARBITRATION_ID_MIN
 from lib.iso15765_2 import IsoTp
 from lib.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, Services
+from modules.uds import ecu_reset, print_negative_response, request_seed, extended_session
 from sys import stdout, version_info
 import argparse
 import datetime
 import time
 
-
-# Python 2/3 compatibility
-if version_info[0] == 2:
-    range = xrange
-    input = raw_input
-
-NRC_NAMES = {
-    0x00: "POSITIVE_RESPONSE",
-    0x10: "GENERAL_REJECT",
-    0x11: "SERVICE_NOT_SUPPORTED",
-    0x12: "SUB_FUNCTION_NOT_SUPPORTED",
-    0x13: "INCORRECT_MESSAGE_LENGTH_OR_INVALID_FORMAT",
-    0x14: "RESPONSE_TOO_LONG",
-    0x21: "BUSY_REPEAT_REQUEST",
-    0x22: "CONDITIONS_NOT_CORRECT",
-    0x24: "REQUEST_SEQUENCE_ERROR",
-    0x25: "NO_RESPONSE_FROM_SUBNET_COMPONENT",
-    0x26: "FAILURE_PREVENTS_EXECUTION_OF_REQUESTED_ACTION",
-    0x31: "REQUEST_OUT_OF_RANGE",
-    0x33: "SECURITY_ACCESS_DENIED",
-    0x35: "INVALID_KEY",
-    0x36: "EXCEEDED_NUMBER_OF_ATTEMPTS",
-    0x37: "REQUIRED_TIME_DELAY_NOT_EXPIRED",
-    0x70: "UPLOAD_DOWNLOAD_NOT_ACCEPTED",
-    0x71: "TRANSFER_DATA_SUSPENDED",
-    0x72: "GENERAL_PROGRAMMING_FAILURE",
-    0x73: "WRONG_BLOCK_SEQUENCE_COUNTER",
-    0x78: "REQUEST_CORRECTLY_RECEIVED_RESPONSE_PENDING",
-    0x7E: "SUB_FUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION",
-    0x7F: "SERVICE_NOT_SUPPORTED_IN_ACTIVE_SESSION",
-    0x81: "RPM_TOO_HIGH",
-    0x82: "RPM_TOO_LOW",
-    0x83: "ENGINE_IS_RUNNING",
-    0x84: "ENGINE_IS_NOT_RUNNING",
-    0x85: "ENGINE_RUN_TIME_TOO_LOW",
-    0x86: "TEMPERATURE_TOO_HIGH",
-    0x87: "TEMPERATURE_TOO_LOW",
-    0x88: "VEHICLE_SPEED_TOO_HIGH",
-    0x89: "VEHICLE_SPEED_TOO_LOW",
-    0x8A: "THROTTLE_PEDAL_TOO_HIGH",
-    0x8B: "THROTTLE_PEDAL_TOO_LOW",
-    0x8C: "TRANSMISSION_RANGE_NOT_IN_NEUTRAL",
-    0x8D: "TRANSMISSION_RANGE_NOT_IN_GEAR",
-    0x8F: "BRAKE_SWITCHES_NOT_CLOSED",
-    0x90: "SHIFT_LEVER_NOT_IN_PARK",
-    0x91: "TORQUE_CONVERTER_CLUTCH_LOCKED",
-    0x92: "VOLTAGE_TOO_HIGH",
-    0x93: "VOLTAGE_TOO_LOW"
-}
 
 # Number of seconds to wait between messages
 DELAY_SECSEED_RESET = 0.011
@@ -85,62 +33,9 @@ def find_duplicates(sequence):
   duplicates = set(i for i in sequence if i in first_seen or first_seen_add(i) )
   return duplicates 
 
-def ecu_reset(arb_id_request, arb_id_response, reset_type, timeout):
-    """Sends an ECU Reset message to 'arb_id_request'. Returns the first
-        response received from 'arb_id_response' within 'timeout' seconds
-        or None otherwise.
-
-    :param arb_id_request: arbitration ID for requests
-    :param arb_id_response: arbitration ID for responses
-    :param reset_type: value corresponding to a reset type
-    :param timeout: seconds to wait for response before timeout, or None
-                    for default UDS timeout
-    :type arb_id_request: int
-    :type arb_id_response int
-    :type reset_type: int
-    :type timeout: float or None
-    :return: list of response byte values on success, None otherwise
-    :rtype [int] or None
-    """
-    # Sanity checks
-    if not BYTE_MIN <= reset_type <= BYTE_MAX:
-        raise ValueError("reset type must be within interval "
-                         "0x{0:02x}-0x{1:02x}"
-                         .format(BYTE_MIN, BYTE_MAX))
-    if isinstance(timeout, float) and timeout < 0.0:
-        raise ValueError("timeout value ({0}) cannot be negative"
-                         .format(timeout))
-
-    with IsoTp(arb_id_request=arb_id_request,
-               arb_id_response=arb_id_response) as tp:
-        # Setup filter for incoming messages
-        tp.set_filter_single_arbitration_id(arb_id_response)
-        with Iso14229_1(tp) as uds:
-            # Set timeout
-            if timeout is not None:
-                uds.P3_CLIENT = timeout
-
-            response = uds.ecu_reset(reset_type=reset_type)
-            return response
-
-
-def print_negative_response(response):
-    """
-    Helper function for decoding and printing a negative response received
-    from a UDS server.
-
-    :param response: Response data after CAN-TP layer has been removed
-    :type response: [int]
-
-    :return: Nothing
-    """
-    nrc = response[2]
-    nrc_description = NRC_NAMES.get(nrc, "Unknown NRC value")
-    print("Received negative response code (NRC) 0x{0:02x}: {1}"
-          .format(nrc, nrc_description))
 
 def seed_randomness_fuzzer(args):
-    """Wrapper used to initiate security seed dump"""
+    """Wrapper used to initiate security randomness fuzzer"""
     arb_id_request = args.src
     arb_id_response = args.dst
     reset_type = args.reset
@@ -152,6 +47,8 @@ def seed_randomness_fuzzer(args):
 
     seed_list = []
     try: 
+
+        # Issue first reset with the supplied delay time
         print("Security seed dump started. Press Ctrl+C if you need to stop.\n")
         ecu_reset(arb_id_request, arb_id_response, reset_type, None)
         time.sleep(reset_delay)
@@ -160,9 +57,9 @@ def seed_randomness_fuzzer(args):
                 ecu_reset(arb_id_request, arb_id_response, reset_type, None)
                 time.sleep(reset_delay)
 
-            # Extended diagnostics
             for y in range(0, len(session_type), 4):
 
+                # Get into the appropriate supplied session
                 if session_type[y] == "1" and session_type[y+1] == "0":
                     session = str_to_hex(y, session_type)
                     response = extended_session(arb_id_request,
@@ -173,9 +70,9 @@ def seed_randomness_fuzzer(args):
                     if inter:
                         time.sleep(inter)
 
+                # Request seed
                 elif session_type[y] == "2" and session_type[y+1] == "7":
                 
-                    # Request seed
                     session = str_to_hex(y, session_type)
                     response = request_seed(arb_id_request, arb_id_response,
                                             session, None, None)
@@ -195,6 +92,7 @@ def seed_randomness_fuzzer(args):
                         print_negative_response(response)
                         break
                 
+                # ECUReset
                 elif session_type[y] == "1" and session_type[y+1] == "1":
                     ecu_reset(arb_id_request, arb_id_response, int(session_type[y+3]), None)
                     time.sleep(reset_delay)
@@ -208,6 +106,7 @@ def seed_randomness_fuzzer(args):
         print(e)
         return
 
+    # Print captured seeds and found dumpicates
     if len(seed_list) > 0:
         print("\n")
         print("Security Access Seeds captured:")
@@ -217,7 +116,7 @@ def seed_randomness_fuzzer(args):
 
 
 def delay_fuzzer(args):
-    """Wrapper used to initiate security seed dump"""
+    """Wrapper used to initiate delay fuzzer"""
     arb_id_request = args.src
     arb_id_response = args.dst
     reset_type = args.reset
@@ -230,11 +129,15 @@ def delay_fuzzer(args):
     try:
         print("Security seed dump started. Press Ctrl+C to stop.\n")
         while loop:
-            # Extended diagnostics
+            
+            # Issue first reset with the supplied delay time
             ecu_reset(arb_id_request, arb_id_response, reset_type, None)
             time.sleep(reset_delay)
+
+            # Loop through the length of the suppplied input
             for i in range(0, len(session_type), 4):
 
+                # Get into the appropriate supplied session
                 if session_type[i] == "1" and session_type[i+1] == "0":
                     session = str_to_hex(i, session_type)
                     response = extended_session(arb_id_request,
@@ -244,9 +147,9 @@ def delay_fuzzer(args):
                         print("Unable to enter session. Retrying...\n")
                         break
 
+                # Request seed
                 elif session_type[i] == "2" and session_type[i+1] == "7":
                 
-                    # Request seed
                     session = str_to_hex(i, session_type)
                     response = request_seed(arb_id_request, arb_id_response,
                                             session, None, None)
@@ -269,13 +172,14 @@ def delay_fuzzer(args):
                         print_negative_response(response)
                         break
                 
+                # ECUReset
                 elif session_type[i] == 1 and session_type[i+1] == 1:
                     ecu_reset(arb_id_request, arb_id_response, reset_type, None)
                     time.sleep(reset_delay)
                 else:
                     break
 
-
+            # ECUReset and increase of delay in each loop
             if reset_type:
                 ecu_reset(arb_id_request, arb_id_response, reset_type, None)
                 time.sleep(reset_delay)
@@ -294,66 +198,18 @@ def delay_fuzzer(args):
             print(seed)
 
 def str_to_hex(i, session_type):
-    session = []
-    session.append('0x')
-    session.append(session_type[i+2])
-    session.append(session_type[i+3])
-    session = ''.join(session)
-    session = int(session, 16)
-    return session
-
-
-def extended_session(arb_id_request, arb_id_response, session_type):
-    with IsoTp(arb_id_request=arb_id_request, arb_id_response=arb_id_response) as tp:
-        # Setup filter for incoming messages
-        tp.set_filter_single_arbitration_id(arb_id_response)
-        with Iso14229_1(tp) as uds:
-            response = uds.diagnostic_session_control(session_type)
-            return response
-
-
-def request_seed(arb_id_request, arb_id_response, level, data_record, timeout):
-    """Sends an Request seed message to 'arb_id_request'. Returns the
-       first response received from 'arb_id_response' within 'timeout'
-       seconds or None otherwise.
-
-    :param arb_id_request: arbitration ID for requests
-    :param arb_id_response: arbitration ID for responses
-    :param level: vehicle manufacturer specific access level to request
-                  seed for
-    :param data_record: optional vehicle manufacturer specific data to
-                        transmit when requesting seed
-    :param timeout: seconds to wait for response before timeout, or None
-                    for default UDS timeout
-    :type arb_id_request: int
-    :type arb_id_response: int
-    :type level: int
-    :type data_record: [int] or None
-    :type timeout: float or None
-    :return: list of response byte values on success, None otherwise
-    :rtype [int] or None
-    """
-    # Sanity checks
-    if (not Services.SecurityAccess.RequestSeedOrSendKey()
-       .is_valid_request_seed_level(level)):
-        raise ValueError("Invalid request seed level")
-    if isinstance(timeout, float) and timeout < 0.0:
-        raise ValueError("Timeout value ({0}) cannot be negative"
-                         .format(timeout))
-
-    with IsoTp(arb_id_request=arb_id_request,
-               arb_id_response=arb_id_response) as tp:
-        # Setup filter for incoming messages
-        tp.set_filter_single_arbitration_id(arb_id_response)
-        with Iso14229_1(tp) as uds:
-            # Set timeout
-            if timeout is not None:
-                uds.P3_CLIENT = timeout
-
-            response = uds.security_access_request_seed(level, data_record)
-            return response
-
-           
+    
+    max = i + 3
+    if len(session_type) >= max: 
+        session = []
+        session.append('0x')
+        session.append(session_type[i+2])
+        session.append(session_type[i+3])
+        session = ''.join(session)
+        session = int(session, 16)
+        return session
+    else:
+        return
 
 def __parse_args(args):
     """Parser for module arguments"""

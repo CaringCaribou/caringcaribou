@@ -225,10 +225,10 @@ def __parse_args(args):
                                 help="Describe the session sequence followed by "
                                      "the target ECU."
                                      "e.g. if the following sequence is needed in order to request a seed: "
-                                     "Request 1 - 0310030000000000, "
-                                     "Request 2 - 0311020000000000, "
-                                     "Request 3 - 0310050000000000, "
-                                     "Request 4 - 0327050000000000. "
+                                     "Request 1 - 1003 (Diagnostic Session Control), "
+                                     "Request 2 - 1102 (ECUReset), "
+                                     "Request 3 - 1005 (Diagnostic Session Control), "
+                                     "Request 4 - 2705 (Security Access Seed Request). "
                                      "The option should be: 1003110210052705\n")
     parser_delay_fuzzer.add_argument("target_seed", metavar="target",
                                 help="Seed that is targeted for the delay attack. "

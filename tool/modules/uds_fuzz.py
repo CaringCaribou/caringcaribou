@@ -1,14 +1,9 @@
 from __future__ import print_function
-from lib.can_actions import auto_blacklist
 from lib.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
-from lib.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
-from lib.constants import ARBITRATION_ID_MIN
-from lib.iso15765_2 import IsoTp
-from lib.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, Services
+from lib.iso14229_1 import Iso14229_1
 from modules.uds import ecu_reset, print_negative_response, request_seed, extended_session
-from sys import stdout, version_info
+from sys import stdout
 import argparse
-import datetime
 import time
 
 
@@ -106,7 +101,7 @@ def seed_randomness_fuzzer(args):
         print(e)
         return
 
-    # Print captured seeds and found dumpicates
+    # Print captured seeds and found duplicates
     if len(seed_list) > 0:
         print("\n")
         print("Security Access Seeds captured:")
@@ -134,7 +129,7 @@ def delay_fuzzer(args):
             ecu_reset(arb_id_request, arb_id_response, reset_type, None)
             time.sleep(reset_delay)
 
-            # Loop through the length of the suppplied input
+            # Loop through the length of the supplied input
             for i in range(0, len(session_type), 4):
 
                 # Get into the appropriate supplied session
@@ -219,7 +214,7 @@ def __parse_args(args):
                 description="UDS seed randomness fuzzer and tester module for "
                 "CaringCaribou",
                 epilog="""Example usage:
-  cc.py uds_fuzz seed_randomness_fuzzer -t 10 -d 3 3 0x03 0x733 0x633
+  cc.py uds_fuzz seed_randomness_fuzzer 100311022701 0x733 0x633 -d 4 -r 1 -id 2 -m 0
   cc.py uds_fuzz delay_fuzzer 100311022701 0x03 0x733 0x633""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
@@ -228,7 +223,7 @@ def __parse_args(args):
     parser_delay_fuzzer = subparsers.add_parser("delay_fuzzer")
     parser_delay_fuzzer.add_argument("sess_type", metavar="stype",
                                 help="Describe the session sequence followed by "
-                                     "the trarget ECU."
+                                     "the target ECU."
                                      "e.g. if the following sequence is needed in order to request a seed: "
                                      "Request 1 - 0310030000000000, "
                                      "Request 2 - 0311020000000000, "
@@ -267,12 +262,12 @@ def __parse_args(args):
     parser_randomness_fuzzer = subparsers.add_parser("seed_randomness_fuzzer")
     parser_randomness_fuzzer.add_argument("sess_type", metavar="stype",
                                 help="Describe the session sequence followed by "
-                                     "the trarget ECU."
+                                     "the target ECU."
                                      "e.g. if the following sequence is needed in order to request a seed: "
-                                     "Request 1 - 0310030000000000, "
-                                     "Request 2 - 0311020000000000, "
-                                     "Request 3 - 0310050000000000, "
-                                     "Request 4 - 0327050000000000. "
+                                     "Request 1 - 1003 (Diagnostic Session Control), "
+                                     "Request 2 - 1102 (ECUReset), "
+                                     "Request 3 - 1005 (Diagnostic Session Control), "
+                                     "Request 4 - 2705 (Security Access Seed Request). "
                                      "The option should be: 1003110210052705\n")
     parser_randomness_fuzzer.add_argument("src",
                                 type=parse_int_dec_or_hex,

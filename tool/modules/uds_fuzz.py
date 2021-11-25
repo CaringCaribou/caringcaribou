@@ -194,8 +194,8 @@ def delay_fuzzer(args):
 
 
 def str_to_hex(i, session_type):
-    max = i + 3
-    if len(session_type) >= max:
+    max_index = i + 3
+    if len(session_type) >= max_index:
         session = []
         session.append('0x')
         session.append(session_type[i + 2])

@@ -96,7 +96,7 @@ Fuzzing module for UDS security seed randomness evaluation and testing.
 - seed_randomness_fuzzer - ECUReset method fuzzing for seed randomness evaluation
 - delay_fuzzer - delay fuzzing for targets with weak randomness implemented, to match acquired seed/key pair to the delay in which the seed can be requested
 
-Details here: [uds_fuzz module](documentation/usd_fuzz.md)
+Details here: [uds_fuzz module](documentation/uds_fuzz.md)
 
 ## List of libraries
 The `/lib` folder contains the following libraries:

@@ -91,6 +91,13 @@ Runs automated Caring Caribou test suites
 
 Details here: [dcm module](documentation/dcm.md)
 
+### uds_fuzz - Universal Diagnostic Services Fuzzer
+Fuzzing module for UDS security seed randomness evaluation and testing.
+- seed_randomness_fuzzer - ECUReset method fuzzing for seed randomness evaluation
+- delay_fuzzer - delay fuzzing for targets with weak randomness implemented, to match acquired seed/key pair to the delay in which the seed can be requested
+
+Details here: [uds_fuzz module](documentation/usd_fuzz.md)
+
 ## List of libraries
 The `/lib` folder contains the following libraries:
 
@@ -142,3 +149,4 @@ The target ECU used for the development setup is an STM32F107 based dev-board fr
 * sigttou
 * FearfulSpoon
 * Alex DeTrano
+* Thomas Sermpinis

@@ -706,7 +706,7 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
 def __parse_args(args):
     """Parser for module arguments"""
     parser = argparse.ArgumentParser(
-                prog="cc.py uds",
+                prog="cc.py doip",
                 formatter_class=argparse.RawDescriptionHelpFormatter,
                 description="DoIP module for "
                 "CaringCaribou",

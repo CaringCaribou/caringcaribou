@@ -98,8 +98,8 @@ Fuzzing module for UDS security seed randomness evaluation and testing.
 
 Details here: [uds_fuzz module](documentation/uds_fuzz.md)
 
-### DoIP - Diagnostic communication over Internet Protocol
-Discovers and utilizes various ISO 14229-1 services.
+### doip - Diagnostic communication over Internet Protocol
+Discovers and utilizes various ISO 13400-2 services.
 - discovery - Scans for ECUs supporting diagnostics services
 - services - Scans for diagnostics services supported by an ECU
 - ecu_reset - Reset an ECU

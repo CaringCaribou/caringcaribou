@@ -10,11 +10,13 @@ Supported modes:
 * security_seed - Request security seeds from an ECU
 * dump_dids - Dump data identifiers with the read_data_by_identifier UDS service
 * testerpresent - Force an elevated diagnostics session against an ECU to stay active
+* seed_randomness_fuzzer - ECUReset method fuzzing for seed randomness evaluation
 
 As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific mode by specifying the mode followed by `-h`, e.g. `./cc.py doip discovery -h` or `./cc.py doip testerpresent -h`
 
 ```
 $ ./cc.py doip -h
+
 
 -------------------
 CARING CARIBOU v0.3
@@ -22,12 +24,12 @@ CARING CARIBOU v0.3
 
 Loaded module 'doip'
 
-usage: cc.py doip [-h] {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids} ...
+usage: cc.py doip [-h] {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids,seed_randomness_fuzzer} ...
 
 DoIP module for CaringCaribou
 
 positional arguments:
-  {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids}
+  {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids,seed_randomness_fuzzer}
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -42,6 +44,7 @@ Example usage:
   cc.py doip security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
   cc.py doip dump_dids 0x733 0x633
   cc.py doip dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1
+  cc.py doip seed_randomness_fuzzer 2 2 0x733 0x633 -m 1 -t 10 -d 50 -id 4
 ```
 
 ## Discovery
@@ -170,4 +173,40 @@ optional arguments:
   -t T, --timeout T  wait T seconds for response before timeout
   --min_did MIN_DID  minimum device identifier (DID) to read (default: 0x0000)
   --max_did MAX_DID  maximum device identifier (DID) to read (default: 0xFFFF)
+```
+
+## Seed Randomness Fuzzer
+Requests a security seed after a Hard ECUReset, using the supplied request sequence, to check for duplicate seeds. 
+
+In case that duplicate seeds are found by the tool, it means that the ECU is potentially  vulnerable and uses weak random number generation seeded by the system timer.
+
+```
+$ ./cc.py doip seed_randomness_fuzzer -h
+
+-------------------
+CARING CARIBOU v0.3
+-------------------
+
+Loaded module 'doip'
+
+usage: cc.py doip seed_randomness_fuzzer [-h] [-t ITERATIONS] [-r RTYPE] [-id RTYPE] [-m RMETHOD] [-d D] stype level src dst
+
+positional arguments:
+  stype                 Session Type: 1=defaultSession 2=programmingSession 3=extendedSession 4=safetySession
+  level                 Security level: [0x1-0x41 (odd only)]=OEM 0x5F=EOLPyrotechnics [0x61-0x7E]=Supplier [0x0, 0x43-0x5E, 0x7F]=ISOSAEReserved
+  src                   arbitration ID to transmit to
+  dst                   arbitration ID to listen to
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t ITERATIONS, --iter ITERATIONS
+                        Number of iterations of seed requests. It is highly suggested to perform >=1000 for accurate results. (default: 1000)
+  -r RTYPE, --reset RTYPE
+                        Enable reset between security seed requests. Valid RTYPE integers are: 1=hardReset, 2=key off/on, 3=softReset, 4=enable rapid power shutdown, 5=disable rapid power shutdown. This attack is based on hard
+                        ECUReset (1) as it targets seed randomness based on the system clock. (default: hardReset)
+  -id RTYPE, --inter_delay RTYPE
+                        Intermediate delay between messages:(default: 0.1)
+  -m RMETHOD, --reset_method RMETHOD
+                        The method that the ECUReset will happen: 1=before each seed request 0=once before the seed requests start (default: 1) *This method works better with option 1.*
+  -d D, --delay D       Wait D seconds between reset and security seed request. You'll likely need to increase this when using RTYPE: 1=hardReset. Does nothing if RTYPE is None. (default: 3.901)
 ```

@@ -106,6 +106,7 @@ Discovers and utilizes various ISO 13400-2 services.
 - security_seed - Request security seeds from an ECU
 - testerpresent - Force an elevated session against an ECU to stay active
 - dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
+- seed_randomness_fuzzer - ECUReset method fuzzing for seed randomness evaluation
 
 Details here: [doip module](documentation/doip.md)
 

@@ -69,6 +69,10 @@ DUMP_DID_MIN = 0x0000
 DUMP_DID_MAX = 0xFFFF
 DUMP_DID_TIMEOUT = 0.2
 
+# Diagnostic Message payload type - see Table 21 "Payload type diagnostic message structure"
+# https://python-doipclient.readthedocs.io/en/latest/messages.html
+PAYLOAD_TYPE = 0x8001
+
 class DevNull:
     # Supress errors solution: 
     # https://stackoverflow.com/questions/5925918/python-suppressing-errors-from-going-to-commandline
@@ -124,7 +128,6 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
     :type blacklist_args: [int]
     :type auto_blacklist_duration: float
     :type delay: float
-    :type verify: bool
     :type print_results: bool
     :return: list of (client_arbitration_id, server_arbitration_id) pairs
     :rtype [(int, int)]
@@ -312,21 +315,19 @@ def service_discovery(arb_id_request, arb_id_response, timeout,
             
             doip_message = struct.pack("!HH", arb_id_response, arb_id_request) + s[:1] + b'\x00'
             
-            payload_type = 0x8001
-            
             try:
                 with Client(conn, request_timeout = timeout) as client:
                     extended_session(client, session_type = 3)
                     
-                    doip_client.send_doip(payload_type, doip_message)
+                    doip_client.send_doip(PAYLOAD_TYPE, doip_message)
                     response = doip_client.receive_diagnostic(timeout)
                     
                     doip_client.close()
                     
-                    if response[2] == 17 or response is None:
+                    if response[2] == NegativeResponseCodes.SERVICE_NOT_SUPPORTED or response is None:
                         continue
                     
-                    if response[2] == 18 or response[2] == 19:
+                    if response[2] == NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED or response[2] == NegativeResponseCodes.INCORRECT_MESSAGE_LENGTH_OR_INVALID_FORMAT:
                         response_id = service_id
                         response_service_id = response[2]
                         status = response[2]
@@ -632,7 +633,7 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                     extended_session(client, session_type = 3)
                     response = client.read_data_by_identifier(identifier)  
 
-                if response.positive == True:
+                if response.positive:
                     responses.append((identifier, response.data))
                     if print_results:
                         print('0x{:04x}'.format(identifier), list_to_hex_str(response))
@@ -663,7 +664,6 @@ def seed_randomness_fuzzer(args):
     """Wrapper used to initiate security randomness fuzzer"""
     arb_id_request = args.src
     arb_id_response = args.dst
-    reset_type = args.reset
     session_type = args.sess_type
     security_level = args.sec_level
     iterations = args.iter

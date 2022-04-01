@@ -98,6 +98,18 @@ Fuzzing module for UDS security seed randomness evaluation and testing.
 
 Details here: [uds_fuzz module](documentation/uds_fuzz.md)
 
+### doip - Diagnostic communication over Internet Protocol
+Discovers and utilizes various ISO 13400-2 services.
+- discovery - Scans for ECUs supporting diagnostics services
+- services - Scans for diagnostics services supported by an ECU
+- ecu_reset - Reset an ECU
+- security_seed - Request security seeds from an ECU
+- testerpresent - Force an elevated session against an ECU to stay active
+- dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
+- seed_randomness_fuzzer - ECUReset method fuzzing for seed randomness evaluation
+
+Details here: [doip module](documentation/doip.md)
+
 ## List of libraries
 The `/lib` folder contains the following libraries:
 

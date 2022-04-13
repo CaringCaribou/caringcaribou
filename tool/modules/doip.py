@@ -659,43 +659,32 @@ def seed_randomness_fuzzer(args):
         print("Security seed dump started. Press Ctrl+C if you need to stop.\n")
         for _ in range(iterations):
             try:
-                doip_client = DoIPClient(ip, logical_address, client_logical_address=arb_id_response)
-                conn = DoIPClientUDSConnector(doip_client)
+                with DoIPClient(ip, logical_address, client_logical_address=arb_id_response) as doip_client:
+                    conn = DoIPClientUDSConnector(doip_client)
 
-                with Client(conn) as client:
-                    extended_session(client, session_type)
+                    with Client(conn) as client:
+                        extended_session(client, session_type)
 
-                    time.sleep(inter)
+                        time.sleep(inter)
 
-                    seed = client.request_seed(security_level)
-                    seed = seed.data
-                    seed_list.append(list_to_hex_str(seed))
-
-                print("Seed received: ", "".join("{:02x}".format(x) for x in seed))
-
-                doip_client.close()
-
-                doip_client = DoIPClient(ip, logical_address, client_logical_address=arb_id_response)
-                conn = DoIPClientUDSConnector(doip_client)
-                with Client(conn) as client:
+                        seed_response = client.request_seed(security_level)
+                        seed_hex_str = list_to_hex_str(seed_response).data
+                        seed_list.append(seed_hex_str)
+                        print("Seed received: {0}".format(seed_hex_str))
                     ecu_reset(client, reset_type)
-                    doip_client.close()
 
                 time.sleep(reset_delay)
 
             except TimeoutError:
                 print("Timeout Error Exception: You may need to increase the intermediate delay (-id).")
                 time.sleep(0.5)
-                doip_client.close()
                 continue
             except NegativeResponseException:
                 time.sleep(0.5)
-                doip_client.close()
                 continue
             except ConnectionRefusedError:
                 print("Connection Refused Error: You may need to increase the reset delay (-d).")
                 time.sleep(0.5)
-                doip_client.close()
                 continue
 
     except KeyboardInterrupt:

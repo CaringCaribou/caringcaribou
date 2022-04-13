@@ -156,9 +156,9 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
         raise ValueError("auto_blacklist_duration must not be smaller "
                          "than 0, got {0}'".format(auto_blacklist_duration))
 
-    S_DSC = Services.DiagnosticSessionControl
-    service_id = S_DSC.service_id
-    sub_function = S_DSC.DiagnosticSessionType.DEFAULT_SESSION
+    diagnostic_session_control = Services.DiagnosticSessionControl
+    service_id = diagnostic_session_control.service_id
+    sub_function = diagnostic_session_control.DiagnosticSessionType.DEFAULT_SESSION
     session_control_data = [service_id, sub_function]
 
     valid_session_control_responses = [0x50, 0x7F]
@@ -768,9 +768,7 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
             for identifier in range(min_did, max_did + 1):
                 response = uds.read_data_by_identifier(identifier=[identifier])
 
-                # Keep the response if we get a positive response
-                # otherwise ignore negative responses
-                # negative responses look like 7f 22 <NRC>
+                # Only keep positive responses
                 if response and Iso14229_1.is_positive_response(response):
                     responses.append((identifier, response))
                     if print_results:

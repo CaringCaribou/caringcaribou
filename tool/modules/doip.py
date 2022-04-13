@@ -14,7 +14,6 @@ import time
 import sys
 import struct
 
-
 # Handle large ranges efficiently in both python 2 and 3
 if version_info[0] == 2:
     range = xrange
@@ -73,12 +72,13 @@ DUMP_DID_TIMEOUT = 0.2
 # https://python-doipclient.readthedocs.io/en/latest/messages.html
 PAYLOAD_TYPE = 0x8001
 
+
 class DevNull:
     # Supress errors solution: 
     # https://stackoverflow.com/questions/5925918/python-suppressing-errors-from-going-to-commandline
-    
     def write(self, msg):
         pass
+
 
 # Duplicate testing from https://www.iditect.com/guide/python/python_howto_find_the_duplicates_in_a_list.html
 def find_duplicates(sequence):
@@ -86,6 +86,7 @@ def find_duplicates(sequence):
     first_seen_add = first_seen.add
     duplicates = set(i for i in sequence if i in first_seen or first_seen_add(i))
     return duplicates
+
 
 def ecu_reset(client, reset_type):
     if reset_type == 1:
@@ -99,6 +100,7 @@ def ecu_reset(client, reset_type):
     elif reset_type == 5:
         client.ecu_reset(ECUReset.ResetType.disableRapidPowerShutDown)
 
+
 def extended_session(client, session_type):
     if session_type == 1:
         client.change_session(DiagnosticSessionControl.Session.defaultSession)
@@ -108,6 +110,7 @@ def extended_session(client, session_type):
         client.change_session(DiagnosticSessionControl.Session.extendedDiagnosticSession)
     elif session_type == 4:
         client.change_session(DiagnosticSessionControl.Session.safetySystemDiagnosticSession)
+
 
 def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
                   delay, print_results=True):
@@ -149,12 +152,9 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
 
     # Sanity checks
     if max_id < min_id:
-        raise ValueError("max_id must not be smaller than min_id -"
-                         " got min:0x{0:x}, max:0x{1:x}".format(
-                          min_id, max_id))
+        raise ValueError("max_id must not be smaller than min_id - got min:0x{0:x}, max:0x{1:x}".format(min_id, max_id))
     if auto_blacklist_duration < 0:
-        raise ValueError("auto_blacklist_duration must not be smaller "
-                         "than 0, got {0}'".format(auto_blacklist_duration))
+        raise ValueError("auto_blacklist_duration must not be smaller than 0, got {0}'".format(auto_blacklist_duration))
     elif auto_blacklist_duration > 0:
         timeout = auto_blacklist_duration
     else:
@@ -171,49 +171,48 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
     address, announcement = DoIPClient.await_vehicle_announcement()
     logical_address = announcement.logical_address
     ip, port = address
-    print("ECU IP and port found: ", ip, ",", port,"\nECU Logical Address Found: ", hex(logical_address), "\n")
+    print("ECU IP and port found: ", ip, ",", port, "\nECU Logical Address Found: ", hex(logical_address), "\n")
 
     print("Searching for Client Node ID\n")
 
-    clientid_status = 0
+    client_id_status = 0
     while send_arb_id < max_id:
 
-         
         send_arb_id += 1
         if print_results:
             print("\rSending Diagnostic Session Control to 0x{0:04x}"
-                    .format(send_arb_id), end="")
-        
+                  .format(send_arb_id), end="")
+
         try:
             if send_arb_id in blacklist:
                 # Ignore blacklisted arbitration IDs
                 continue
 
-            if clientid_status == 0:
-                doip_client = DoIPClient(ip, logical_address, client_logical_address  = send_arb_id )
+            if client_id_status == 0:
+                doip_client = DoIPClient(ip, logical_address, client_logical_address=send_arb_id)
             else:
-                doip_client = DoIPClient(ip, send_arb_id, client_logical_address = client_logical_address )
+                doip_client = DoIPClient(ip, send_arb_id, client_logical_address=client_logical_address)
 
             conn = DoIPClientUDSConnector(doip_client)
-            with Client(conn, request_timeout = timeout) as client:
+            with Client(conn, request_timeout=timeout) as client:
                 response = client.change_session(DiagnosticSessionControl.Session.defaultSession)
-            if response.positive == True:
+            if response.positive:
                 print("\n\nFound diagnostics server "
-                                "listening at 0x{0:04x}, "
-                                "response at 0x{1:04x}"
-                                .format(logical_address, send_arb_id))
+                      "listening at 0x{0:04x}, "
+                      "response at 0x{1:04x}"
+                      .format(logical_address, send_arb_id))
                 found_arb_id_pair = (logical_address, send_arb_id)
                 found_arbitration_ids.append(found_arb_id_pair)
 
-                if clientid_status == 0:
-                    clientid_status = 1
+                if client_id_status == 0:
+                    client_id_status = 1
                     client_logical_address = send_arb_id
                     send_arb_id = min_id - 1
                     print("\nSearching for Server Node ID\n")
                 else:
                     continue
             else:
-                blacklist.append(send_arb_id)
+                blacklist.add(send_arb_id)
 
         except KeyboardInterrupt:
             return found_arbitration_ids
@@ -227,12 +226,11 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
         except TimeoutError:
             sys.stderr = DevNull()
             continue
-            
+
         except OSError:
             print("Please check the connection and try again.\n")
-            
-    return found_arbitration_ids
 
+    return found_arbitration_ids
 
 
 def __uds_discovery_wrapper(args):
@@ -287,7 +285,7 @@ def service_discovery(arb_id_request, arb_id_response, timeout,
     :rtype [int]
     """
     found_services = []
-    
+
     print("Waiting for Vehicle Identification Announcement\n")
     print("Power cycle your ECU and wait for a few seconds for the broadcast to be received\n")
     address, announcement = DoIPClient.await_vehicle_announcement()
@@ -295,39 +293,39 @@ def service_discovery(arb_id_request, arb_id_response, timeout,
     ip, port = address
 
     print("Discovering Services\n")
-    
-    
+
     try:
-    
+
         for service_id in range(min_id, max_id + 1):
-                        
+
             if print_results:
                 print("\rProbing service 0x{0:02x} ({0}/{1}): found {2}"
-                    .format(service_id, max_id, len(found_services)),
-                    end="")
+                      .format(service_id, max_id, len(found_services)),
+                      end="")
             stdout.flush()
-            
-            doip_client = DoIPClient(ip, logical_address, client_logical_address  = arb_id_response )
-        
+
+            doip_client = DoIPClient(ip, logical_address, client_logical_address=arb_id_response)
+
             conn = DoIPClientUDSConnector(doip_client)
-            
-            s = struct.pack('<h', service_id) 
-            
-            doip_message = struct.pack("!HH", arb_id_response, arb_id_request) + s[:1] + b'\x00'
-            
+
+            s = struct.pack("<h", service_id)
+
+            doip_message = struct.pack("!HH", arb_id_response, arb_id_request) + s[:1] + b"\x00"
+
             try:
-                with Client(conn, request_timeout = timeout) as client:
-                    extended_session(client, session_type = 3)
-                    
+                with Client(conn, request_timeout=timeout) as client:
+                    extended_session(client, session_type=3)
+
                     doip_client.send_doip(PAYLOAD_TYPE, doip_message)
                     response = doip_client.receive_diagnostic(timeout)
-                    
+
                     doip_client.close()
-                    
-                    if response[2] == NegativeResponseCodes.SERVICE_NOT_SUPPORTED or response is None:
+
+                    if response is None or response[2] == NegativeResponseCodes.SERVICE_NOT_SUPPORTED:
                         continue
-                    
-                    if response[2] == NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED or response[2] == NegativeResponseCodes.INCORRECT_MESSAGE_LENGTH_OR_INVALID_FORMAT:
+
+                    if response[2] == NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED or \
+                            response[2] == NegativeResponseCodes.INCORRECT_MESSAGE_LENGTH_OR_INVALID_FORMAT:
                         response_id = service_id
                         response_service_id = response[2]
                         status = response[2]
@@ -337,7 +335,7 @@ def service_discovery(arb_id_request, arb_id_response, timeout,
                         elif status != NegativeResponseCodes.SERVICE_NOT_SUPPORTED:
                             # Any other response than "service not supported" counts
                             found_services.append(response_service_id)
-                    
+
             except ConfigError:
                 sys.stderr = DevNull()
                 time.sleep(3)
@@ -349,29 +347,19 @@ def service_discovery(arb_id_request, arb_id_response, timeout,
             except IndexError:
                 sys.stderr = DevNull()
                 continue
-                
+
         if print_results:
             print("\nDone!")
-            
-        
+
     except KeyboardInterrupt:
         if print_results:
             print("\nInterrupted by user!\n")
         return found_services
-            
-    except ConnectionRefusedError:
+
+    except (ConnectionRefusedError, ConnectionResetError, TimeoutError, OSError):
         print("Please check the connection and try again.\n")
 
-    except ConnectionResetError:
-        print("Please check the connection and try again.\n")
-        
-    except TimeoutError:
-        print("Please check the connection and try again.\n")
-        
-    except OSError:
-        print("Please check the connection and try again.\n")
-        
-    return found_services 
+    return found_services
 
 
 def __service_discovery_wrapper(args):
@@ -384,10 +372,8 @@ def __service_discovery_wrapper(args):
                                        arb_id_response, timeout)
     # Print results
     for service_id in found_services:
-        service_name = UDS_SERVICE_NAMES.get(service_id, "Unknown service")
-        print("Supported service 0x{0:02x}: {1}"
-              .format(service_id, service_name))
-
+        service_id_name = UDS_SERVICE_NAMES.get(service_id, "Unknown service")
+        print("Supported service 0x{0:02x}: {1}".format(service_id, service_id_name))
 
 
 def tester_present(arb_id_request, arb_id_response, delay, duration):
@@ -417,13 +403,13 @@ def tester_present(arb_id_request, arb_id_response, delay, duration):
     address, announcement = DoIPClient.await_vehicle_announcement()
     logical_address = arb_id_request
     ip, port = address
-    
-    doip_client = DoIPClient(ip, logical_address, client_logical_address = arb_id_response)
+
+    doip_client = DoIPClient(ip, logical_address, client_logical_address=arb_id_response)
     conn = DoIPClientUDSConnector(doip_client)
-    with Client(conn,  request_timeout = 5) as client:
+    with Client(conn, request_timeout=5) as client:
         counter = 1
         print("Sending TesterPresent to arbitration ID {0} (0x{0:02x})"
-            .format(arb_id_request))
+              .format(arb_id_request))
         print("\nPress Ctrl+C to stop\n")
         while True:
             client.tester_present()
@@ -442,7 +428,6 @@ def __tester_present_wrapper(args):
     delay = args.delay
     duration = args.duration
 
-
     tester_present(arb_id_request, arb_id_response, delay, duration)
 
 
@@ -452,24 +437,22 @@ def __ecu_reset_wrapper(args):
     reset_type = args.reset_type
 
     if not 1 <= reset_type <= 5:
-        raise ValueError("reset type must be within interval "
-                         "0x01-0x05")
-    
-    print("Sending ECU reset, type 0x{0:02x} to arbitration ID  "
-          "(0x{1:02x})".format(reset_type, logical_address))
+        raise ValueError("reset type must be within interval 0x01-0x05")
+
+    print("Sending ECU reset, type 0x{0:02x} to arbitration ID 0x{1:02x}".format(reset_type, logical_address))
     try:
         print("\nWaiting for Vehicle Identification Announcement\n")
         print("Power cycle your ECU and wait for a few seconds for the broadcast to be received\n")
         address, announcement = DoIPClient.await_vehicle_announcement()
         ip, port = address
-        
-        doip_client = DoIPClient(ip, logical_address, client_logical_address = args.dst)
+
+        doip_client = DoIPClient(ip, logical_address, client_logical_address=args.dst)
         conn = DoIPClientUDSConnector(doip_client)
-        with Client(conn,  request_timeout = 5) as client:
+        with Client(conn, request_timeout=5) as client:
             ecu_reset(client, reset_type)
-        
+
         print(doip_client.request_entity_status())
-        
+
     except ConnectionRefusedError:
         print("Connection Refused: Please check the connection and try again.\n")
 
@@ -478,11 +461,10 @@ def __ecu_reset_wrapper(args):
 
     except TimeoutError:
         print("Timeout Error: Please check the connection and try again.\n")
-        
+
     except OSError:
         print("OSError: Please check the connection and try again.\n")
-            
-   
+
 
 def __security_seed_wrapper(args):
     """Wrapper used to initiate security seed dump"""
@@ -495,48 +477,48 @@ def __security_seed_wrapper(args):
     reset_delay = args.delay
 
     seed_list = []
-    
+
     print("\nWaiting for Vehicle Identification Announcement\n")
     print("Power cycle your ECU and wait for a few seconds for the broadcast to be received\n")
     address, announcement = DoIPClient.await_vehicle_announcement()
     logical_address = arb_id_request
     ip, port = address
-    
+
     try:
-        
-        doip_client = DoIPClient(ip, logical_address, client_logical_address = arb_id_response)
+
+        doip_client = DoIPClient(ip, logical_address, client_logical_address=arb_id_response)
         conn = DoIPClientUDSConnector(doip_client)
-        
+
         print("Security seed dump started. Press Ctrl+C to stop.\n")
         with Client(conn) as client:
             while num_seeds > len(seed_list) or num_seeds == 0:
                 # Diagnostics Session Control
                 try:
                     extended_session(client, session_type)
-                
+
                 except InvalidResponseException:
                     print("Unable to enter extended session. Retrying...\n")
                     continue
                 try:
                     # Request seed
                     response = client.request_seed(level)
-                    
+
                     if response is None:
                         print("\nInvalid response")
                     elif response.data:
                         seed_list.append(response.data)
                         print("Seed received: {}\t(Total captured: {})"
-                            .format(response.data,
-                                    len(seed_list)), end="\r")
+                              .format(response.data,
+                                      len(seed_list)), end="\r")
                         stdout.flush()
-                    
+
                     if reset_type:
                         ecu_reset(client, reset_type)
                         time.sleep(reset_delay)
-                        
+
                 except NegativeResponseException:
                     break
-                
+
     except KeyboardInterrupt:
         print("Interrupted by user.")
     except ValueError as e:
@@ -547,10 +529,10 @@ def __security_seed_wrapper(args):
 
     except ConnectionResetError:
         print("Please check the connection and try again.\n")
-        
+
     except TimeoutError:
         print("Please check the connection and try again.\n")
-        
+
     except OSError:
         print("Please check the connection and try again.\n")
 
@@ -558,8 +540,7 @@ def __security_seed_wrapper(args):
         print("\n")
         print("Security Access Seeds captured:")
         for seed in seed_list:
-            print(''.join('{:02x}'.format(x) for x in seed))
-
+            print("".join("{:02x}".format(x) for x in seed))
 
 
 def __dump_dids_wrapper(args):
@@ -573,7 +554,7 @@ def __dump_dids_wrapper(args):
     dump_dids(arb_id_request, arb_id_response, timeout, min_did, max_did,
               print_results)
 
-    
+
 def dump_dids(arb_id_request, arb_id_response, timeout,
               min_did=DUMP_DID_MIN, max_did=DUMP_DID_MAX, print_results=True):
     """
@@ -604,9 +585,8 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                          .format(timeout))
 
     if max_did < min_did:
-        raise ValueError("max_did must not be smaller than min_did -"
-                         " got min:0x{0:x}, max:0x{1:x}".format(
-                          min_did, max_did))
+        raise ValueError("max_did must not be smaller than min_did - got min:0x{0:x}, max:0x{1:x}".format(
+            min_did, max_did))
 
     responses = []
     print("Waiting for Vehicle Identification Announcement\n")
@@ -616,46 +596,40 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
     ip, port = address
 
     print("Discovering DIDs\n")
-    
+
     try:
-    
-        doip_client = DoIPClient(ip, logical_address, client_logical_address  = arb_id_response )
-        
+        doip_client = DoIPClient(ip, logical_address, client_logical_address=arb_id_response)
         conn = DoIPClientUDSConnector(doip_client)
         if print_results:
-            print('Dumping DIDs in range 0x{:04x}-0x{:04x}\n'.format(
-                min_did, max_did))
-            print('Identified DIDs:')
-            print('DID    Value (hex)')
+            print("Dumping DIDs in range 0x{:04x}-0x{:04x}\n".format(min_did, max_did))
+            print("Identified DIDs:")
+            print("DID    Value (hex)")
         for identifier in range(min_did, max_did + 1):
             try:
-                with Client(conn, request_timeout = timeout) as client:
-                    extended_session(client, session_type = 3)
-                    response = client.read_data_by_identifier(identifier)  
+                with Client(conn, request_timeout=timeout) as client:
+                    extended_session(client, session_type=3)
+                    response = client.read_data_by_identifier(identifier)
 
                 if response.positive:
                     responses.append((identifier, response.data))
                     if print_results:
-                        print('0x{:04x}'.format(identifier), list_to_hex_str(response))
+                        print("0x{:04x}".format(identifier), list_to_hex_str(response))
             except ConfigError:
                 sys.stderr = DevNull()
                 continue
         if print_results:
             print("\nDone!")
-            
         return responses
-    
-    
-        
+
     except ConnectionRefusedError:
         print("Please check the connection and try again.\n")
 
     except ConnectionResetError:
         print("Please check the connection and try again.\n")
-        
+
     except TimeoutError:
         print("Please check the connection and try again.\n")
-        
+
     except OSError:
         print("Please check the connection and try again.\n")
 
@@ -683,26 +657,25 @@ def seed_randomness_fuzzer(args):
 
         # Issue first reset with the supplied delay time
         print("Security seed dump started. Press Ctrl+C if you need to stop.\n")
-        for i in range(iterations):
+        for _ in range(iterations):
             try:
-                doip_client = DoIPClient(ip, logical_address, client_logical_address = arb_id_response)
+                doip_client = DoIPClient(ip, logical_address, client_logical_address=arb_id_response)
                 conn = DoIPClientUDSConnector(doip_client)
-                
+
                 with Client(conn) as client:
                     extended_session(client, session_type)
-                    
+
                     time.sleep(inter)
 
-                    
                     seed = client.request_seed(security_level)
                     seed = seed.data
                     seed_list.append(list_to_hex_str(seed))
 
-                print('Seed received: ', ''.join('{:02x}'.format(x) for x in seed))
+                print("Seed received: ", "".join("{:02x}".format(x) for x in seed))
 
                 doip_client.close()
 
-                doip_client = DoIPClient(ip, logical_address, client_logical_address = arb_id_response)
+                doip_client = DoIPClient(ip, logical_address, client_logical_address=arb_id_response)
                 conn = DoIPClientUDSConnector(doip_client)
                 with Client(conn) as client:
                     ecu_reset(client, reset_type)
@@ -715,7 +688,6 @@ def seed_randomness_fuzzer(args):
                 time.sleep(0.5)
                 doip_client.close()
                 continue
-
             except NegativeResponseException:
                 time.sleep(0.5)
                 doip_client.close()
@@ -745,11 +717,11 @@ def seed_randomness_fuzzer(args):
 def __parse_args(args):
     """Parser for module arguments"""
     parser = argparse.ArgumentParser(
-                prog="cc.py doip",
-                formatter_class=argparse.RawDescriptionHelpFormatter,
-                description="DoIP module for "
-                "CaringCaribou",
-                epilog="""Example usage:
+        prog="cc.py doip",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="DoIP module for "
+                    "CaringCaribou",
+        epilog="""Example usage:
   cc.py doip discovery
   cc.py doip discovery -blacklist 0x123 0x456
   cc.py doip discovery -autoblacklist 10
@@ -801,7 +773,7 @@ def __parse_args(args):
                              type=float, default=TIMEOUT_SERVICES,
                              help="wait T seconds for response before "
                                   "timeout (default: {0})"
-                                  .format(TIMEOUT_SERVICES))
+                             .format(TIMEOUT_SERVICES))
     parser_info.set_defaults(func=__service_discovery_wrapper)
 
     # Parser for ECU Reset
@@ -872,7 +844,7 @@ def __parse_args(args):
                                      "need to increase this when using RTYPE: "
                                      "1=hardReset. Does nothing if RTYPE "
                                      "is None. (default: {0})"
-                                     .format(DELAY_SECSEED_RESET))
+                                .format(DELAY_SECSEED_RESET))
     parser_secseed.add_argument("-n", "--num", metavar="NUM", default=0,
                                 type=parse_int_dec_or_hex,
                                 help="Specify a positive number of security"
@@ -907,17 +879,17 @@ def __parse_args(args):
     # Parser for Delay fuzz testing
     parser_randomness_fuzzer = subparsers.add_parser("seed_randomness_fuzzer")
     parser_randomness_fuzzer.add_argument("sess_type", metavar="stype",
-                                type=parse_int_dec_or_hex,
-                                help="Session Type: 1=defaultSession "
-                                     "2=programmingSession 3=extendedSession "
-                                     "4=safetySession ")
+                                          type=parse_int_dec_or_hex,
+                                          help="Session Type: 1=defaultSession "
+                                               "2=programmingSession 3=extendedSession "
+                                               "4=safetySession ")
     parser_randomness_fuzzer.add_argument("sec_level", metavar="level",
-                                type=parse_int_dec_or_hex,
-                                help="Security level: "
-                                     "[0x1-0x41 (odd only)]=OEM "
-                                     "0x5F=EOLPyrotechnics "
-                                     "[0x61-0x7E]=Supplier "
-                                     "[0x0, 0x43-0x5E, 0x7F]=ISOSAEReserved")
+                                          type=parse_int_dec_or_hex,
+                                          help="Security level: "
+                                               "[0x1-0x41 (odd only)]=OEM "
+                                               "0x5F=EOLPyrotechnics "
+                                               "[0x61-0x7E]=Supplier "
+                                               "[0x0, 0x43-0x5E, 0x7F]=ISOSAEReserved")
     parser_randomness_fuzzer.add_argument("src",
                                           type=parse_int_dec_or_hex,
                                           help="arbitration ID to transmit to")

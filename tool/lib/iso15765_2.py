@@ -1,8 +1,9 @@
-from lib.can_actions import DEFAULT_INTERFACE
-from lib.constants import ARBITRATION_ID_MAX_EXTENDED, ARBITRATION_ID_MAX
+from lib.can_actions import DEFAULT_INTERFACE, windows
+from lib.constants import ARBITRATION_ID_MAX_EXTENDED, ARBITRATION_ID_MAX,pad
 import can
 import datetime
 import time
+from can.interfaces.pcan import PcanBus
 
 
 class IsoTp:
@@ -37,7 +38,9 @@ class IsoTp:
     def __init__(self, arb_id_request, arb_id_response, bus=None):
         # Setting default bus to None rather than the actual bus prevents a CanError when
         # called with a virtual CAN bus, while the OS is lacking a working CAN interface
-        if bus is None:
+        if windows:
+            self.bus = PcanBus()
+        elif bus is None:
             self.bus = can.Bus(DEFAULT_INTERFACE)
         else:
             self.bus = bus
@@ -79,6 +82,8 @@ class IsoTp:
         :return: None
         """
         is_extended = force_extended or arbitration_id > ARBITRATION_ID_MAX
+        if pad:
+            data+=[0]*(8-len(data))
         msg = can.Message(arbitration_id=arbitration_id, data=data, is_extended_id=is_extended)
         self.bus.send(msg)
 

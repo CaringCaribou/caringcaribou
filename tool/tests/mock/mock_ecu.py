@@ -1,6 +1,7 @@
 from __future__ import print_function
-from lib.can_actions import DEFAULT_INTERFACE
+from lib.can_actions import DEFAULT_INTERFACE, windows
 import can
+from can.interfaces.pcan import PcanBus
 
 
 class MockEcu:
@@ -10,7 +11,9 @@ class MockEcu:
 
     def __init__(self, bus=None):
         self.message_process = None
-        if bus is None:
+        if windows:
+            self.bus = PcanBus()
+        elif bus is None:
             self.bus = can.Bus(DEFAULT_INTERFACE)
         else:
             self.bus = bus

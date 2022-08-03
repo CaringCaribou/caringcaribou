@@ -70,6 +70,12 @@ def parse_arguments():
                                      epilog=available_modules())
     parser.add_argument("-i", dest="interface", default=None,
                         help="force interface, e.g. 'can1' or 'vcan0'")
+    parser.add_argument("-p", dest="pad", default=None,
+                        help="pad messages with 0s")
+    parser.add_argument("-w", dest="windows", default=None,
+                        help="set bus to PcanBus (works on windows)")
+    parser.add_argument("-fd", dest="canfd", default=None,
+                        help="set bus to CAN-FD mode")
     parser.add_argument("module",
                         help="Name of the module to run")
     parser.add_argument("module_args", metavar="...", nargs=argparse.REMAINDER,
@@ -108,6 +114,12 @@ def main():
     # Save interface to can_actions, for use in modules
     if args.interface:
         lib.can_actions.DEFAULT_INTERFACE = args.interface
+    if args.pad:
+        lib.can_actions.pad = args.pad
+    if args.windows:
+        lib.can_actions.windows=True
+    if args.canfd:
+        lib.can_actions.canfd=args.canfd
     # Dynamically load module
     mod = load_module(args.module)
     if mod is not None:

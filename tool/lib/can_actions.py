@@ -3,6 +3,7 @@ from lib.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED, ARBIT
 from sys import stdout, version_info
 import can
 import time
+from can.interfaces.pcan import PcanBus
 
 # Handle large ranges efficiently in both python 2 and 3
 if version_info[0] == 2:
@@ -16,7 +17,9 @@ NOTIFIER_STOP_DURATION = 0.5
 # Global CAN interface setting, which can be set through the -i flag to cc.py
 # The value None corresponds to the default CAN interface (typically can0)
 DEFAULT_INTERFACE = None
-
+pad=False
+windows=False
+canfd=False
 
 def auto_blacklist(bus, duration, classifier_function, print_results):
     """Listens for false positives on the CAN bus and generates an arbitration ID blacklist.
@@ -75,7 +78,13 @@ class CanActions:
         :param arb_id: int default arbitration ID for object or None
         :param notifier_enabled: bool indicating whether a notifier for incoming message callbacks should be enabled
         """
-        self.bus = can.Bus(DEFAULT_INTERFACE)
+        if windows:
+            if canfd:
+                self.bus = PcanBus(fd=True, f_clock=80000000,nom_brp=2, nom_tseg1=63, nom_tseg2=16, nom_sjw=16,data_brp=2, data_tseg1=15, data_tseg2=4, data_sjw=4)
+            else:
+                self.bus = PcanBus()
+        else:
+            self.bus = can.Bus(DEFAULT_INTERFACE)
         self.arb_id = arb_id
         self.bruteforce_running = False
         self.notifier = None
@@ -120,11 +129,15 @@ class CanActions:
         # Force extended flag if it is unspecified and arbitration ID is larger than the standard format allows
         if is_extended is None:
             is_extended = arb_id > ARBITRATION_ID_MAX
+        if pad:
+            data+=[0]*(8-len(data))
         msg = can.Message(arbitration_id=arb_id,
                           data=data,
                           is_extended_id=is_extended,
                           is_error_frame=is_error,
-                          is_remote_frame=is_remote)
+                          is_remote_frame=is_remote,
+                          is_fd=canfd,
+                          bitrate_switch=canfd)
         self.bus.send(msg)
 
     def bruteforce_arbitration_id(self, data, callback, min_id, max_id,
@@ -151,6 +164,7 @@ class CanActions:
             extended = False
             if arb_id > ARBITRATION_ID_MAX:
                 extended = True
+            data+=[0]*(8-len(data))
             msg = can.Message(arbitration_id=arb_id, data=data, is_extended_id=extended)
             self.bus.send(msg)
             time.sleep(MESSAGE_DELAY)

@@ -1,10 +1,11 @@
 from __future__ import print_function
 from lib.can_actions import CanActions, auto_blacklist
-from lib.common import list_to_hex_str, parse_int_dec_or_hex
+from lib.common import is_string, list_to_hex_str, parse_int_dec_or_hex
 from datetime import datetime, timedelta
 from sys import stdout
 import argparse
 import time
+import lib.unlock_functions
 
 # Dictionary of XCP error codes
 XCP_ERROR_CODES = {
@@ -87,7 +88,12 @@ XCP_COMMAND_CODES = [
     (0xC9, "PROGRAM_MAX"),
     (0xC8, "PROGRAM_VERIFY")
 ]
-
+XCP_RESOURCE_CODES = {
+    "PGM":16,
+    "STIM":8,
+    "DAQ":4,
+    "CAL/PAG":1
+}
 
 def decode_xcp_error(error_message):
     """
@@ -476,6 +482,68 @@ def xcp_memory_dump(args):
         if not dump_complete:
             print("\nERROR: Dump ended due to idle timeout")
 
+def xcp_unlock(args):
+    send_arb_id = args.src
+    rcv_arb_id = args.dst
+    resource=XCP_RESOURCE_CODES[args.resource]
+    if not(hasattr(lib.unlock_functions, args.unlock_func) and callable(getattr(lib.unlock_functions, args.unlock_func))):
+        print("ERROR: unlock fuction not found in unlock_functions")
+        return
+
+    def handle_get_seed_reply(msg):
+        if msg.arbitration_id != rcv_arb_id:
+            return
+        if msg.data[0] == 0xfe:
+            decode_xcp_error(msg)
+            return
+        if msg.data[0] == 0xff:
+            seed_length=int(msg.data[1])
+            if(seed_length>6):
+                print("long seed support not implemented yet")
+                return
+            seed=msg.data[2:2+seed_length]
+            unlock_func = getattr(lib.unlock_functions, args.unlock_func)
+            if(seed):
+                key=unlock_func(seed)
+                can_wrap.send_single_message_with_callback(
+                    [0xf7,seed_length]+key,
+                    handle_unlock_reply)
+            else:
+                print("ERROR: empty seed")
+                return
+
+    def handle_unlock_reply(msg):
+        if msg.arbitration_id != rcv_arb_id:
+            return
+        if msg.data[0] == 0xfe:
+            decode_xcp_error(msg)
+            return
+        if msg.data[0] == 0xff:
+            print("unlock success")
+            print("-" * 20)
+            print("RESOURCE PROTECTION STATUS | Seed/key required")
+            resource_protection_bits = ["CAL/PAG", "X (bit 1)", "DAQ", "STIM", "PGM", "X (bit 5)", "X (bit 6)", "X (bit 7)"]
+            for i in range(8):
+                print("{0:<27}| {1}".format(resource_protection_bits[i], bool(msg.data[1] & 2 ** i)))
+            print("-" * 20)
+
+    def handle_connect_reply(msg):
+        if msg.arbitration_id != rcv_arb_id:
+            return
+        if msg.data[0] == 0xfe:
+            decode_xcp_error(msg)
+            return
+        if msg.data[0] == 0xff:
+            can_wrap.send_single_message_with_callback(
+                [0xf8,0x00,resource],
+                handle_get_seed_reply)
+        else:
+            print("Unexpected connect reply: {0}\n".format(msg))
+
+    # Initiate probing
+    with CanActions(arb_id=send_arb_id) as can_wrap:
+        can_wrap.send_single_message_with_callback([0xff], handle_connect_reply)
+        time.sleep(2)
 
 def parse_args(args):
     """
@@ -518,6 +586,14 @@ def parse_args(args):
     parser_info.add_argument("src", type=parse_int_dec_or_hex, help="arbitration ID to transmit from")
     parser_info.add_argument("dst", type=parse_int_dec_or_hex, help="arbitration ID to listen to")
     parser_info.set_defaults(func=xcp_get_basic_information)
+
+    # Parser for XCP unlock
+    parser_info = subparsers.add_parser("unlock")
+    parser_info.add_argument("src", type=parse_int_dec_or_hex, help="arbitration ID to transmit from")
+    parser_info.add_argument("dst", type=parse_int_dec_or_hex, help="arbitration ID to listen to")
+    parser_info.add_argument("unlock_func", type=is_string, help="seed & key function to compute key from seed")
+    parser_info.add_argument("resource", type=is_string, help="resource to unlock: PGM, STIM, DAQ, CAL/PAG")
+    parser_info.set_defaults(func=xcp_unlock)
 
     # Parser for XCP data dump
     parser_dump = subparsers.add_parser("dump")

@@ -1,4 +1,7 @@
 
+import string
+
+
 def parse_int_dec_or_hex(value):
     """Parses an integer on base 10 (decimal) or 16 (hex with "0x" prefix)
 
@@ -105,3 +108,7 @@ def msg_to_candump_format(msg):
     data = list_to_hex_str(msg.data, "")
     candump = output.format(msg.timestamp, msg.channel, msg.arbitration_id, data)
     return candump
+
+def is_string(msg):
+    if(str(msg)==msg):
+        return msg

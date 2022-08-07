@@ -56,6 +56,7 @@ Details here: [uds module](documentation/uds.md)
 - discovery - Scans for ECUs supporting XCP
 - info - XCP Get Basic Information. Retrieves information about XCP abilities of an ECU
 - dump - XCP Upload. Used to dump ECU memory (such as SRAM, flash and bootloader) to file 
+- unlock - XCP unlock. unlock command groups using a custom seed & key mechanism implementation
 
 Details here: [xcp module](documentation/xcp.md)
 

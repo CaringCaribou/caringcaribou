@@ -1,6 +1,6 @@
 from __future__ import print_function
 from lib.can_actions import CanActions, auto_blacklist
-from lib.common import is_string, list_to_hex_str, parse_int_dec_or_hex
+from lib.common import list_to_hex_str, parse_int_dec_or_hex
 from datetime import datetime, timedelta
 from sys import stdout
 import argparse
@@ -591,8 +591,8 @@ def parse_args(args):
     parser_info = subparsers.add_parser("unlock")
     parser_info.add_argument("src", type=parse_int_dec_or_hex, help="arbitration ID to transmit from")
     parser_info.add_argument("dst", type=parse_int_dec_or_hex, help="arbitration ID to listen to")
-    parser_info.add_argument("unlock_func", type=is_string, help="seed & key function to compute key from seed")
-    parser_info.add_argument("resource", type=is_string, help="resource to unlock: PGM, STIM, DAQ, CAL/PAG")
+    parser_info.add_argument("unlock_func", help="seed & key function to compute key from seed")
+    parser_info.add_argument("resource", choices=["PGM", "STIM", "DAQ", "CAL/PAG"], help="resource to unlock: PGM, STIM, DAQ, CAL/PAG")
     parser_info.set_defaults(func=xcp_unlock)
 
     # Parser for XCP data dump

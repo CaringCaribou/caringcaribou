@@ -1,5 +1,5 @@
-from lib.can_actions import DEFAULT_INTERFACE, windows
-from lib.constants import ARBITRATION_ID_MAX_EXTENDED, ARBITRATION_ID_MAX,pad
+from lib.can_actions import DEFAULT_INTERFACE, pcan, pad
+from lib.constants import ARBITRATION_ID_MAX_EXTENDED, ARBITRATION_ID_MAX
 import can
 import datetime
 import time
@@ -38,7 +38,7 @@ class IsoTp:
     def __init__(self, arb_id_request, arb_id_response, bus=None):
         # Setting default bus to None rather than the actual bus prevents a CanError when
         # called with a virtual CAN bus, while the OS is lacking a working CAN interface
-        if windows:
+        if pcan:
             self.bus = PcanBus()
         elif bus is None:
             self.bus = can.Bus(DEFAULT_INTERFACE)

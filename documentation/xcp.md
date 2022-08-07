@@ -20,6 +20,8 @@ Example usage:
  cc.py xcp discovery
  cc.py xcp info 1000 1001
  cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex
+ cc.py -p True -w True xcp unlock 0x7FC9600 0x7FC9601 Lenkung_MQB_A0_ZF_TRW CAL/PAG
+ 
  ```
  
 ## Discovery
@@ -77,4 +79,22 @@ positional arguments:
 optional arguments:
  -h, --help            show this help message and exit
  -f F, -file F         output file
+ ```
+
+## Unlock
+ 
+ ```
+-------------------
+CARING CARIBOU v0.3
+-------------------
+
+Loaded module 'xcp'
+
+usage: cc.py xcp unlock [-h] src dst unlock_func resource
+
+positional arguments:
+  src          arbitration ID to transmit from
+  dst          arbitration ID to listen to
+  unlock_func  seed & key function to compute key from seed
+  resource     resource to unlock: PGM, STIM, DAQ, CAL/PAG
  ```

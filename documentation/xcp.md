@@ -6,12 +6,12 @@ CARING CARIBOU v0.1
 
 Loaded module 'xcp'
 
-usage: cc.py xcp [-h] {discovery,info,dump} ...
+usage: cc.py xcp [-h] {discovery,commands,info,unlock,dump} ...
 
 XCP module for CaringCaribou
 
 positional arguments:
- {discovery,info,dump}
+ {discovery,commands,info,unlock,dump}
 
 optional arguments:
  -h, --help            show this help message and exit
@@ -20,7 +20,7 @@ Example usage:
  cc.py xcp discovery
  cc.py xcp info 1000 1001
  cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex
- cc.py -p -pcan xcp unlock 0x7F11110 0x7F11111 example CAL/PAG 
+ cc.py xcp unlock 0x7F11110 0x7F11111 example CAL/PAG 
  
  ```
  

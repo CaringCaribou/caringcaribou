@@ -563,7 +563,8 @@ def parse_args(args):
   cc.py xcp discovery -autoblacklist 10
   cc.py xcp commands 0x3e8 0x3e9
   cc.py xcp info 1000 1001
-  cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex""")
+  cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex
+  cc.py xcp unlock 0x7F11110 0x7F11111 example CAL/PAG """)
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 

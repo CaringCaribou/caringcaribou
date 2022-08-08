@@ -20,7 +20,7 @@ Example usage:
  cc.py xcp discovery
  cc.py xcp info 1000 1001
  cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex
- cc.py -p -pcan xcp unlock 0x7FC9600 0x7FC9601 example CAL/PAG
+ cc.py -p -pcan xcp unlock 0x7F11110 0x7F11111 example CAL/PAG 
  
  ```
  

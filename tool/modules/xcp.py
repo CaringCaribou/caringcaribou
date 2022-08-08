@@ -1,11 +1,12 @@
 from __future__ import print_function
 from lib.can_actions import CanActions, auto_blacklist
-from lib.common import list_to_hex_str, parse_int_dec_or_hex
+from lib.common import list_to_hex_str, parse_int_dec_or_hex, parse_members
 from datetime import datetime, timedelta
 from sys import stdout
 import argparse
 import time
 import lib.unlock_functions
+from inspect import getmembers, isfunction
 
 # Dictionary of XCP error codes
 XCP_ERROR_CODES = {
@@ -488,6 +489,7 @@ def xcp_unlock(args):
     resource=XCP_RESOURCE_CODES[args.resource]
     if not(hasattr(lib.unlock_functions, args.unlock_func) and callable(getattr(lib.unlock_functions, args.unlock_func))):
         print("ERROR: unlock fuction not found in unlock_functions")
+        print(parse_members(getmembers(lib.unlock_functions, isfunction)))
         return
 
     def handle_get_seed_reply(msg):

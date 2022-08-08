@@ -4,6 +4,7 @@ from sys import stdout, version_info
 import can
 import time
 from can.interfaces.pcan import PcanBus
+from lib.globals import get_bus, pad,canfd
 
 # Handle large ranges efficiently in both python 2 and 3
 if version_info[0] == 2:
@@ -16,10 +17,6 @@ NOTIFIER_STOP_DURATION = 0.5
 
 # Global CAN interface setting, which can be set through the -i flag to cc.py
 # The value None corresponds to the default CAN interface (typically can0)
-DEFAULT_INTERFACE = None
-pad=False
-pcan=False
-canfd=False
 
 def auto_blacklist(bus, duration, classifier_function, print_results):
     """Listens for false positives on the CAN bus and generates an arbitration ID blacklist.
@@ -78,13 +75,7 @@ class CanActions:
         :param arb_id: int default arbitration ID for object or None
         :param notifier_enabled: bool indicating whether a notifier for incoming message callbacks should be enabled
         """
-        if pcan:
-            if canfd:
-                self.bus = PcanBus(fd=True, f_clock=80000000,nom_brp=2, nom_tseg1=63, nom_tseg2=16, nom_sjw=16,data_brp=2, data_tseg1=15, data_tseg2=4, data_sjw=4)
-            else:
-                self.bus = PcanBus()
-        else:
-            self.bus = can.Bus(DEFAULT_INTERFACE)
+        self.bus = get_bus()
         self.arb_id = arb_id
         self.bruteforce_running = False
         self.notifier = None

@@ -1,5 +1,5 @@
 from __future__ import print_function
-from lib.can_actions import DEFAULT_INTERFACE
+from lib.globals import DEFAULT_INTERFACE
 import unittest
 
 

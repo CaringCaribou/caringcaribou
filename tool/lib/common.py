@@ -71,6 +71,11 @@ def list_to_hex_str(data, delimiter=""):
     data_string = delimiter.join(["{0:02x}".format(i) for i in data])
     return data_string
 
+def parse_members(members):
+    ret=[]
+    for member in members:
+        ret.append(member[0])
+    return ret
 
 def hex_str_to_nibble_list(data):
     """

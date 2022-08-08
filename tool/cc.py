@@ -4,7 +4,7 @@
 import argparse
 import can
 import errno
-import lib.can_actions
+import lib.globals
 import importlib
 import traceback
 import os
@@ -111,15 +111,16 @@ def main():
     args = parse_arguments()
     # Show header
     show_script_header()
+    lib.globals.initialize()
     # Save interface to can_actions, for use in modules
     if args.interface:
-        lib.can_actions.DEFAULT_INTERFACE = args.interface
+        lib.globals.DEFAULT_INTERFACE = args.interface
     if args.p:
-        lib.can_actions.pad = True
+        lib.globals.pad = True
     if args.pcan:
-        lib.can_actions.pcan=True
+        lib.globals.pcan=True
     if args.fd:
-        lib.can_actions.canfd=True
+        lib.globals.canfd=True
     # Dynamically load module
     mod = load_module(args.module)
     if mod is not None:

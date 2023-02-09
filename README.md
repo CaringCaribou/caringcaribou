@@ -1,10 +1,9 @@
 # Caring Caribou
-A friendly car security exploration tool
+A friendly automotive security exploration tool.
 
 ## Rationale
-We are lacking a security testing tool for automotive. A zero-knowledge tool that can be dropped onto any CAN network and collect information regarding what services and vulnerabilities exist. This is a start.
-
 This work was initiated as part of the research project HEAVENS (HEAling Vulnerabilities to ENhance Software Security and Safety), but lives on as a stand-alone project.
+We were lacking a security testing tool for automotive; a zero-knowledge tool that can be dropped onto any CAN network and collect information regarding what services and vulnerabilities exist. This project is a start.
 
 ## Documentation
 - [How to install](documentation/howtoinstall.md)
@@ -12,6 +11,10 @@ This work was initiated as part of the research project HEAVENS (HEAling Vulnera
 - [Troubleshooting](documentation/troubleshooting.md), common errors and solutions
 
 ## Get started
+Install the tool:
+
+    python setup.py install
+
 The best way to understand how to use Caring Caribou is to look at the help screen:
 
     cc.py --help

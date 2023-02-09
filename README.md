@@ -106,7 +106,7 @@ Discovers and utilizes various ISO 13400-2 services.
 Details here: [doip module](documentation/doip.md)
 
 ## List of libraries/utilities
-The `/utils` folder contains the following:
+The `caringcaribou/utils` folder contains the following:
 
 ### can_actions.py
 Provides abstraction for access to the CAN bus, bruteforce engines etc.

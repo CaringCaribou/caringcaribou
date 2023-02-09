@@ -4,15 +4,13 @@
 import argparse
 import can
 import errno
-import lib.can_actions
+from .utils import can_actions
 import importlib
 import traceback
-import os
+import pkg_resources
 
-VERSION = "0.3"
 
-# Find the right "modules" directory, even if the script is run from another directory
-MODULES_DIR = "modules"
+VERSION = "0.4dev"
 
 
 def show_script_header():
@@ -43,19 +41,28 @@ CARING CARIBOU v{0}
 """.format(VERSION)
 
 
+def available_modules_dict():
+    available_modules = dict()
+    for entry_point in pkg_resources.iter_entry_points("caringcaribou.modules"):
+        nicename = str(entry_point).split("=")[0].strip()
+        available_modules[nicename] = entry_point
+    return available_modules
+
+
 def available_modules():
     """
     Get a string showing available CaringCaribou modules.
+    Modules are listed in setup.py: entry_points['caringcaribou.modules']
 
     :return: A string listing available modules
     :rtype: str
     """
-    blacklisted_files = ["__init__.py"]
-    modules = [m[:-3] for m in os.listdir(MODULES_DIR) if m.endswith(".py") and m not in blacklisted_files]
+    modules = list(available_modules_dict().keys())
     modules.sort()
     mod_str = "available modules:\n  "
     mod_str += ", ".join(modules)
     return mod_str
+    
 
 
 def parse_arguments():
@@ -82,20 +89,16 @@ def load_module(module_name):
     """
     Dynamically imports module_name from the folder specified by MODULES_DIR.
 
-    :param str module_name: Name of the module to import (without file extension)
-                            e.g. "listener" if module is stored in "./modules/listener.py"
-    :return: a loaded module on success, None otherwise
+    :param str module_name: Name of the module to import as referenced in entry_points
+                            e.g. "dcm", "uds", "listener"
+    :return: a module on success, None otherwise
     """
-    # Clean module name (since module location is decided by MODULES_DIR, we don't take a full path)
-    clean_mod_name = os.path.basename(module_name)
-    package = "{0}.{1}".format(MODULES_DIR, clean_mod_name)
     try:
-        # Import module
-        py_mod = importlib.import_module(package)
-        print("Loaded module '{0}'\n".format(clean_mod_name))
-        return py_mod
-    except ImportError as e:
-        print("Load module failed: {0}".format(e))
+        print("Loading module '{0}'\n".format(module_name))
+        cc_mod = available_modules_dict()[module_name]
+        return cc_mod
+    except KeyError as e:
+        print("Load module failed: module {0} is not available".format(e))
         return None
 
 
@@ -107,18 +110,13 @@ def main():
     show_script_header()
     # Save interface to can_actions, for use in modules
     if args.interface:
-        lib.can_actions.DEFAULT_INTERFACE = args.interface
-    # Dynamically load module
-    mod = load_module(args.module)
-    if mod is not None:
-        func_name = "module_main"
-        func_exists = func_name in dir(mod) and callable(getattr(mod, func_name))
-        if func_exists:
-            # Run module, passing any remaining arguments
-            mod.module_main(args.module_args)
-        else:
-            # Print error message if module_main is missing
-            print("ERROR: Module '{0}' does not contain a '{1}' function.".format(args.module, func_name))
+        can_actions.DEFAULT_INTERFACE = args.interface
+    try:
+        # Load module
+        cc_mod = load_module(args.module).load()
+        cc_mod.module_main(args.module_args)
+    except AttributeError as e:
+        pass
 
 
 # Main wrapper

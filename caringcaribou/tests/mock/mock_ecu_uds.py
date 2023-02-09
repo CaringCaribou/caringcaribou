@@ -1,6 +1,6 @@
-from lib.iso15765_2 import IsoTp
-from lib.iso14229_1 import *
-from lib.common import int_from_byte_list
+from utils.iso15765_2 import IsoTp
+from utils.iso14229_1 import *
+from utils.common import int_from_byte_list
 from tests.mock.mock_ecu import MockEcu
 from tests.mock.mock_ecu_iso_tp import MockEcuIsoTp
 

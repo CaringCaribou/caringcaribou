@@ -6,19 +6,16 @@
 # Steps to add this module to CaringCaribou and run it:
 #
 # 1. Copy this file to caringcaribou/tool/modules/
-#      $ cp module_template.py ../modules/
+#      $ cp module_template.py my_module.py
 #
-# 2. Go to caringcaribou/tool
-#      $ cd ..
-#
-# 3. Run the following command to run module and show usage instructions:
-#      $ ./cc.py module_template -h
+# 2. Run the following command to run module and show usage instructions:
+#      $ caringcaribou my_module -h
 #
 from __future__ import print_function
 import argparse
 import time
-from lib.can_actions import CanActions
-from lib.common import list_to_hex_str, parse_int_dec_or_hex
+from ..utils.can_actions import CanActions
+from ..utils.common import list_to_hex_str, parse_int_dec_or_hex
 
 
 def do_stuff(my_arbitration_id):

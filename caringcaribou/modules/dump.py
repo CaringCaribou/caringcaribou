@@ -1,6 +1,6 @@
 from __future__ import print_function
-from lib.can_actions import CanActions
-from lib.common import msg_to_candump_format, parse_int_dec_or_hex
+from ..utils.can_actions import CanActions
+from ..utils.common import msg_to_candump_format, parse_int_dec_or_hex
 from modules.send import FILE_LINE_COMMENT_PREFIX
 from sys import argv, stdout
 import argparse

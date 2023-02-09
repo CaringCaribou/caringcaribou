@@ -1,6 +1,6 @@
 from __future__ import print_function
-from lib.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
-from lib.iso14229_1 import Iso14229_1
+from ..utils.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
+from ..utils.iso14229_1 import Iso14229_1
 from modules.uds import ecu_reset, print_negative_response, request_seed, extended_session
 from sys import stdout
 import argparse

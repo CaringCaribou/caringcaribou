@@ -1,5 +1,19 @@
 ## How to install
 
+### Work in progress: python package, setup.py
+
+Currently refactoring to implement proper Python packaging.
+
+Install the tool along with dependencies (python-can) with: `python setup.py install`.
+
+You still need to configure your CAN interface per the instructions below.
+
+Package installation tested/working on:
+
+- [X] Python 3.10
+- [] Python 3.6 - 3.9
+- [] Python 2.7
+
 ### Linux
 The setup consists of two steps. First we need to get the USB-to-Can device working and secondly configure Python-Can
 for the device.

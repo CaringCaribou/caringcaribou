@@ -1,7 +1,7 @@
 import multiprocessing
 import time
 
-from lib.iso15765_2 import IsoTp
+from utils.iso15765_2 import IsoTp
 from tests.mock.mock_ecu import MockEcu
 
 

@@ -4,9 +4,9 @@ import argparse
 import random
 
 from itertools import product
-from lib.can_actions import CanActions
-from lib.common import hex_str_to_nibble_list, int_from_byte_list, list_to_hex_str, parse_int_dec_or_hex
-from lib.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MIN, BYTE_MAX, BYTE_MIN
+from ..utils.can_actions import CanActions
+from ..utils.common import hex_str_to_nibble_list, int_from_byte_list, list_to_hex_str, parse_int_dec_or_hex
+from ..utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MIN, BYTE_MAX, BYTE_MIN
 from time import sleep
 
 # Python 2/3 compatibility

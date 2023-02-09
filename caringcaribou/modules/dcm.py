@@ -1,6 +1,6 @@
 from __future__ import print_function
-from lib.can_actions import CanActions
-from lib.common import parse_int_dec_or_hex
+from ..utils.can_actions import CanActions
+from ..utils.common import parse_int_dec_or_hex
 from sys import stdout
 import argparse
 import time

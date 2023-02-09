@@ -1,5 +1,5 @@
 from __future__ import print_function
-from lib.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, ServiceID, Services
+from utils.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, ServiceID, Services
 from tests.mock.mock_ecu_uds import MockEcuIso14229
 from modules import uds
 import unittest

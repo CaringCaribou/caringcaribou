@@ -1,10 +1,10 @@
 from __future__ import print_function
-from lib.can_actions import auto_blacklist
-from lib.common import list_to_hex_str, parse_int_dec_or_hex
-from lib.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
-from lib.constants import ARBITRATION_ID_MIN
-from lib.iso15765_2 import IsoTp
-from lib.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, Services
+from ..utils.can_actions import auto_blacklist
+from ..utils.common import list_to_hex_str, parse_int_dec_or_hex
+from ..utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
+from ..utils.constants import ARBITRATION_ID_MIN
+from ..utils.iso15765_2 import IsoTp
+from ..utils.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, Services
 from sys import stdout, version_info
 import argparse
 import datetime

@@ -65,7 +65,7 @@ The contents of this file might e.g. be:
 ##### Test it
 Go to the Caring Caribou directory and run the following command:
 
-``` python cc.py dump```
+    cc.py dump
 
 If packets are received, everything is good to go!
 

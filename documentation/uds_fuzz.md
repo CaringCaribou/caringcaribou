@@ -11,13 +11,13 @@ Supported modes:
 * seed_randomness_fuzzer - ECUReset method fuzzing for seed randomness evaluation
 * delay_fuzzer - delay fuzzing for targets with weak randomness implemented, to match acquired seed/key pair to the delay in which the seed can be requested
 
-As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific mode by specifying the mode followed by `-h`, e.g. `./cc.py uds_fuzz seed_randomness_fuzzer -h` or `./cc.py uds_fuzz delay_fuzzer -h`
+As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific mode by specifying the mode followed by `-h`, e.g. `cc.py uds_fuzz seed_randomness_fuzzer -h` or `cc.py uds_fuzz delay_fuzzer -h`
 
 ```
-$ ./cc.py uds_fuzz -h
+$ cc.py uds_fuzz -h
 
 -------------------
-CARING CARIBOU v0.3
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'uds_fuzz'
@@ -43,10 +43,10 @@ Requests a security seed after a Hard ECUReset, using the supplied request seque
 In case that duplicate seeds are found by the tool, it means that the ECU is potentially  vulnerable and uses weak random number generation seeded by the system timer.
 
 ```
-$ ./cc.py uds_fuzz seed_randomness_fuzzer -h
+$ cc.py uds_fuzz seed_randomness_fuzzer -h
 
 -------------------
-CARING CARIBOU v0.3
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'uds_fuzz'
@@ -89,10 +89,10 @@ That way the exact delay needed to request the user specified seed can be matche
 In that case, the user can access the security access service of vulnerable ECUs, with just one seed/key pair (it can be obtained in several ways) and no access to the secret key needed to generate the key from the seed.
 
 ```
-$ ./cc.py uds_fuzz delay_fuzzer -h
+$ cc.py uds_fuzz delay_fuzzer -h
 
 -------------------
-CARING CARIBOU v0.3
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'uds_fuzz'

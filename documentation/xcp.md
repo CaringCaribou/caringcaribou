@@ -1,7 +1,7 @@
 # XCP
 ```
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'xcp'
@@ -25,7 +25,7 @@ Example usage:
 ## Discovery
  ```
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'xcp'
@@ -42,7 +42,7 @@ optional arguments:
  
  ```
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'xcp'
@@ -61,7 +61,7 @@ optional arguments:
  
  ```
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'xcp'

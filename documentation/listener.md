@@ -1,9 +1,9 @@
 # Listener
 ````
->./cc.py listener -h
+$ cc.py listener -h
 
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'listener'

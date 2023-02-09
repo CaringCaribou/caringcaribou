@@ -1,9 +1,9 @@
 # Send
 ```
-> ./cc.py send -h
+$ cc.py send -h
 
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'send'
@@ -28,10 +28,10 @@ Example usage:
 
 ## Message
 ```
-> ./cc.py send message -h
+$ cc.py send message -h
 
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'send'
@@ -53,10 +53,10 @@ optional arguments:
 ## File
 
 ```
-> ./cc.py send file -h
+$ cc.py send file -h
 
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'send'

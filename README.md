@@ -6,38 +6,33 @@ We are lacking a security testing tool for automotive. A zero-knowledge tool tha
 
 This work was initiated as part of the research project HEAVENS (HEAling Vulnerabilities to ENhance Software Security and Safety), but lives on as a stand-alone project.
 
-## How to install
-Instructions available [here](documentation/howtoinstall.md)
+## Documentation
+- [How to install](documentation/howtoinstall.md)
+- [How to use](documentation/howtouse.md)
+- [Troubleshooting](documentation/troubleshooting.md), common errors and solutions
 
-## Troubleshooting
-See common errors and solutions [here](documentation/troubleshooting.md)
-
-## How to use
+## Get started
 The best way to understand how to use Caring Caribou is to look at the help screen:
 
-    python cc.py -h
-
-or simply
-
-    ./cc.py -h
+    cc.py --help
 
 This will list all available modules at the bottom of the output. Help for specific modules works the same way. For example, the help screen for the `send` module is shown by running
 
-    ./cc.py send -h
+    cc.py send --help
 
 The module help always includes some usage examples. If the module has multiple sub functions, these have similar help screens as well:
 
-    ./cc.py send message -h
-    ./cc.py send file -h
+    cc.py send message -h
+    cc.py send file -h
 
-More detailed usage information is available [here](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/howtouse.md).
+More detailed usage information is available [in the documentation on usage](documentation/howtouse.md).
 
 ## Features and Architecture
-Caring Caribou is based on a master script `cc.py`, which runs the show. This enables an easy drop-in architecture for new modules, which are located in the `/modules` folder.
+Caring Caribou is based on a main entry point, `cc.py`, which runs the show. This enables an easy drop-in architecture for new modules, which are located in the `caringcaribou/modules` folder.
 
-The `/lib` folder contains various higher level CAN protocol implementations and shared functions, meant to be used by modules.
+The `caringcaribou/utils` folder contains various higher level CAN protocol implementations and shared functions, meant to be used by modules.
 
-The `/tests` folder contains automated test suites and `/documentation` stores module documentation files.
+The `caringcaribou/tests` folder contains automated test suites and `/documentation` stores documentation files (modules are also documented here).
 
 ## List of Modules
 A clean installation of Caring Caribou includes the following modules:
@@ -110,8 +105,8 @@ Discovers and utilizes various ISO 13400-2 services.
 
 Details here: [doip module](documentation/doip.md)
 
-## List of libraries
-The `/lib` folder contains the following libraries:
+## List of libraries/utilities
+The `/utils` folder contains the following:
 
 ### can_actions.py
 Provides abstraction for access to the CAN bus, bruteforce engines etc.
@@ -136,12 +131,16 @@ Some sort of CAN bus interface (http://elinux.org/CAN_Bus#CAN_Support_in_Linux)
 - python-can
 - a pretty modern linux kernel
 
-## Extending the project
-Create a python file with a function `module_main(args)` and put it in the ```tool/modules``` folder. Caring Caribou will automagically recognize it as a module and list it in the output of `./cc.py -h`
+## Extending the project with new modules
+- A template for new modules is available in `caringcaribou/modules/module_template.py`
+- Create a python file with a function `module_main(args)` (or copy the template) in the `caringcaribou/modules` directory.
+- In `setup.py`, add an entry under `caringcaribou.modules`, referencing your new module like: `my_module = caringcaribou.modules.my_module`
+- Run `python setup.py install`
+- Verify that the module is available, should be listed in the output of `cc.py -h`
 
-For example, if your new module is located in `modules/foo.py` you run it with the command `./cc.py foo`. Additional arguments (if any) are passed as arguments to the `module_main` function.
+If your new module is located in `caringcaribou/modules/foo.py` you will run it with the command `cc.py foo`.
+Additional arguments (if any) are passed as arguments to the `module_main` function.
 
-A template for new modules is available in `tool/template`
 
 ## The target
 The target ECU used for the development setup is an STM32F107 based dev-board from ArcCore called Arctic EVK-M3, but the tool can be used against any ECU communicating over a CAN bus.
@@ -162,3 +161,4 @@ The target ECU used for the development setup is an STM32F107 based dev-board fr
 * FearfulSpoon
 * Alex DeTrano
 * Thomas Sermpinis
+* Alexander Alasjö

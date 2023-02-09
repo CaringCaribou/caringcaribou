@@ -1,7 +1,7 @@
 from __future__ import print_function
-from tests.mock.mock_ecu_iso_tp import MockEcuIsoTp
-from utils import iso15765_2
-from utils.can_actions import DEFAULT_INTERFACE
+from caringcaribou.tests.mock.mock_ecu_iso_tp import MockEcuIsoTp
+from caringcaribou.utils import iso15765_2
+from caringcaribou.utils.can_actions import DEFAULT_INTERFACE
 import can
 import unittest
 

@@ -1,5 +1,5 @@
 from __future__ import print_function
-from utils.can_actions import DEFAULT_INTERFACE
+from caringcaribou.utils.can_actions import DEFAULT_INTERFACE
 import can
 
 

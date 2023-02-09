@@ -1,5 +1,5 @@
 from __future__ import print_function
-from .constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED, ARBITRATION_ID_MIN, BYTE_MAX, BYTE_MIN
+from caringcaribou.utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED, ARBITRATION_ID_MIN, BYTE_MAX, BYTE_MIN
 from sys import stdout, version_info
 import can
 import time

@@ -1,6 +1,6 @@
 from __future__ import print_function
-from ..utils.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
-from ..utils.iso14229_1 import Iso14229_1
+from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
+from caringcaribou.utils.iso14229_1 import Iso14229_1
 from modules.uds import ecu_reset, print_negative_response, request_seed, extended_session
 from sys import stdout
 import argparse

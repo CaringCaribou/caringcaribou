@@ -1,6 +1,6 @@
 from __future__ import print_function
-from ..utils.can_actions import CanActions
-from ..utils.common import parse_int_dec_or_hex
+from caringcaribou.utils.can_actions import CanActions
+from caringcaribou.utils.common import parse_int_dec_or_hex
 from sys import stdout
 import argparse
 import time

@@ -1,6 +1,6 @@
 from __future__ import print_function
-from ..utils.can_actions import CanActions, auto_blacklist
-from ..utils.common import list_to_hex_str, parse_int_dec_or_hex
+from caringcaribou.utils.can_actions import CanActions, auto_blacklist
+from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex
 from datetime import datetime, timedelta
 from sys import stdout
 import argparse

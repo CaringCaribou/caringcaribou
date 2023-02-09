@@ -1,8 +1,8 @@
 import multiprocessing
 import time
 
-from utils.iso15765_2 import IsoTp
-from tests.mock.mock_ecu import MockEcu
+from caringcaribou.utils.iso15765_2 import IsoTp
+from caringcaribou.tests.mock.mock_ecu import MockEcu
 
 
 class MockEcuIsoTp(MockEcu):

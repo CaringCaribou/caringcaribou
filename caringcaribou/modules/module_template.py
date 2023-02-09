@@ -14,8 +14,8 @@
 from __future__ import print_function
 import argparse
 import time
-from ..utils.can_actions import CanActions
-from ..utils.common import list_to_hex_str, parse_int_dec_or_hex
+from caringcaribou.utils.can_actions import CanActions
+from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex
 
 
 def do_stuff(my_arbitration_id):

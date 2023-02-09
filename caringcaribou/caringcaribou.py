@@ -16,10 +16,10 @@ VERSION = "0.4dev"
 def show_script_header():
     """Show script header"""
     print(r"""
--------------------
-CARING CARIBOU v{0}
--------------------
-""".format(VERSION))
+{0}
+CARING CARIBOU v{1}
+{0}
+""".format("-"*(16 + len(VERSION)), VERSION))
 
 
 def fancy_header():
@@ -28,17 +28,17 @@ def fancy_header():
 
     :rtype: str
     """
-    return r"""-------------------
-CARING CARIBOU v{0}
+    return r"""{0}
+CARING CARIBOU v{1}
 \_\_    _/_/
     \__/
     (oo)\_______
     (__)\       )\/
         ||-----||
         ||     ||
--------------------
+{0}
 
-""".format(VERSION)
+""".format("-"*(16 + len(VERSION)), VERSION)
 
 
 def available_modules_dict():

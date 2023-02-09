@@ -11,8 +11,8 @@ You still need to configure your CAN interface per the instructions below.
 Package installation tested/working on:
 
 - [X] Python 3.10
-- [] Python 3.6 - 3.9
-- [] Python 2.7
+- [ ] Python 3.6 - 3.9
+- [ ] Python 2.7
 
 ### Linux
 The setup consists of two steps. First we need to get the USB-to-Can device working and secondly configure Python-Can

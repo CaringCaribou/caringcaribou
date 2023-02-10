@@ -4,7 +4,7 @@
 import argparse
 import can
 import errno
-from caringcaribou.utils import can_actions
+from .utils import can_actions
 import traceback
 import pkg_resources
 

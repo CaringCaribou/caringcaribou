@@ -107,6 +107,13 @@ DUMP_DID_MIN = 0x0000
 DUMP_DID_MAX = 0xFFFF
 DUMP_DID_TIMEOUT = 0.2
 
+MEM_START_ADDR = 0
+MEM_LEN = 1
+MEM_SIZE = 1
+ADDR_BYTE_SIZE = 2
+MEM_LEN_BYTE_SIZE = 1
+SESSION_TYPE = 3
+
 
 def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
                   delay, verify, print_results=True):
@@ -151,7 +158,7 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
     if max_id < min_id:
         raise ValueError("max_id must not be smaller than min_id -"
                          " got min:0x{0:x}, max:0x{1:x}".format(
-                          min_id, max_id))
+            min_id, max_id))
     if auto_blacklist_duration < 0:
         raise ValueError("auto_blacklist_duration must not be smaller "
                          "than 0, got {0}'".format(auto_blacklist_duration))
@@ -517,9 +524,9 @@ def __ecu_reset_wrapper(args):
             subfunction = response[1]
             expected_response_id = \
                 Iso14229_1.get_service_response_id(
-                                               Services.EcuReset.service_id)
+                    Services.EcuReset.service_id)
             if (response_service_id == expected_response_id
-               and subfunction == reset_type):
+                    and subfunction == reset_type):
                 # Positive response
                 pos_msg = "Received positive response"
                 if response_length > 2:
@@ -644,7 +651,7 @@ def request_seed(arb_id_request, arb_id_response, level,
     """
     # Sanity checks
     if (not Services.SecurityAccess.RequestSeedOrSendKey()
-       .is_valid_request_seed_level(level)):
+            .is_valid_request_seed_level(level)):
         raise ValueError("Invalid request seed level")
     if isinstance(timeout, float) and timeout < 0.0:
         raise ValueError("Timeout value ({0}) cannot be negative"
@@ -685,7 +692,7 @@ def send_key(arb_id_request, arb_id_response, level, key, timeout):
     """
     # Sanity checks
     if (not Services.SecurityAccess.RequestSeedOrSendKey()
-       .is_valid_send_key_level(level)):
+            .is_valid_send_key_level(level)):
         raise ValueError("Invalid send key level")
     if isinstance(timeout, float) and timeout < 0.0:
         raise ValueError("Timeout value ({0}) cannot be negative"
@@ -748,7 +755,7 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
     if max_did < min_did:
         raise ValueError("max_did must not be smaller than min_did -"
                          " got min:0x{0:x}, max:0x{1:x}".format(
-                          min_did, max_did))
+            min_did, max_did))
 
     responses = []
     with IsoTp(arb_id_request=arb_id_request,
@@ -778,14 +785,107 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
             return responses
 
 
+def __dump_mem_wrapper(args):
+    """Wrapper used to initiate data identifier dump"""
+    arb_id_request = args.src
+    arb_id_response = args.dst
+    timeout = args.timeout
+    start_addr = args.start_addr
+    mem_length = args.mem_length
+    mem_size = args.mem_size
+    address_byte_size = args.address_byte_size
+    memory_length_byte_size = args.memory_length_byte_size
+    session_type = args.sess_type
+    print_results = True
+    dump_memory(arb_id_request, arb_id_response, timeout, start_addr, mem_length, mem_size, address_byte_size,
+                memory_length_byte_size, session_type, print_results)
+
+
+def dump_memory(arb_id_request, arb_id_response, timeout,
+                start_addr=MEM_START_ADDR, mem_length=MEM_LEN, mem_size=MEM_SIZE, address_byte_size=ADDR_BYTE_SIZE,
+                memory_length_byte_size=MEM_LEN_BYTE_SIZE, session_type=3, print_results=True):
+    """
+    Sends read data by identifier (DID) messages to 'arb_id_request'.
+    Returns a list of positive responses received from 'arb_id_response' within
+    'timeout' seconds or an empty list if no positive responses were received.
+
+    :param arb_id_request: arbitration ID for requests
+    :param arb_id_response: arbitration ID for responses
+    :param timeout: seconds to wait for response before timeout, or None
+                    for default UDS timeout
+    :param start_addr: starting address to read
+    :param mem_length: maximum device identifier to read
+    :param mem_size: number of bytes to read from the controller
+    :param address_byte_size: number of bytes of the memory address parameter
+    :param memory_length_byte_size: number of bytes of the memory length parameter
+    :param session_type: session level
+    :param print_results: whether progress should be printed to stdout
+    :type address_byte_size: int
+    :type memory_length_byte_size: int
+    :type arb_id_request: int
+    :type arb_id_response: int
+    :type timeout: float or None
+    :type start_addr: int
+    :type mem_length: int
+    :type mem_size: int
+    :type session_type: int
+    :type print_results: bool
+    :return: list of tuples containing memory address and response bytes on success,
+             empty list if no responses
+    :rtype [(int, [int])] or []
+    """
+    # Sanity checks
+    if isinstance(timeout, float) and timeout < 0.0:
+        raise ValueError("Timeout value ({0}) cannot be negative"
+                         .format(timeout))
+
+    if start_addr < 0:
+        raise ValueError("Start Address '{:x}' must be a positive integer".format(start_addr))
+
+    # Extended diagnostics
+    response = extended_session(arb_id_request,
+                                arb_id_response,
+                                session_type)
+    if not Iso14229_1.is_positive_response(response):
+        raise ValueError("Unable to enter extended session...\n")
+
+    responses = []
+    with IsoTp(arb_id_request=arb_id_request,
+               arb_id_response=arb_id_response) as tp:
+        # Setup filter for incoming messages
+        tp.set_filter_single_arbitration_id(arb_id_response)
+        with Iso14229_1(tp) as uds:
+            # Set timeout
+            if timeout is not None:
+                uds.P3_CLIENT = timeout
+
+            if print_results:
+                print('Dumping Memory in range 0x{:x}-0x{:x}\n'.format(
+                    start_addr, start_addr + mem_length))
+                print('Identified Addresses:')
+                print('Address    Value (hex)')
+            for identifier in range(start_addr, start_addr + mem_length, mem_size):
+                response = uds.read_memory_by_address(memory_address=identifier, memory_size=mem_size,
+                                                      address_and_length_format=(memory_length_byte_size << 4) + address_byte_size)
+
+                # Only keep positive responses
+                if response and Iso14229_1.is_positive_response(response):
+                    responses.append((identifier, response))
+                    if print_results:
+                        print('0x{:x}'.format(identifier), list_to_hex_str(response))
+            if print_results:
+                print("\nDone!")
+            return responses
+
+
 def __parse_args(args):
     """Parser for module arguments"""
     parser = argparse.ArgumentParser(
-                prog="cc.py uds",
-                formatter_class=argparse.RawDescriptionHelpFormatter,
-                description="Universal Diagnostic Services module for "
-                "CaringCaribou",
-                epilog="""Example usage:
+        prog="cc.py uds",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Universal Diagnostic Services module for "
+                    "CaringCaribou",
+        epilog="""Example usage:
   cc.py uds discovery
   cc.py uds discovery -blacklist 0x123 0x456
   cc.py uds discovery -autoblacklist 10
@@ -794,7 +894,8 @@ def __parse_args(args):
   cc.py uds testerpresent 0x733
   cc.py uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
   cc.py uds dump_dids 0x733 0x633
-  cc.py uds dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1""")
+  cc.py uds dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1
+  cc.py uds dump_mem 0x733 0x633 --start_addr 0 --mem_length 0x10000 --mem_size=4""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 
@@ -840,7 +941,7 @@ def __parse_args(args):
                              type=float, default=TIMEOUT_SERVICES,
                              help="wait T seconds for response before "
                                   "timeout (default: {0})"
-                                  .format(TIMEOUT_SERVICES))
+                             .format(TIMEOUT_SERVICES))
     parser_info.set_defaults(func=__service_discovery_wrapper)
 
     # Parser for ECU Reset
@@ -916,7 +1017,7 @@ def __parse_args(args):
                                      "need to increase this when using RTYPE: "
                                      "1=hardReset. Does nothing if RTYPE "
                                      "is None. (default: {0})"
-                                     .format(DELAY_SECSEED_RESET))
+                                .format(DELAY_SECSEED_RESET))
     parser_secseed.add_argument("-n", "--num", metavar="NUM", default=0,
                                 type=parse_int_dec_or_hex,
                                 help="Specify a positive number of security"
@@ -947,6 +1048,45 @@ def __parse_args(args):
                             default=DUMP_DID_MAX,
                             help="maximum device identifier (DID) to read (default: 0xFFFF)")
     parser_did.set_defaults(func=__dump_dids_wrapper)
+
+    # Parser for dump_mem
+    parser_mem = subparsers.add_parser("dump_mem")
+    parser_mem.add_argument("src",
+                            type=parse_int_dec_or_hex,
+                            help="arbitration ID to transmit to")
+    parser_mem.add_argument("dst",
+                            type=parse_int_dec_or_hex,
+                            help="arbitration ID to listen to")
+    parser_mem.add_argument("-t", "--timeout",
+                            type=float, metavar="T",
+                            default=DUMP_DID_TIMEOUT,
+                            help="wait T seconds for response before "
+                                 "timeout")
+    parser_mem.add_argument("--start_addr",
+                            type=parse_int_dec_or_hex,
+                            default=MEM_START_ADDR,
+                            help="starting address (default: 0x0000)")
+    parser_mem.add_argument("--mem_length",
+                            type=parse_int_dec_or_hex,
+                            default=MEM_LEN,
+                            help="number of bytes to read (default: 1)")
+    parser_mem.add_argument("--mem_size",
+                            type=parse_int_dec_or_hex,
+                            default=MEM_SIZE,
+                            help="numbers of bytes to return per request (default: 1)")
+    parser_mem.add_argument("--address_byte_size",
+                            type=parse_int_dec_or_hex,
+                            default=ADDR_BYTE_SIZE,
+                            help="numbers of bytes of the address (default: 2)")
+    parser_mem.add_argument("--memory_length_byte_size",
+                            type=parse_int_dec_or_hex,
+                            default=ADDR_BYTE_SIZE,
+                            help="numbers of bytes of the memory length parameter (default: 1)")
+    parser_mem.add_argument("--sess_type",
+                            type=parse_int_dec_or_hex,
+                            default=SESSION_TYPE,
+                            help="Session Type for activating service (default: 3)")
+    parser_mem.set_defaults(func=__dump_mem_wrapper)
 
     args = parser.parse_args(args)
     return args

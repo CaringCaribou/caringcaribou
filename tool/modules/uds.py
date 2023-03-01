@@ -835,7 +835,7 @@ def dump_memory(arb_id_request, arb_id_response, timeout,
     :rtype [(int, [int])] or []
     """
 
-    _max_memory_space = (2 ** (8 * address_byte_size) -1)
+    _max_memory_space = (2 ** (8 * address_byte_size) - 1)
 
     # Sanity checks
     if isinstance(timeout, float) and timeout < 0.0:
@@ -874,7 +874,8 @@ def dump_memory(arb_id_request, arb_id_response, timeout,
                 print('Address    Value (hex)')
             for identifier in range(start_addr, start_addr + mem_length, mem_size):
                 response = uds.read_memory_by_address(memory_address=identifier, memory_size=mem_size,
-                                                      address_and_length_format=(memory_length_byte_size << 4) + address_byte_size)
+                                                      address_and_length_format=(
+                                                                                            memory_length_byte_size << 4) + address_byte_size)
 
                 # Only keep positive responses
                 if response and Iso14229_1.is_positive_response(response):

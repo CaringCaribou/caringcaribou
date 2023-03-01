@@ -834,6 +834,9 @@ def dump_memory(arb_id_request, arb_id_response, timeout,
              empty list if no responses
     :rtype [(int, [int])] or []
     """
+
+    _max_memory_space = (2 ** (8 * address_byte_size) -1)
+
     # Sanity checks
     if isinstance(timeout, float) and timeout < 0.0:
         raise ValueError("Timeout value ({0}) cannot be negative"
@@ -841,6 +844,11 @@ def dump_memory(arb_id_request, arb_id_response, timeout,
 
     if start_addr < 0:
         raise ValueError("Start Address '{:x}' must be a positive integer".format(start_addr))
+
+    if start_addr + mem_length > _max_memory_space:
+        raise OverflowError("Start Address (0x{:x}) plus Memory Length (0x{:x}) "
+                            "will exceed the maximum memory address space (0x{:x})"
+                            .format(start_addr, mem_length, _max_memory_space))
 
     # Extended diagnostics
     response = extended_session(arb_id_request,
@@ -1099,3 +1107,5 @@ def module_main(arg_list):
         args.func(args)
     except KeyboardInterrupt:
         print("\n\nTerminated by user")
+    except OverflowError as e:
+        print("\n\n{}".format(e))

@@ -48,7 +48,8 @@ Discovers and utilizes various ISO 14229-1 services.
 - services - Scans for diagnostics services supported by an ECU
 - ecu_reset - Reset an ECU
 - testerpresent - Force an elevated session against an ECU to stay active
-- dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
+- dump_dids - Dumps values of Data Identifiers (DIDs)
+- dump_mem - Dumps memory of ECU
 
 Details here: [uds module](documentation/uds.md)
 
@@ -162,3 +163,4 @@ The target ECU used for the development setup is an STM32F107 based dev-board fr
 * FearfulSpoon
 * Alex DeTrano
 * Thomas Sermpinis
+* Robert Leale (carfucar)

@@ -15,7 +15,7 @@ NOTIFIER_STOP_DURATION = 0.5
 
 # Global CAN interface setting, which can be set through the -i flag to cc.py
 # The value None corresponds to the default CAN interface (typically can0)
-DEFAULT_INTERFACE = None
+DEFAULT_INTERFACE = 'vcan0'
 
 
 def auto_blacklist(bus, duration, classifier_function, print_results):
@@ -75,7 +75,7 @@ class CanActions:
         :param arb_id: int default arbitration ID for object or None
         :param notifier_enabled: bool indicating whether a notifier for incoming message callbacks should be enabled
         """
-        self.bus = can.Bus(DEFAULT_INTERFACE)
+        self.bus = can.Bus(channel=DEFAULT_INTERFACE, interface='socketcan')
         self.arb_id = arb_id
         self.bruteforce_running = False
         self.notifier = None

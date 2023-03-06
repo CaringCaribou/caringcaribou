@@ -63,7 +63,7 @@ The contents of this file might e.g. be:
     channel = can0
 
 ##### Test it
-Go to the Caring Caribou directory and run the following command:
+Run the following command:
 
     cc.py dump
 
@@ -82,12 +82,12 @@ The simplest solution is to download
 - DBUS 9 male
 - 2 wires
 
-> NOTE! The install procedure was more complex earlier - if you are using an older Raspian, try looking into older versions of this howto.
+> NOTE! The install procedure was more complex earlier - if you are using an older Raspbian, try looking into older versions of this howto.
 > Regarding HW, [this](https://harrisonsand.com/can-on-the-raspberry-pi/) blogpost details a couple of interesting alternatives
 
 #### USB-to-CAN
-##### Raspian
-1. Download and flash latest raspian image to SD card.
+##### Raspbian
+1. Download and flash latest raspbian image to SD card.
 We used ```http://downloads.raspberrypi.org/raspbian/images/raspbian-2017-07-05/```
 1. Update, upgrade & reboot
 
@@ -99,7 +99,7 @@ sudo reboot
 
 ##### Kernel modules
 1. Enable kernel module for spi by;  
-    1. either using the Raspberry Pi Configuraton tool, available from the Raspian desktop
+    1. either using the Raspberry Pi Configuraton tool, available from the Raspbian desktop
     1. or editing ```/boot/config.txt``` and adding ```dtparam=spi=on```
 1. Enable kernel module for the mcp2515 chipset (CAN controller) on piCAN by adding ```dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25``` to ```/boot/config.txt```
 1. Add ```dtoverlay=spi-bcm2835-overlay``` to ```/boot/config.txt```, because everyone says it's the right thing to do

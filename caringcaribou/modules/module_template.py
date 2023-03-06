@@ -1,16 +1,28 @@
-# module_template.py
-#
-# This file contains a template for a simple CaringCaribou module.
-# The module's entry point is the 'module_main' function.
-#
-# Steps to add this module to CaringCaribou and run it:
-#
-# 1. Copy this file to caringcaribou/tool/modules/
-#      $ cp module_template.py my_module.py
-#
-# 2. Run the following command to run module and show usage instructions:
-#      $ caringcaribou my_module -h
-#
+'''
+module_template.py
+
+This file contains a template for a simple CaringCaribou module.
+The module's entry point is the 'module_main' function.
+
+Steps to add this module to CaringCaribou and run it:
+
+1. Copy this template into the `caringcaribou/modules` directory:
+
+    $ cp module_template.py my_module.py
+
+2. In `setup.py`, add an entry under `caringcaribou.modules`, 
+   referencing your new module like:
+   `my_module = caringcaribou.modules.my_module`  
+
+3. Run: `setup.py install`
+
+4. Verify that the module is available,
+   it should be listed in the output of `cc.py -h`
+
+5. Run the following command to run module and show usage instructions:
+
+    $ cc.py my_module -h
+'''
 from __future__ import print_function
 import argparse
 import time
@@ -76,7 +88,8 @@ def parse_args(args):
   cc.py module_template
   cc.py module_template -id 123
   cc.py module_template -id 0x1FF""")
-    parser.add_argument("-id", type=parse_int_dec_or_hex, default=0, help="arbitration ID to use")
+    parser.add_argument("-id", type=parse_int_dec_or_hex,
+                        default=0, help="arbitration ID to use")
     args = parser.parse_args(args)
     return args
 

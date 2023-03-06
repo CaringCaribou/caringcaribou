@@ -8,7 +8,7 @@ Caring Caribou
 
 from setuptools import find_packages, setup
 
-version = "0.4dev"
+version = "0.4.dev0"
 dl_version = "master" if "dev" in version else "v{}".format(version)
 
 print(r"""-----------------------------------
@@ -20,11 +20,11 @@ setup(
     name="caringcaribou",
     version=version,
     author="Kasper Karlsson",
-    author_email="hej@cc.py",
+    # author_email="TBD",
     description="A friendly automotive security exploration tool",
     long_description=__doc__,
     keywords=["automotive", "security", "CAN", "automotive protocols", "fuzzing"],
-    url="https://cc.py",
+    url="https://github.com/CaringCaribou/caringcaribou/",
     download_url="https://github.com/CaringCaribou/caringcaribou/tarball/{}".format(dl_version),
     license="GPLv3",
     packages=find_packages(),

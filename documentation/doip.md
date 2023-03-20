@@ -14,14 +14,14 @@ Supported modes:
 * testerpresent - Force an elevated diagnostics session against an ECU to stay active
 * seed_randomness_fuzzer - ECUReset method fuzzing for seed randomness evaluation
 
-As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific mode by specifying the mode followed by `-h`, e.g. `./cc.py doip discovery -h` or `./cc.py doip testerpresent -h`
+As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific mode by specifying the mode followed by `-h`, e.g. `cc.py doip discovery -h` or `cc.py doip testerpresent -h`
 
 ```
-$ ./cc.py doip -h
+$ cc.py doip -h
 
 
 -------------------
-CARING CARIBOU v0.3
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'doip'
@@ -55,7 +55,7 @@ Scans for arbitration IDs where an ECU responds to UDS requests.
 The ID of both the request and the matching response are printed. These are typically used as inputs for other UDS modes.
 
 ```
-$ ./cc.py doip discovery -h
+$ cc.py doip discovery -h
 
 -------------------
 CARING CARIBOU v0.3
@@ -80,7 +80,7 @@ optional arguments:
 Scans an ECU (or rather, a given pair of request/response arbitration IDs) for supported diagnostics services.
 
 ```
-$ ./cc.py doip services -h
+$ cc.py doip services -h
 
 -------------------
 CARING CARIBOU v0.3
@@ -105,7 +105,7 @@ Requests a restart of an ECU.
 It is common for an ECU to support multiple reset types.
 
 ```
-$ ./cc.py doip ecu_reset -h
+$ cc.py doip ecu_reset -h
 
 -------------------
 CARING CARIBOU v0.3
@@ -132,7 +132,7 @@ Elevated sessions (often referred to as "unlocked servers") automatically fall b
 By continuing to send Tester Present messages after a server (ECU) has been unlocked (e.g. by an official diagnostics tool), it can be kept in an unlocked state for an arbitrary amount of time in order to allow continued access to protected services.
 
 ```
-$ ./cc.py doip testerpresent -h
+$ cc.py doip testerpresent -h
 
 -------------------
 CARING CARIBOU v0.3
@@ -156,7 +156,7 @@ optional arguments:
 Scans a range of Dynamic Data Identifiers (DIDs) and dumps their values.
 
 ```
-$ ./cc.py doip dump_dids -h
+$ cc.py doip dump_dids -h
 
 -------------------
 CARING CARIBOU v0.3
@@ -183,7 +183,7 @@ Requests a security seed after a Hard ECUReset, using the supplied request seque
 In case that duplicate seeds are found by the tool, it means that the ECU is potentially  vulnerable and uses weak random number generation seeded by the system timer.
 
 ```
-$ ./cc.py doip seed_randomness_fuzzer -h
+$ cc.py doip seed_randomness_fuzzer -h
 
 -------------------
 CARING CARIBOU v0.3

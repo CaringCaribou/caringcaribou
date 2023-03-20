@@ -1,9 +1,9 @@
 # Dump
 ````
->./cc.py dump -h
+$ cc.py dump -h
 
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'dump'

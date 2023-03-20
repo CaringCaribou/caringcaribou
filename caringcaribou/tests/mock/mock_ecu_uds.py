@@ -1,8 +1,8 @@
-from lib.iso15765_2 import IsoTp
-from lib.iso14229_1 import *
-from lib.common import int_from_byte_list
-from tests.mock.mock_ecu import MockEcu
-from tests.mock.mock_ecu_iso_tp import MockEcuIsoTp
+from caringcaribou.utils.iso15765_2 import IsoTp
+from caringcaribou.utils.iso14229_1 import *
+from caringcaribou.utils.common import int_from_byte_list
+from caringcaribou.tests.mock.mock_ecu import MockEcu
+from caringcaribou.tests.mock.mock_ecu_iso_tp import MockEcuIsoTp
 
 
 class MockEcuIso14229(MockEcuIsoTp, MockEcu):

@@ -1,9 +1,9 @@
 # DCM
 ```
-> ./cc.py dcm -h
+$ cc.py dcm -h
 
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'dcm'
@@ -27,10 +27,10 @@ Example usage:
 
 ## Discovery
 ```
-> ./cc.py dcm discovery -h
+$ cc.py dcm discovery -h
 
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'dcm'
@@ -50,10 +50,10 @@ optional arguments:
 
 ## Services
 ````
-> ./cc.py dcm services -h
+$ cc.py dcm services -h
 
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'dcm'
@@ -70,10 +70,10 @@ optional arguments:
 
 ## Subfunc
 ````
-> ./cc.py dcm subfunc -h
+$ cc.py dcm subfunc -h
 
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'dcm'
@@ -93,10 +93,10 @@ optional arguments:
 
 ## DTC
 ````
-> ./cc.py dcm dtc -h
+$ cc.py dcm dtc -h
 
 -------------------
-CARING CARIBOU v0.1
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'dcm'

@@ -8,13 +8,13 @@ The fuzzer module supports multiple fuzzing methods.
 
 The `random` and `mutate` modes both show which random seed is being used. The seed can be passed in an optional argument to these modes, in order to repeat the sequence of generated messages.
 
-As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific fuzzing mode by specifying the mode followed by `-h`, e.g. `./cc.py fuzzer random -h` or `./cc.py fuzzer mutate -h`
+As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific fuzzing mode by specifying the mode followed by `-h`, e.g. `cc.py fuzzer random -h` or `cc.py fuzzer mutate -h`
 
 ````
-$ ./cc.py fuzzer -h
+$ cc.py fuzzer -h
 
 -------------------
-CARING CARIBOU v0.2
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'fuzzer'
@@ -36,10 +36,10 @@ optional arguments:
 
 Example usage:
 
-./cc.py fuzzer random
-./cc.py fuzzer random -min 4 -seed 0xabc123 -f log.txt
-./cc.py fuzzer brute 0x123 12ab..78
-./cc.py fuzzer mutate 7f.. 12ab....
-./cc.py fuzzer replay log.txt
-./cc.py fuzzer identify log.txt
+cc.py fuzzer random
+cc.py fuzzer random -min 4 -seed 0xabc123 -f log.txt
+cc.py fuzzer brute 0x123 12ab..78
+cc.py fuzzer mutate 7f.. 12ab....
+cc.py fuzzer replay log.txt
+cc.py fuzzer identify log.txt
 ````

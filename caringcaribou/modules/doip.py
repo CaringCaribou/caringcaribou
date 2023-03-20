@@ -1,8 +1,8 @@
 from __future__ import print_function
-from lib.common import list_to_hex_str, parse_int_dec_or_hex
-from lib.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
-from lib.constants import ARBITRATION_ID_MIN
-from lib.iso14229_1 import Constants, NegativeResponseCodes
+from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex
+from caringcaribou.utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
+from caringcaribou.utils.constants import ARBITRATION_ID_MIN
+from caringcaribou.utils.iso14229_1 import Constants, NegativeResponseCodes
 from doipclient import DoIPClient
 from doipclient.connectors import DoIPClientUDSConnector
 from udsoncan.client import Client

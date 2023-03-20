@@ -243,7 +243,7 @@ def xcp_command_discovery(args):
     global connect_reply, command_reply
     send_arb_id = args.src
     rcv_arb_id = args.dst
-    connect_message = [0xFF, 0, 0, 0, 0, 0, 0, 0]
+    connect_message = [0xff, 0, 0, 0, 0, 0, 0, 0]
 
     def connect_callback_handler(msg):
         global connect_reply
@@ -273,7 +273,7 @@ def xcp_command_discovery(args):
             def callback_handler(msg):
                 global command_reply
                 if msg.arbitration_id == rcv_arb_id:
-                    print("{0:<23} {1}".format(cmd_desc, msg.data[0] != 0xFE))
+                    print("{0:<23} {1}".format(cmd_desc, msg.data[0] != 0xfe))
                     command_reply = True
 
             command_reply = False
@@ -452,9 +452,9 @@ def xcp_memory_dump(args):
     n = start_address
     bytes_left = length
     # Calculate start address (r is automatically reversed after connect if needed)
-    n &= 0xFFFFFFFF
+    n &= 0xffffffff
     for i in range(4):
-        r.append(n & 0xFF)
+        r.append(n & 0xff)
         n >>= 8
     # Make sure dump_file can be opened if specified (clearing it if it already exists)
     if dump_file:
@@ -468,7 +468,7 @@ def xcp_memory_dump(args):
     with CanActions(arb_id=send_arb_id) as can_wrap:
         print("Attempting XCP memory dump")
         # Connect and prepare for dump
-        can_wrap.send_single_message_with_callback([0xff], handle_connect_reply)
+        can_wrap.send_single_message_with_callback([0xff, 0, 0, 0, 0, 0, 0, 0], handle_connect_reply)
         # Idle timeout handling
         timeout_start = datetime.now()
         while not dump_complete and datetime.now() - timeout_start < timedelta(seconds=3):

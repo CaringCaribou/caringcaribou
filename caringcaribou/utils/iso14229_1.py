@@ -293,7 +293,7 @@ class Iso14229_1(object):
             response = self.tp.indication(wait_window)
             NRC = NegativeResponseCodes
             NRC_RCRRP = NRC.REQUEST_CORRECTLY_RECEIVED_RESPONSE_PENDING
-            if response is not None and len(response) > 3:
+            if response is not None and len(response) >= 3:
                 if (response[0] == Constants.NR_SI and
                    response[2] == NRC_RCRRP):
                     continue

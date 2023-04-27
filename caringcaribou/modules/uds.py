@@ -643,9 +643,9 @@ def request_seed(arb_id_request, arb_id_response, level,
     :rtype [int] or None
     """
     # Sanity checks
-    if (not Services.SecurityAccess.RequestSeedOrSendKey()
-       .is_valid_request_seed_level(level)):
-        raise ValueError("Invalid request seed level")
+    #if (not Services.SecurityAccess.RequestSeedOrSendKey()
+    #   .is_valid_request_seed_level(level)):
+    #    raise ValueError("Invalid request seed level")
     if isinstance(timeout, float) and timeout < 0.0:
         raise ValueError("Timeout value ({0}) cannot be negative"
                          .format(timeout))
@@ -743,9 +743,6 @@ def __auto_wrapper(args):
                 args.src = client_id
                 args.dst = server_id
                 
-                print("\nEnumerating Services:\n")
-
-                found_services = service_discovery(client_id, server_id, timeout)
 
                 # Print Client/Server result table
                 print("\nTarget Diagnostic IDs:\n")
@@ -755,6 +752,10 @@ def __auto_wrapper(args):
                 print("| 0x{0:08x} | 0x{1:08x} |"
                         .format(client_id, server_id))
                 print(table_line)
+
+                print("\nEnumerating Services:\n")
+
+                found_services = service_discovery(client_id, server_id, timeout)
 
                 print("\nIdentified services:\n")
 
@@ -767,14 +768,41 @@ def __auto_wrapper(args):
                 print("\n")
                     
                 dump_dids(client_id, server_id, timeout, min_did, max_did, print_results)
-                
+
                 print("\nEnumerating Diagnostic Session Control Service:\n")
-                for i in range(0,255):    
+
+                found_subservices = []
+
+                for i in range(1,256):    
                     extended_session(client_id, server_id, 1)
                     #time.sleep(0.50)
                     response = extended_session(client_id, server_id, i)
-                    print(response)
+                    print("\rProbing sub-service 0x{0:02x}".format(i), end="")
 
+                    if response is None:
+                        # No response received
+                        continue
+
+                    # Parse response
+                    if len(response) > 3:
+                        response_id = response[1]
+                        # response_service_id = response[2]
+                        status = response[3]
+                        if response_id != Constants.NR_SI:
+                            found_subservices.append(i)
+                        elif status != NegativeResponseCodes.SERVICE_NOT_SUPPORTED:
+                            # Any other response than "service not supported" counts
+                            found_subservices.append(i)
+                
+                print("\n")
+                if len(found_subservices) == 0:
+                    print("\nNo Diagnostic Session Control Sub-Services were discovered\n")
+                else:
+                    print("Discovered Diagnostic Session Control Sub-Services:", end=' ')
+                    for subservice_id in found_subservices:
+                        print("0x{0:02x},".format(subservice_id), end=' ')
+                
+                print("\n")
                 print("\nEnumerating ECUReset Service:\n")
                 for i in range(1,6):    
                     args.reset_type = i
@@ -782,13 +810,31 @@ def __auto_wrapper(args):
                     print("\n")
 
                 if 27 in found_services:
-                    for i in range(0,255)
-                        args.reset = 
-                        args.sess_type = 
-                        args.sec_level = i
-                        args.delay = DELAY_SECSEED_RESET
-                        args.num = 1
 
+                    found_subdiag = []
+                    found_subsec = []
+                    for subservice_id in found_subservices: 
+                        for level in range(1,256):
+
+                            print("\rProbing security access sub-service 0x{0:02x}, in diagnostic session 0x{1:02x}.".format(level, subservice_id), end="")
+                            extended_session(client_id, server_id, subservice_id)
+                            response = request_seed(client_id, server_id, level, None, None)
+
+                            if response is None:
+                                continue
+                            elif Iso14229_1.is_positive_response(response):
+                                #print("Seed received successfully with diagnostic session 0x{0:02x} and security access type 0x{0:02x}.".format(subservice_id, level))
+                                found_subdiag.append(subservice_id)
+                                found_subsec.append(level)
+
+                    print("\nSecurity Access Sub Services:\n")
+                    table_line_sec = "+---------------------+------------------+"
+                    print(table_line_sec)
+                    print("| CLIENT ID  | SERVER ID  |") 
+                    print("| Diagnostic Session  | Security Access  |")  
+                    print("| 0x{0:02x} | 0x{0:02x} |"
+                            .format(subservice_id, level))
+                    print(table_line_sec)
 
     except ValueError as e:
         print("Discovery failed: {0}".format(e))     

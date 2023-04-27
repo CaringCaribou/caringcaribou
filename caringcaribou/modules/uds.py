@@ -826,13 +826,13 @@ def __auto_wrapper(args):
                                 #print("Seed received successfully with diagnostic session 0x{0:02x} and security access type 0x{0:02x}.".format(subservice_id, level))
                                 found_subdiag.append(subservice_id)
                                 found_subsec.append(level)
-
+                    
+                    print("\n")
                     print("\nSecurity Access Sub Services:\n")
                     table_line_sec = "+---------------------+------------------+"
                     print(table_line_sec)
-                    print("| CLIENT ID  | SERVER ID  |") 
-                    print("| Diagnostic Session  | Security Access  |")  
-                    print("| 0x{0:02x} | 0x{0:02x} |"
+                    print("|  Diagnostic Session  |  Security Access  |")  
+                    print("|       0x{0:02x}      |      0x{1:02x}    |"
                             .format(subservice_id, level))
                     print(table_line_sec)
 

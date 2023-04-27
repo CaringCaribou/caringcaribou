@@ -714,6 +714,85 @@ def __dump_dids_wrapper(args):
     print_results = True
     dump_dids(arb_id_request, arb_id_response, timeout, min_did, max_did,
               print_results)
+    
+def __auto_wrapper(args):
+    """Wrapper used to initiate automated UDS scan"""
+    min_id = args.min
+    max_id = args.max
+    blacklist = args.blacklist
+    auto_blacklist_duration = args.autoblacklist
+    delay = args.delay
+    verify = not args.skipverify
+    print_results = True
+    timeout = args.timeout
+    min_did = args.min_did
+    max_did = args.max_did
+
+    try:
+        arb_id_pairs = uds_discovery(min_id, max_id, blacklist,
+                                     auto_blacklist_duration,
+                                     delay, verify, print_results)
+        
+        print("\n")
+        if len(arb_id_pairs) == 0:
+            # No UDS discovered
+            print("\nDiagnostics service could not be found.")
+        else:
+            for (client_id, server_id) in arb_id_pairs:
+                
+                args.src = client_id
+                args.dst = server_id
+                
+                print("\nEnumerating Services:\n")
+
+                found_services = service_discovery(client_id, server_id, timeout)
+
+                # Print Client/Server result table
+                print("\nTarget Diagnostic IDs:\n")
+                table_line = "+------------+------------+"
+                print(table_line)
+                print("| CLIENT ID  | SERVER ID  |")  
+                print("| 0x{0:08x} | 0x{1:08x} |"
+                        .format(client_id, server_id))
+                print(table_line)
+
+                print("\nIdentified services:\n")
+
+                # Print available services result table
+                for service_id in found_services:
+                    service_name = UDS_SERVICE_NAMES.get(service_id, "Unknown service")
+                    print("Supported service 0x{0:02x}: {1}"
+                        .format(service_id, service_name))  
+                
+                print("\n")
+                    
+                dump_dids(client_id, server_id, timeout, min_did, max_did, print_results)
+                
+                print("\nEnumerating Diagnostic Session Control Service:\n")
+                for i in range(0,255):    
+                    extended_session(client_id, server_id, 1)
+                    #time.sleep(0.50)
+                    response = extended_session(client_id, server_id, i)
+                    print(response)
+
+                print("\nEnumerating ECUReset Service:\n")
+                for i in range(1,6):    
+                    args.reset_type = i
+                    __ecu_reset_wrapper(args)
+                    print("\n")
+
+                if 27 in found_services:
+                    for i in range(0,255)
+                        args.reset = 
+                        args.sess_type = 
+                        args.sec_level = i
+                        args.delay = DELAY_SECSEED_RESET
+                        args.num = 1
+
+
+    except ValueError as e:
+        print("Discovery failed: {0}".format(e))     
+
 
 
 def dump_dids(arb_id_request, arb_id_response, timeout,
@@ -947,6 +1026,48 @@ def __parse_args(args):
                             default=DUMP_DID_MAX,
                             help="maximum device identifier (DID) to read (default: 0xFFFF)")
     parser_did.set_defaults(func=__dump_dids_wrapper)
+
+    parser_auto = subparsers.add_parser("auto")
+    parser_auto.add_argument("-min",
+                                  type=parse_int_dec_or_hex, default=None,
+                                  help="min arbitration ID "
+                                       "to send request for")
+    parser_auto.add_argument("-max",
+                                  type=parse_int_dec_or_hex, default=None,
+                                  help="max arbitration ID "
+                                       "to send request for")
+    parser_auto.add_argument("-b", "--blacklist", metavar="B",
+                                  type=parse_int_dec_or_hex, default=[],
+                                  nargs="+",
+                                  help="arbitration IDs to blacklist "
+                                       "responses from")
+    parser_auto.add_argument("-ab", "--autoblacklist", metavar="N",
+                                  type=float, default=0,
+                                  help="listen for false positives for N seconds "
+                                       "and blacklist matching arbitration "
+                                       "IDs before running discovery")
+    parser_auto.add_argument("-sv", "--skipverify",
+                                  action="store_true",
+                                  help="skip verification step (reduces "
+                                       "result accuracy)")
+    parser_auto.add_argument("-d", "--delay", metavar="D",
+                                  type=float, default=DELAY_DISCOVERY,
+                                  help="D seconds delay between messages "
+                                       "(default: {0})".format(DELAY_DISCOVERY))
+    parser_auto.add_argument("-t", "--timeout", metavar="T",
+                             type=float, default=TIMEOUT_SERVICES,
+                             help="wait T seconds for response before "
+                                  "timeout (default: {0})"
+                                  .format(TIMEOUT_SERVICES))
+    parser_auto.add_argument("--min_did",
+                            type=parse_int_dec_or_hex,
+                            default=DUMP_DID_MIN,
+                            help="minimum device identifier (DID) to read (default: 0x0000)")
+    parser_auto.add_argument("--max_did",
+                            type=parse_int_dec_or_hex,
+                            default=DUMP_DID_MAX,
+                            help="maximum device identifier (DID) to read (default: 0xFFFF)")
+    parser_auto.set_defaults(func=__auto_wrapper)
 
     args = parser.parse_args(args)
     return args

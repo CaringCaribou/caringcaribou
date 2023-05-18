@@ -844,6 +844,7 @@ def __auto_wrapper(args):
                     for subservice_id in found_subservices: 
                         for level in range(1,256):
                             print("\rProbing security access sub-service 0x{0:02x} in diagnostic session 0x{1:02x}.".format(level, subservice_id), end=" ")
+                            extended_session(client_id, server_id, 1)
                             extended_session(client_id, server_id, subservice_id)
                             response = request_seed(client_id, server_id, level, None, None)
 
@@ -862,6 +863,7 @@ def __auto_wrapper(args):
                     print("|         0x{0:02x}         |         0x{1:02x}      |"
                             .format(subservice_id, level))
                     print(table_line_sec)
+                    
 
     except ValueError as e:
         print("Discovery failed: {0}".format(e))     

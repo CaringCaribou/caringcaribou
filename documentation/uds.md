@@ -98,6 +98,32 @@ optional arguments:
   -t T, --timeout T  wait T seconds for response before timeout (default: 0.2)
 ```
 
+## Sub-services
+Scans a diagnostics service ID for supported sub-service IDs.
+
+```
+$ cc.py uds subservices -h
+
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
+Loading module 'uds'
+
+usage: cc.py uds subservices [-h] [-t T] dtype stype src dst
+
+positional arguments:
+  dtype              Diagnostic Session Control Subsession Byte
+  stype              Service ID
+  src                arbitration ID to transmit to
+  dst                arbitration ID to listen to
+
+options:
+  -h, --help         show this help message and exit
+  -t T, --timeout T  wait T seconds for response before timeout (default: 0.02)
+```
+
+
 ## ECU Reset
 Requests a restart of an ECU.
 
@@ -177,4 +203,33 @@ optional arguments:
   -t T, --timeout T  wait T seconds for response before timeout
   --min_did MIN_DID  minimum device identifier (DID) to read (default: 0x0000)
   --max_did MAX_DID  maximum device identifier (DID) to read (default: 0xFFFF)
+```
+
+## Auto
+Performs a fully automated diagnostics scan from start to finish, by using the already existing CC modules.
+
+```
+$ cc.py uds auto -h
+
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
+Loading module 'uds'
+
+usage: cc.py uds auto [-h] [-min MIN] [-max MAX] [-b B [B ...]] [-ab N] [-sv] [-d D] [-t T] [--min_did MIN_DID] [--max_did MAX_DID]
+
+options:
+  -h, --help            show this help message and exit
+  -min MIN              min arbitration ID to send request for
+  -max MAX              max arbitration ID to send request for
+  -b B [B ...], --blacklist B [B ...]
+                        arbitration IDs to blacklist responses from
+  -ab N, --autoblacklist N
+                        listen for false positives for N seconds and blacklist matching arbitration IDs before running discovery
+  -sv, --skipverify     skip verification step (reduces result accuracy)
+  -d D, --delay D       D seconds delay between messages (default: 0.01)
+  -t T, --timeout T     wait T seconds for response before timeout (default: 0.2)
+  --min_did MIN_DID     minimum device identifier (DID) to read (default: 0x0000)
+  --max_did MAX_DID     maximum device identifier (DID) to read (default: 0xFFFF)
 ```

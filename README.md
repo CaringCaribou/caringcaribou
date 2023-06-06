@@ -44,9 +44,11 @@ A clean installation of Caring Caribou includes the following modules:
 Discovers and utilizes various ISO 14229-1 services.
 - discovery - Scans for ECUs supporting diagnostics services
 - services - Scans for diagnostics services supported by an ECU
+- subservices - Subservice enumeration of supported diagnostics services by an ECU
 - ecu_reset - Reset an ECU
 - testerpresent - Force an elevated session against an ECU to stay active
 - dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
+- auto - Fully automated diagnostics scan, by using the already existing UDS submodules
 
 Details here: [uds module](documentation/uds.md)
 

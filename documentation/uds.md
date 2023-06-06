@@ -7,8 +7,11 @@ The UDS protocol uses a server-client model, where the client (e.g. a diagnostic
 Supported modes:
 * discovery - Scan for arbitration IDs where ECUs listen and respond to incoming diagnostics requests
 * services - Scan for diagnostics services supported by an ECU
+* subservices - Subservice enumeration of supported diagnostics services by an ECU
 * ecu_reset - Reset an ECU
 * testerpresent - Force an elevated diagnostics session against an ECU to stay active
+* dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
+* auto - Fully automated diagnostics scan, by using the already existing UDS submodules
 
 As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific mode by specifying the mode followed by `-h`, e.g. `cc.py uds discovery -h` or `cc.py uds testerpresent -h`
 

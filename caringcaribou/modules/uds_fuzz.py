@@ -1,6 +1,6 @@
 from __future__ import print_function
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
-from caringcaribou.utils.iso14229_1 import Iso14229_1
+from caringcaribou.utils.iso14229_1 import Iso14229_1, ServiceID
 from caringcaribou.modules.uds import ecu_reset, print_negative_response, request_seed, extended_session
 from sys import stdout
 import argparse
@@ -145,9 +145,9 @@ def delay_fuzzer(args):
                 # Request seed
                 elif session_type[i] == "2" and session_type[i + 1] == "7":
 
+                    service = ServiceID.SECURITY_ACCESS
                     session = str_to_hex(i, session_type)
-                    response = request_seed(arb_id_request, arb_id_response,
-                                            session, None, None)
+                    response = raw_send(arb_id_request, arb_id_response, service, session)
                     if response is None:
                         print("\nInvalid response")
                     elif Iso14229_1.is_positive_response(response):
@@ -192,7 +192,20 @@ def delay_fuzzer(args):
         for seed in seed_list:
             print(seed)
 
+def raw_send(arb_id_request, arb_id_response, service, session_type):
+    with IsoTp(arb_id_request=arb_id_request,
+               arb_id_response=arb_id_response) as tp:
+        # Setup filter for incoming messages
+        request = [0] * 2
+        request[0] = service
+        request[1] = session_type
 
+        tp.set_filter_single_arbitration_id(arb_id_response)
+        with Iso14229_1(tp) as uds:
+            tp.send_request(request)
+            response = uds.receive_response(Iso14229_1.P3_CLIENT)
+            return response
+        
 def str_to_hex(i, session_type):
     max_index = i + 3
     if len(session_type) >= max_index:

@@ -7,8 +7,11 @@ The UDS protocol uses a server-client model, where the client (e.g. a diagnostic
 Supported modes:
 * discovery - Scan for arbitration IDs where ECUs listen and respond to incoming diagnostics requests
 * services - Scan for diagnostics services supported by an ECU
+* subservices - Subservice enumeration of supported diagnostics services by an ECU
 * ecu_reset - Reset an ECU
 * testerpresent - Force an elevated diagnostics session against an ECU to stay active
+* dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
+* auto - Fully automated diagnostics scan, by using the already existing UDS submodules
 
 As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific mode by specifying the mode followed by `-h`, e.g. `cc.py uds discovery -h` or `cc.py uds testerpresent -h`
 
@@ -98,6 +101,32 @@ optional arguments:
   -t T, --timeout T  wait T seconds for response before timeout (default: 0.2)
 ```
 
+## Sub-services
+Scans a diagnostics service ID for supported sub-service IDs.
+
+```
+$ cc.py uds subservices -h
+
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
+Loading module 'uds'
+
+usage: cc.py uds subservices [-h] [-t T] dtype stype src dst
+
+positional arguments:
+  dtype              Diagnostic Session Control Subsession Byte
+  stype              Service ID
+  src                arbitration ID to transmit to
+  dst                arbitration ID to listen to
+
+options:
+  -h, --help         show this help message and exit
+  -t T, --timeout T  wait T seconds for response before timeout (default: 0.02)
+```
+
+
 ## ECU Reset
 Requests a restart of an ECU.
 
@@ -177,4 +206,33 @@ optional arguments:
   -t T, --timeout T  wait T seconds for response before timeout
   --min_did MIN_DID  minimum device identifier (DID) to read (default: 0x0000)
   --max_did MAX_DID  maximum device identifier (DID) to read (default: 0xFFFF)
+```
+
+## Auto
+Performs a fully automated diagnostics scan from start to finish, by using the already existing CC modules.
+
+```
+$ cc.py uds auto -h
+
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
+Loading module 'uds'
+
+usage: cc.py uds auto [-h] [-min MIN] [-max MAX] [-b B [B ...]] [-ab N] [-sv] [-d D] [-t T] [--min_did MIN_DID] [--max_did MAX_DID]
+
+options:
+  -h, --help            show this help message and exit
+  -min MIN              min arbitration ID to send request for
+  -max MAX              max arbitration ID to send request for
+  -b B [B ...], --blacklist B [B ...]
+                        arbitration IDs to blacklist responses from
+  -ab N, --autoblacklist N
+                        listen for false positives for N seconds and blacklist matching arbitration IDs before running discovery
+  -sv, --skipverify     skip verification step (reduces result accuracy)
+  -d D, --delay D       D seconds delay between messages (default: 0.01)
+  -t T, --timeout T     wait T seconds for response before timeout (default: 0.2)
+  --min_did MIN_DID     minimum device identifier (DID) to read (default: 0x0000)
+  --max_did MAX_DID     maximum device identifier (DID) to read (default: 0xFFFF)
 ```

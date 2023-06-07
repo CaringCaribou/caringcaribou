@@ -151,8 +151,7 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
     # Sanity checks
     if max_id < min_id:
         raise ValueError("max_id must not be smaller than min_id -"
-                         " got min:0x{0:x}, max:0x{1:x}".format(
-                          min_id, max_id))
+                         " got min:0x{0:x}, max:0x{1:x}".format(min_id, max_id))
     if auto_blacklist_duration < 0:
         raise ValueError("auto_blacklist_duration must not be smaller "
                          "than 0, got {0}'".format(auto_blacklist_duration))
@@ -384,7 +383,8 @@ def __service_discovery_wrapper(args):
         service_name = UDS_SERVICE_NAMES.get(service_id, "Unknown service")
         print("Supported service 0x{0:02x}: {1}"
               .format(service_id, service_name))
-        
+
+
 def sub_discovery(arb_id_request, arb_id_response, diagnostic, service, timeout, print_results=True):
     """Scans for supported UDS Diagnostic Session Control subservices on the specified arbitration ID.
        Returns a list of found Diagnostic Session Control subservice IDs.
@@ -408,7 +408,7 @@ def sub_discovery(arb_id_request, arb_id_response, diagnostic, service, timeout,
     subservice_status = []
 
     try:
-        for i in range(0,256):    
+        for i in range(0, 256):
 
             if service != Services.DiagnosticSessionControl:
                 extended_session(arb_id_request, arb_id_response, diagnostic)
@@ -421,7 +421,8 @@ def sub_discovery(arb_id_request, arb_id_response, diagnostic, service, timeout,
 
             service_name = UDS_SERVICE_NAMES.get(service, "Unknown service")
 
-            print("\rProbing sub-service ID 0x{0:02x} for service {1} (0x{2:02x}).".format(i, service_name, service), end="")
+            print("\rProbing sub-service ID 0x{0:02x} for service {1} (0x{2:02x}).".format(i, service_name, service),
+                  end="")
 
             if response is None:
                 # No response received
@@ -433,6 +434,8 @@ def sub_discovery(arb_id_request, arb_id_response, diagnostic, service, timeout,
                 response_service_id = response[1]
                 if len(response) >= 3:
                     status = response[2]
+                else:
+                    status = None
                 if Iso14229_1.is_positive_response(response):
                     found_subservices.append(i)
                     subservice_status.append(0x00)
@@ -459,8 +462,8 @@ def __sub_discovery_wrapper(args):
 
     # Probe subservices
     found_subservices, subservice_status = sub_discovery(arb_id_request,
-                                       arb_id_response, diagnostic, service, timeout)
-    
+                                                         arb_id_response, diagnostic, service, timeout)
+
     service_name = UDS_SERVICE_NAMES.get(service, "Unknown service")
     # Print results
     if len(found_subservices) == 0:
@@ -619,9 +622,9 @@ def __ecu_reset_wrapper(args):
             subfunction = response[1]
             expected_response_id = \
                 Iso14229_1.get_service_response_id(
-                                               Services.EcuReset.service_id)
+                    Services.EcuReset.service_id)
             if (response_service_id == expected_response_id
-               and subfunction == reset_type):
+                    and subfunction == reset_type):
                 # Positive response
                 pos_msg = "Received positive response"
                 if response_length > 2:
@@ -746,7 +749,7 @@ def request_seed(arb_id_request, arb_id_response, level,
     """
     # Sanity checks
     if (not Services.SecurityAccess.RequestSeedOrSendKey()
-       .is_valid_request_seed_level(level)):
+            .is_valid_request_seed_level(level)):
         raise ValueError("Invalid request seed level")
     if isinstance(timeout, float) and timeout < 0.0:
         raise ValueError("Timeout value ({0}) cannot be negative"
@@ -787,7 +790,7 @@ def send_key(arb_id_request, arb_id_response, level, key, timeout):
     """
     # Sanity checks
     if (not Services.SecurityAccess.RequestSeedOrSendKey()
-       .is_valid_send_key_level(level)):
+            .is_valid_send_key_level(level)):
         raise ValueError("Invalid send key level")
     if isinstance(timeout, float) and timeout < 0.0:
         raise ValueError("Timeout value ({0}) cannot be negative"
@@ -816,7 +819,8 @@ def __dump_dids_wrapper(args):
     print_results = True
     dump_dids(arb_id_request, arb_id_response, timeout, min_did, max_did,
               print_results)
-    
+
+
 def __auto_wrapper(args):
     """Wrapper used to initiate automated UDS scan"""
     min_id = args.min
@@ -834,7 +838,7 @@ def __auto_wrapper(args):
         arb_id_pairs = uds_discovery(min_id, max_id, blacklist,
                                      auto_blacklist_duration,
                                      delay, verify, print_results)
-        
+
         print("\n")
         if len(arb_id_pairs) == 0:
             # No UDS discovered
@@ -855,24 +859,24 @@ def __auto_wrapper(args):
 
             # Enumerate each pair
             for (client_id, server_id) in arb_id_pairs:
-                
+
                 args.src = client_id
                 args.dst = server_id
-                
 
                 # Print Client/Server result table
                 print("\nTarget Diagnostic IDs:\n")
                 table_line = "+------------+------------+"
                 print(table_line)
-                print("| CLIENT ID  | SERVER ID  |")  
+                print("| CLIENT ID  | SERVER ID  |")
                 print(table_line)
                 print("| 0x{0:08x} | 0x{1:08x} |"
-                        .format(client_id, server_id))
+                      .format(client_id, server_id))
                 print(table_line)
 
                 print("\nEnumerating Services:\n")
 
                 found_services = service_discovery(client_id, server_id, timeout)
+                found_subservices = []
 
                 print("\nIdentified services:\n")
 
@@ -880,10 +884,10 @@ def __auto_wrapper(args):
                 for service_id in found_services:
                     service_name = UDS_SERVICE_NAMES.get(service_id, "Unknown service")
                     print("Supported service 0x{0:02x}: {1}"
-                        .format(service_id, service_name))  
-                
+                          .format(service_id, service_name))
+
                 print("\n")
-                    
+
                 dump_dids(client_id, server_id, timeout, min_did, max_did, print_results)
 
                 if ServiceID.DIAGNOSTIC_SESSION_CONTROL in found_services:
@@ -893,7 +897,7 @@ def __auto_wrapper(args):
                     found_subservices = []
                     subservice_status = []
 
-                    for i in range(1,256):    
+                    for i in range(1, 256):
 
                         extended_session(client_id, server_id, 1)
 
@@ -929,7 +933,7 @@ def __auto_wrapper(args):
                         for subservice_id in found_subservices:
                             nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)])
                             print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=' ')
-                
+
                 if ServiceID.ECU_RESET in found_services:
 
                     print("\n")
@@ -938,7 +942,7 @@ def __auto_wrapper(args):
                     found_subservices = []
                     subservice_status = []
 
-                    for i in range(1,5):    
+                    for i in range(1, 5):
 
                         extended_session(client_id, server_id, 3)
 
@@ -956,6 +960,8 @@ def __auto_wrapper(args):
                             response_service_id = response[1]
                             if len(response) >= 3:
                                 status = response[2]
+                            else:
+                                status = None
                             if Iso14229_1.is_positive_response(response):
                                 found_subservices.append(i)
                                 subservice_status.append(0x00)
@@ -976,16 +982,16 @@ def __auto_wrapper(args):
                             nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)])
                             print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=' ')
 
-                    
-
                 if ServiceID.SECURITY_ACCESS in found_services:
 
                     found_subdiag = []
                     found_subsec = []
                     print("\n")
-                    for subservice_id in found_subservices: 
-                        for level in range(1,256):
-                            print("\rProbing security access sub-service 0x{0:02x} in diagnostic session 0x{1:02x}.".format(level, subservice_id), end=" ")
+                    for subservice_id in found_subservices:
+                        for level in range(1, 256):
+                            print(
+                                "\rProbing security access sub-service 0x{0:02x} in diagnostic session 0x{1:02x}.".format(
+                                    level, subservice_id), end=" ")
                             extended_session(client_id, server_id, 1)
                             extended_session(client_id, server_id, subservice_id)
                             response = raw_send(client_id, server_id, 39, level)
@@ -1003,20 +1009,18 @@ def __auto_wrapper(args):
                         print("\n")
                         table_line_sec = "+----------------------+-------------------+"
                         print(table_line_sec)
-                        print("|  Diagnostic Session  |  Security Access  |")  
+                        print("|  Diagnostic Session  |  Security Access  |")
                         print(table_line_sec)
                         for counter in range(len(found_subsec)):
                             diag = found_subdiag[counter]
                             sec = found_subsec[counter]
                             print("|         0x{0:02x}         |         0x{1:02x}      |"
-                                    .format(diag, sec))
+                                  .format(diag, sec))
                             counter += 1
                         print(table_line_sec)
-                    
 
     except ValueError as e:
-        print("\nDiscovery failed: {0}".format(e), end=" ")     
-
+        print("\nDiscovery failed: {0}".format(e), end=" ")
 
 
 def dump_dids(arb_id_request, arb_id_response, timeout,
@@ -1050,8 +1054,7 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
 
     if max_did < min_did:
         raise ValueError("max_did must not be smaller than min_did -"
-                         " got min:0x{0:x}, max:0x{1:x}".format(
-                          min_did, max_did))
+                         " got min:0x{0:x}, max:0x{1:x}".format(min_did, max_did))
 
     responses = []
     with IsoTp(arb_id_request=arb_id_request,
@@ -1084,11 +1087,11 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
 def __parse_args(args):
     """Parser for module arguments"""
     parser = argparse.ArgumentParser(
-                prog="cc.py uds",
-                formatter_class=argparse.RawDescriptionHelpFormatter,
-                description="Universal Diagnostic Services module for "
-                "CaringCaribou",
-                epilog="""Example usage:
+        prog="cc.py uds",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Universal Diagnostic Services module for "
+                    "CaringCaribou",
+        epilog="""Example usage:
   cc.py uds discovery
   cc.py uds discovery -blacklist 0x123 0x456
   cc.py uds discovery -autoblacklist 10
@@ -1143,28 +1146,28 @@ def __parse_args(args):
                              type=float, default=TIMEOUT_SERVICES,
                              help="wait T seconds for response before "
                                   "timeout (default: {0})"
-                                  .format(TIMEOUT_SERVICES))
+                             .format(TIMEOUT_SERVICES))
     parser_info.set_defaults(func=__service_discovery_wrapper)
 
     # Parser for diagnostics session control subservice discovery
     parser_sub = subparsers.add_parser("subservices")
     parser_sub.add_argument("dsc", metavar="dtype",
-                                type=parse_int_dec_or_hex, default="0x01",
-                                help="Diagnostic Session Control Subsession Byte")
+                            type=parse_int_dec_or_hex, default="0x01",
+                            help="Diagnostic Session Control Subsession Byte")
     parser_sub.add_argument("service", metavar="stype",
-                                type=parse_int_dec_or_hex,
-                                help="Service ID")
+                            type=parse_int_dec_or_hex,
+                            help="Service ID")
     parser_sub.add_argument("src",
-                             type=parse_int_dec_or_hex,
-                             help="arbitration ID to transmit to")
+                            type=parse_int_dec_or_hex,
+                            help="arbitration ID to transmit to")
     parser_sub.add_argument("dst",
-                             type=parse_int_dec_or_hex,
-                             help="arbitration ID to listen to")
+                            type=parse_int_dec_or_hex,
+                            help="arbitration ID to listen to")
     parser_sub.add_argument("-t", "--timeout", metavar="T",
-                             type=float, default=TIMEOUT_SUBSERVICES,
-                             help="wait T seconds for response before "
-                                  "timeout (default: {0})"
-                                  .format(TIMEOUT_SUBSERVICES))
+                            type=float, default=TIMEOUT_SUBSERVICES,
+                            help="wait T seconds for response before "
+                                 "timeout (default: {0})"
+                            .format(TIMEOUT_SUBSERVICES))
     parser_sub.set_defaults(func=__sub_discovery_wrapper)
 
     # Parser for ECU Reset
@@ -1240,7 +1243,7 @@ def __parse_args(args):
                                      "need to increase this when using RTYPE: "
                                      "1=hardReset. Does nothing if RTYPE "
                                      "is None. (default: {0})"
-                                     .format(DELAY_SECSEED_RESET))
+                                .format(DELAY_SECSEED_RESET))
     parser_secseed.add_argument("-n", "--num", metavar="NUM", default=0,
                                 type=parse_int_dec_or_hex,
                                 help="Specify a positive number of security"
@@ -1274,44 +1277,44 @@ def __parse_args(args):
 
     parser_auto = subparsers.add_parser("auto")
     parser_auto.add_argument("-min",
-                                  type=parse_int_dec_or_hex, default=None,
-                                  help="min arbitration ID "
-                                       "to send request for")
+                             type=parse_int_dec_or_hex, default=None,
+                             help="min arbitration ID "
+                                  "to send request for")
     parser_auto.add_argument("-max",
-                                  type=parse_int_dec_or_hex, default=None,
-                                  help="max arbitration ID "
-                                       "to send request for")
+                             type=parse_int_dec_or_hex, default=None,
+                             help="max arbitration ID "
+                                  "to send request for")
     parser_auto.add_argument("-b", "--blacklist", metavar="B",
-                                  type=parse_int_dec_or_hex, default=[],
-                                  nargs="+",
-                                  help="arbitration IDs to blacklist "
-                                       "responses from")
+                             type=parse_int_dec_or_hex, default=[],
+                             nargs="+",
+                             help="arbitration IDs to blacklist "
+                                  "responses from")
     parser_auto.add_argument("-ab", "--autoblacklist", metavar="N",
-                                  type=float, default=0,
-                                  help="listen for false positives for N seconds "
-                                       "and blacklist matching arbitration "
-                                       "IDs before running discovery")
+                             type=float, default=0,
+                             help="listen for false positives for N seconds "
+                                  "and blacklist matching arbitration "
+                                  "IDs before running discovery")
     parser_auto.add_argument("-sv", "--skipverify",
-                                  action="store_true",
-                                  help="skip verification step (reduces "
-                                       "result accuracy)")
+                             action="store_true",
+                             help="skip verification step (reduces "
+                                  "result accuracy)")
     parser_auto.add_argument("-d", "--delay", metavar="D",
-                                  type=float, default=DELAY_DISCOVERY,
-                                  help="D seconds delay between messages "
-                                       "(default: {0})".format(DELAY_DISCOVERY))
+                             type=float, default=DELAY_DISCOVERY,
+                             help="D seconds delay between messages "
+                                  "(default: {0})".format(DELAY_DISCOVERY))
     parser_auto.add_argument("-t", "--timeout", metavar="T",
                              type=float, default=TIMEOUT_SERVICES,
                              help="wait T seconds for response before "
                                   "timeout (default: {0})"
-                                  .format(TIMEOUT_SERVICES))
+                             .format(TIMEOUT_SERVICES))
     parser_auto.add_argument("--min_did",
-                            type=parse_int_dec_or_hex,
-                            default=DUMP_DID_MIN,
-                            help="minimum device identifier (DID) to read (default: 0x0000)")
+                             type=parse_int_dec_or_hex,
+                             default=DUMP_DID_MIN,
+                             help="minimum device identifier (DID) to read (default: 0x0000)")
     parser_auto.add_argument("--max_did",
-                            type=parse_int_dec_or_hex,
-                            default=DUMP_DID_MAX,
-                            help="maximum device identifier (DID) to read (default: 0xFFFF)")
+                             type=parse_int_dec_or_hex,
+                             default=DUMP_DID_MAX,
+                             help="maximum device identifier (DID) to read (default: 0xFFFF)")
     parser_auto.set_defaults(func=__auto_wrapper)
 
     args = parser.parse_args(args)

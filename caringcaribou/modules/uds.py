@@ -4,7 +4,7 @@ from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex
 from caringcaribou.utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
 from caringcaribou.utils.constants import ARBITRATION_ID_MIN
 from caringcaribou.utils.iso15765_2 import IsoTp
-from caringcaribou.utils.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, Services
+from caringcaribou.utils.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, Services, ServiceID
 from sys import stdout, version_info
 import argparse
 import datetime
@@ -392,14 +392,14 @@ def sub_discovery(arb_id_request, arb_id_response, diagnostic, service, timeout,
     :param arb_id_request: arbitration ID for requests
     :param arb_id_response: arbitration ID for responses
     :param timeout: delay between each request sent
-    :param min_id: first service ID to scan
-    :param max_id: last service ID to scan
+    :param diagnostic: the diagnostic session control subfunction in which the target service is accessible
+    :param service: the target service to be enumerated
     :param print_results: whether progress should be printed to stdout
     :type arb_id_request: int
     :type arb_id_response: int
     :type timeout: float
-    :type min_id: int
-    :type max_id: int
+    :type diagnostic: int
+    :type service: int
     :type print_results: bool
     :return: list of supported service IDs
     :rtype [int]
@@ -408,7 +408,7 @@ def sub_discovery(arb_id_request, arb_id_response, diagnostic, service, timeout,
     subservice_status = []
 
     try:
-        for i in range(1,256):    
+        for i in range(0,256):    
 
             if service != Services.DiagnosticSessionControl:
                 extended_session(arb_id_request, arb_id_response, diagnostic)
@@ -745,9 +745,9 @@ def request_seed(arb_id_request, arb_id_response, level,
     :rtype [int] or None
     """
     # Sanity checks
-    #if (not Services.SecurityAccess.RequestSeedOrSendKey()
-    #   .is_valid_request_seed_level(level)):
-    #    raise ValueError("Invalid request seed level")
+    if (not Services.SecurityAccess.RequestSeedOrSendKey()
+       .is_valid_request_seed_level(level)):
+        raise ValueError("Invalid request seed level")
     if isinstance(timeout, float) and timeout < 0.0:
         raise ValueError("Timeout value ({0}) cannot be negative"
                          .format(timeout))
@@ -886,7 +886,7 @@ def __auto_wrapper(args):
                     
                 dump_dids(client_id, server_id, timeout, min_did, max_did, print_results)
 
-                if 16 in found_services:
+                if ServiceID.DIAGNOSTIC_SESSION_CONTROL in found_services:
 
                     print("\nEnumerating Diagnostic Session Control Service:\n")
 
@@ -896,8 +896,6 @@ def __auto_wrapper(args):
                     for i in range(1,256):    
 
                         extended_session(client_id, server_id, 1)
-
-                        #time.sleep(0.1)
 
                         response = extended_session(client_id, server_id, i)
 
@@ -932,7 +930,7 @@ def __auto_wrapper(args):
                             nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)])
                             print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=' ')
                 
-                if 17 in found_services:
+                if ServiceID.ECU_RESET in found_services:
 
                     print("\n")
                     print("\nEnumerating ECUReset Service:\n")
@@ -943,8 +941,6 @@ def __auto_wrapper(args):
                     for i in range(1,5):    
 
                         extended_session(client_id, server_id, 3)
-
-                        #time.sleep(0.1)
 
                         response = raw_send(client_id, server_id, 17, i)
 
@@ -982,7 +978,7 @@ def __auto_wrapper(args):
 
                     
 
-                if 39 in found_services:
+                if ServiceID.SECURITY_ACCESS in found_services:
 
                     found_subdiag = []
                     found_subsec = []
@@ -997,7 +993,6 @@ def __auto_wrapper(args):
                             if response is None:
                                 continue
                             elif Iso14229_1.is_positive_response(response):
-                                #print("Seed received successfully with diagnostic session 0x{0:02x} and security access type 0x{0:02x}.".format(subservice_id, level))
                                 found_subdiag.append(subservice_id)
                                 found_subsec.append(level)
                     if len(found_subsec) == 0:

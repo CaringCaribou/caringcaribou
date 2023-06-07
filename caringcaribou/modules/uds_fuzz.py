@@ -68,9 +68,9 @@ def seed_randomness_fuzzer(args):
                 # Request seed
                 elif session_type[y] == "2" and session_type[y + 1] == "7":
 
+                    service = ServiceID.SECURITY_ACCESS
                     session = str_to_hex(y, session_type)
-                    response = request_seed(arb_id_request, arb_id_response,
-                                            session, None, None)
+                    response = raw_send(arb_id_request, arb_id_response, service, session)
                     if response is None:
                         print("\nInvalid response")
                     elif Iso14229_1.is_positive_response(response):

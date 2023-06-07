@@ -1,7 +1,7 @@
 from __future__ import print_function
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
 from caringcaribou.utils.iso14229_1 import Iso14229_1, ServiceID
-from caringcaribou.modules.uds import ecu_reset, print_negative_response, request_seed, extended_session
+from caringcaribou.modules.uds import ecu_reset, print_negative_response, extended_session
 from sys import stdout
 import argparse
 import time
@@ -148,6 +148,7 @@ def delay_fuzzer(args):
                     service = ServiceID.SECURITY_ACCESS
                     session = str_to_hex(i, session_type)
                     response = raw_send(arb_id_request, arb_id_response, service, session)
+                    
                     if response is None:
                         print("\nInvalid response")
                     elif Iso14229_1.is_positive_response(response):

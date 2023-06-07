@@ -2,6 +2,7 @@ from __future__ import print_function
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
 from caringcaribou.utils.iso14229_1 import Iso14229_1, ServiceID
 from caringcaribou.modules.uds import ecu_reset, print_negative_response, extended_session
+from caringcaribou.utils.iso15765_2 import IsoTp
 from sys import stdout
 import argparse
 import time
@@ -41,6 +42,7 @@ def seed_randomness_fuzzer(args):
     inter = args.inter_delay
 
     seed_list = []
+
     try:
 
         # Issue first reset with the supplied delay time

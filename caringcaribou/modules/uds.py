@@ -1209,11 +1209,11 @@ def __parse_args(args):
                                   help="D seconds delay between messages "
                                        "(default: {0})".format(DELAY_DISCOVERY))
     parser_discovery.add_argument("-p", "--padding", metavar="P",
-                            type=parse_int_dec_or_hex, default=PADDING,
-                            help="padding to be used in target messages (default: 0)")
+                                    type=parse_int_dec_or_hex, default=PADDING,
+                                    help="padding to be used in target messages (default: 0)")
     parser_discovery.add_argument("-np", "--no_padding",
-                            action="store_true",
-                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
+                                    action="store_true",
+                                    help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_discovery.set_defaults(func=__uds_discovery_wrapper)
 
     # Parser for diagnostics service discovery
@@ -1283,11 +1283,11 @@ def __parse_args(args):
                                   help="wait T seconds for response before "
                                        "timeout")
     parser_ecu_reset.add_argument("-p", "--padding", metavar="P",
-                            type=parse_int_dec_or_hex, default=PADDING,
-                            help="padding to be used in target messages (default: 0)")
+                                    type=parse_int_dec_or_hex, default=PADDING,
+                                    help="padding to be used in target messages (default: 0)")
     parser_ecu_reset.add_argument("-np", "--no_padding",
-                            action="store_true",
-                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
+                                    action="store_true",
+                                    help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_ecu_reset.set_defaults(func=__ecu_reset_wrapper)
 
     # Parser for TesterPresent
@@ -1357,11 +1357,11 @@ def __parse_args(args):
                                      "A '0' is interpreted as infinity. "
                                      "(default: 0)")
     parser_secseed.add_argument("-p", "--padding", metavar="P",
-                            type=parse_int_dec_or_hex, default=PADDING,
-                            help="padding to be used in target messages (default: 0)")
+                                type=parse_int_dec_or_hex, default=PADDING,
+                                help="padding to be used in target messages (default: 0)")
     parser_secseed.add_argument("-np", "--no_padding",
-                            action="store_true",
-                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
+                                action="store_true",
+                                help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_secseed.set_defaults(func=__security_seed_wrapper)
 
     # Parser for dump_did

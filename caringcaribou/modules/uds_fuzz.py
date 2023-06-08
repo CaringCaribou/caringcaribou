@@ -1,7 +1,7 @@
 from __future__ import print_function
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
 from caringcaribou.utils.iso14229_1 import Iso14229_1, ServiceID
-from caringcaribou.modules.uds import ecu_reset, print_negative_response, extended_session
+from caringcaribou.modules.uds import print_negative_response
 from caringcaribou.utils.iso15765_2 import IsoTp
 from sys import stdout
 import argparse
@@ -56,11 +56,11 @@ def seed_randomness_fuzzer(args):
 
         # Issue first reset with the supplied delay time
         print("Security seed dump started. Press Ctrl+C if you need to stop.\n")
-        ecu_reset(arb_id_request, arb_id_response, reset_type, None)
+        raw_send(arb_id_request, arb_id_response, ServiceID.ECU_RESET, reset_type)
         time.sleep(reset_delay)
         for i in range(iterations):
             if reset_method == 1 and i > 0:
-                ecu_reset(arb_id_request, arb_id_response, reset_type, None)
+                raw_send(arb_id_request, arb_id_response, ServiceID.ECU_RESET, reset_type)
                 time.sleep(reset_delay)
 
             for y in range(0, len(session_type), 4):
@@ -68,9 +68,7 @@ def seed_randomness_fuzzer(args):
                 # Get into the appropriate supplied session
                 if session_type[y] == "1" and session_type[y + 1] == "0":
                     session = str_to_hex(y, session_type)
-                    response = extended_session(arb_id_request,
-                                                arb_id_response,
-                                                session)
+                    response = raw_send(arb_id_request, arb_id_response, ServiceID.DIAGNOSTIC_SESSION_CONTROL, session)
                     if not Iso14229_1.is_positive_response(response):
                         print("Unable to enter session. Retrying...\n")
                     if inter:
@@ -100,7 +98,7 @@ def seed_randomness_fuzzer(args):
 
                 # ECUReset
                 elif session_type[y] == "1" and session_type[y + 1] == "1":
-                    ecu_reset(arb_id_request, arb_id_response, int(session_type[y + 3]), None)
+                    raw_send(arb_id_request, arb_id_response, ServiceID.ECU_RESET, int(session_type[y + 3]))
                     time.sleep(reset_delay)
                 else:
                     print("\nPlease check your supplied sequence...")
@@ -141,7 +139,7 @@ def delay_fuzzer(args):
         while loop:
 
             # Issue first reset with the supplied delay time
-            ecu_reset(arb_id_request, arb_id_response, reset_type, None)
+            raw_send(arb_id_request, arb_id_response, ServiceID.ECU_RESET, reset_type)
             time.sleep(reset_delay)
 
             # Loop through the length of the supplied input
@@ -150,9 +148,7 @@ def delay_fuzzer(args):
                 # Get into the appropriate supplied session
                 if session_type[i] == "1" and session_type[i + 1] == "0":
                     session = str_to_hex(i, session_type)
-                    response = extended_session(arb_id_request,
-                                                arb_id_response,
-                                                session)
+                    response = raw_send(arb_id_request, arb_id_response, ServiceID.DIAGNOSTIC_SESSION_CONTROL, session)
                     if not Iso14229_1.is_positive_response(response):
                         print("Unable to enter session. Retrying...\n")
                         break
@@ -185,14 +181,14 @@ def delay_fuzzer(args):
 
                 # ECUReset
                 elif session_type[i] == 1 and session_type[i + 1] == 1:
-                    ecu_reset(arb_id_request, arb_id_response, reset_type, None)
+                    raw_send(arb_id_request, arb_id_response, ServiceID.ECU_RESET, reset_type)
                     time.sleep(reset_delay)
                 else:
                     break
 
             # ECUReset and increase of delay in each loop
             if reset_type:
-                ecu_reset(arb_id_request, arb_id_response, reset_type, None)
+                raw_send(arb_id_request, arb_id_response, ServiceID.ECU_RESET, reset_type)
                 time.sleep(reset_delay)
                 reset_delay += 0.001
 

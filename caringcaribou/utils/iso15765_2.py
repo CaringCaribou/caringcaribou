@@ -34,6 +34,9 @@ class IsoTp:
     MAX_FRAME_LENGTH = 8
     MAX_MESSAGE_LENGTH = 4095
 
+    PADDING = [0x00]
+    NP = [0]
+
     def __init__(self, arb_id_request, arb_id_response, bus=None):
         # Setting default bus to None rather than the actual bus prevents a CanError when
         # called with a virtual CAN bus, while the OS is lacking a working CAN interface
@@ -336,20 +339,34 @@ class IsoTp:
             raise ValueError(error_msg)
         if message_length <= IsoTp.MAX_SF_LENGTH:
             # Single frame message
-            frame = [0] * IsoTp.MAX_FRAME_LENGTH
-            frame[0] = (IsoTp.SF_FRAME_ID << 4) | message_length
-            for i in range(0, message_length):
-                frame[1 + i] = message[i]
+            if IsoTp.NP[0] == 1:
+                frame = [0] * (message_length + 1)
+                frame[0] = (IsoTp.SF_FRAME_ID << 4) | message_length
+                for i in range(0, message_length):
+                    frame[1 + i] = message[i]
+            else:
+                frame = [IsoTp.PADDING[0]] * IsoTp.MAX_FRAME_LENGTH
+                frame[0] = (IsoTp.SF_FRAME_ID << 4) | message_length
+                for i in range(0, message_length):
+                    frame[1 + i] = message[i]
             frame_list.append(frame)
         else:
             # Multiple frame message
             bytes_left_to_copy = message_length
-            frame = [0] * IsoTp.MAX_FRAME_LENGTH
+
             # Create first frame (FF)
-            frame[0] = (IsoTp.FF_FRAME_ID << 4) | (message_length >> 8)
-            frame[1] = message_length & 0xFF
-            for i in range(0, IsoTp.MAX_FF_LENGTH):
-                frame[2 + i] = message[i]
+            if IsoTp.NP[0] == 1:
+                frame = [0] * (message_length + 2)
+                frame[0] = (IsoTp.FF_FRAME_ID << 4) | (message_length >> 8)
+                frame[1] = message_length & 0xFF
+                for i in range(0, message_length):
+                    frame[2 + i] = message[i]
+            else:
+                frame = IsoTp.PADDING[0] * IsoTp.MAX_FRAME_LENGTH
+                frame[0] = (IsoTp.FF_FRAME_ID << 4) | (message_length >> 8)
+                frame[1] = message_length & 0xFF
+                for i in range(0, IsoTp.MAX_FF_LENGTH):
+                    frame[2 + i] = message[i]
             frame_list.append(frame)
             # Create consecutive frames (CF)
             bytes_copied = IsoTp.MAX_FF_LENGTH

@@ -108,6 +108,9 @@ DUMP_DID_MIN = 0x0000
 DUMP_DID_MAX = 0xFFFF
 DUMP_DID_TIMEOUT = 0.2
 
+PADDING = [0x00]
+NP = [0]
+
 
 def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
                   delay, verify, print_results=True):
@@ -411,9 +414,9 @@ def sub_discovery(arb_id_request, arb_id_response, diagnostic, service, timeout,
         for i in range(0, 256):
 
             if service != Services.DiagnosticSessionControl:
-                extended_session(arb_id_request, arb_id_response, diagnostic)
+                raw_send(arb_id_request, arb_id_response, ServiceID.DIAGNOSTIC_SESSION_CONTROL, diagnostic)
             else:
-                extended_session(arb_id_request, arb_id_response, 1)
+                raw_send(arb_id_request, arb_id_response, ServiceID.DIAGNOSTIC_SESSION_CONTROL, 1)
 
             time.sleep(0.1)
 
@@ -459,6 +462,10 @@ def __sub_discovery_wrapper(args):
     diagnostic = args.dsc
     service = args.service
     timeout = args.timeout
+    padding = args.padding
+    no_padding = args.no_padding
+
+    padding_set(padding, no_padding)
 
     # Probe subservices
     found_subservices, subservice_status = sub_discovery(arb_id_request,
@@ -483,11 +490,21 @@ def raw_send(arb_id_request, arb_id_response, service, session_type):
         request[0] = service
         request[1] = session_type
 
+        IsoTp.NP[0] = NP[0]
+        IsoTp.PADDING[0] = PADDING[0]
+
         tp.set_filter_single_arbitration_id(arb_id_response)
         with Iso14229_1(tp) as uds:
             tp.send_request(request)
             response = uds.receive_response(Iso14229_1.P3_CLIENT)
             return response
+
+def padding_set(padding, no_padding):
+    
+    if no_padding == True:
+        NP[0] = 1
+    else:
+        PADDING[0] = padding
 
 
 def tester_present(arb_id_request, delay, duration,
@@ -1168,6 +1185,12 @@ def __parse_args(args):
                             help="wait T seconds for response before "
                                  "timeout (default: {0})"
                             .format(TIMEOUT_SUBSERVICES))
+    parser_sub.add_argument("-p", "--padding", metavar="P",
+                            type=parse_int_dec_or_hex, default=PADDING,
+                            help="padding to be used in target messages (default: 0)")
+    parser_sub.add_argument("-np", "--no_padding",
+                            action="store_true",
+                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_sub.set_defaults(func=__sub_discovery_wrapper)
 
     # Parser for ECU Reset

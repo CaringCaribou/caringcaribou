@@ -340,7 +340,7 @@ class IsoTp:
         if message_length <= IsoTp.MAX_SF_LENGTH:
             # Single frame message
             if IsoTp.NP[0] == 1:
-                frame = [0] * (message_length + 1)
+                frame = [IsoTp.PADDING[0]] * (message_length + 1)
                 frame[0] = (IsoTp.SF_FRAME_ID << 4) | message_length
                 for i in range(0, message_length):
                     frame[1 + i] = message[i]
@@ -350,14 +350,15 @@ class IsoTp:
                 for i in range(0, message_length):
                     frame[1 + i] = message[i]
             frame_list.append(frame)
+
         else:
             # Multiple frame message
             bytes_left_to_copy = message_length
 
             # Create first frame (FF)
             bytes_left_to_copy = message_length
-            frame = [0] * IsoTp.MAX_FRAME_LENGTH
-            
+            frame = [IsoTp.PADDING[0]] * IsoTp.MAX_FRAME_LENGTH
+
             # Create first frame (FF)
             frame[0] = (IsoTp.FF_FRAME_ID << 4) | (message_length >> 8)
             frame[1] = message_length & 0xFF
@@ -374,7 +375,7 @@ class IsoTp:
                 sn = (sn + 1) % 16
 
                 if bytes_left_to_copy < 7 and IsoTp.NP[0] == 1:
-                    frame = [0] * bytes_left_to_copy
+                    frame = [IsoTp.PADDING[0]] * bytes_left_to_copy
                     frame[0] = (IsoTp.CF_FRAME_ID << 4) | sn
                     # Fill current consecutive frame without padding
                     for i in range(0, bytes_left_to_copy):

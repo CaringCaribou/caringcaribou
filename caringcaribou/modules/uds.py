@@ -108,7 +108,9 @@ DUMP_DID_MIN = 0x0000
 DUMP_DID_MAX = 0xFFFF
 DUMP_DID_TIMEOUT = 0.2
 
-PADDING = [0x00]
+PADDING_DEFAULT = 0x00
+
+PADDING = []
 NP = [0]
 
 
@@ -521,8 +523,8 @@ def padding_set(padding, no_padding):
     
     if no_padding == True:
         NP[0] = 1
-    else:
-        PADDING[0] = padding
+
+    PADDING.append(padding)
 
 
 def tester_present(arb_id_request, delay, duration,
@@ -1209,7 +1211,7 @@ def __parse_args(args):
                                   help="D seconds delay between messages "
                                        "(default: {0})".format(DELAY_DISCOVERY))
     parser_discovery.add_argument("-p", "--padding", metavar="P",
-                                    type=parse_int_dec_or_hex, default=PADDING,
+                                    type=parse_int_dec_or_hex, default=PADDING_DEFAULT,
                                     help="padding to be used in target messages (default: 0)")
     parser_discovery.add_argument("-np", "--no_padding",
                                     action="store_true",
@@ -1230,7 +1232,7 @@ def __parse_args(args):
                                   "timeout (default: {0})"
                              .format(TIMEOUT_SERVICES))
     parser_info.add_argument("-p", "--padding", metavar="P",
-                            type=parse_int_dec_or_hex, default=PADDING,
+                            type=parse_int_dec_or_hex, default=PADDING_DEFAULT,
                             help="padding to be used in target messages (default: 0)")
     parser_info.add_argument("-np", "--no_padding",
                             action="store_true",
@@ -1257,7 +1259,7 @@ def __parse_args(args):
                                  "timeout (default: {0})"
                             .format(TIMEOUT_SUBSERVICES))
     parser_sub.add_argument("-p", "--padding", metavar="P",
-                            type=parse_int_dec_or_hex, default=PADDING,
+                            type=parse_int_dec_or_hex, default=PADDING_DEFAULT,
                             help="padding to be used in target messages (default: 0)")
     parser_sub.add_argument("-np", "--no_padding",
                             action="store_true",
@@ -1283,7 +1285,7 @@ def __parse_args(args):
                                   help="wait T seconds for response before "
                                        "timeout")
     parser_ecu_reset.add_argument("-p", "--padding", metavar="P",
-                                    type=parse_int_dec_or_hex, default=PADDING,
+                                    type=parse_int_dec_or_hex, default=PADDING_DEFAULT,
                                     help="padding to be used in target messages (default: 0)")
     parser_ecu_reset.add_argument("-np", "--no_padding",
                                     action="store_true",
@@ -1305,7 +1307,7 @@ def __parse_args(args):
     parser_tp.add_argument("-spr", action="store_true",
                            help="suppress positive response")
     parser_tp.add_argument("-p", "--padding", metavar="P",
-                            type=parse_int_dec_or_hex, default=PADDING,
+                            type=parse_int_dec_or_hex, default=PADDING_DEFAULT,
                             help="padding to be used in target messages (default: 0)")
     parser_tp.add_argument("-np", "--no_padding",
                             action="store_true",
@@ -1357,7 +1359,7 @@ def __parse_args(args):
                                      "A '0' is interpreted as infinity. "
                                      "(default: 0)")
     parser_secseed.add_argument("-p", "--padding", metavar="P",
-                                type=parse_int_dec_or_hex, default=PADDING,
+                                type=parse_int_dec_or_hex, default=PADDING_DEFAULT,
                                 help="padding to be used in target messages (default: 0)")
     parser_secseed.add_argument("-np", "--no_padding",
                                 action="store_true",
@@ -1386,7 +1388,7 @@ def __parse_args(args):
                             default=DUMP_DID_MAX,
                             help="maximum device identifier (DID) to read (default: 0xFFFF)")
     parser_did.add_argument("-p", "--padding", metavar="P",
-                            type=parse_int_dec_or_hex, default=PADDING,
+                            type=parse_int_dec_or_hex, default=PADDING_DEFAULT,
                             help="padding to be used in target messages (default: 0)")
     parser_did.add_argument("-np", "--no_padding",
                             action="store_true",
@@ -1434,7 +1436,7 @@ def __parse_args(args):
                              default=DUMP_DID_MAX,
                              help="maximum device identifier (DID) to read (default: 0xFFFF)")
     parser_auto.add_argument("-p", "--padding", metavar="P",
-                            type=parse_int_dec_or_hex, default=PADDING,
+                            type=parse_int_dec_or_hex, default=PADDING_DEFAULT,
                             help="padding to be used in target messages (default: 0)")
     parser_auto.add_argument("-np", "--no_padding",
                             action="store_true",

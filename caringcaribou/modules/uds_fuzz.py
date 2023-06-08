@@ -21,6 +21,11 @@ REPLAY_NUMBER_OF_SUB_LISTS = 5
 BYTE_MIN = 0x00
 BYTE_MAX = 0xFF
 
+PADDING_DEFAULT = 0x00
+
+PADDING = []
+NP = [0]
+
 
 # Duplicate testing from https://www.iditect.com/guide/python/python_howto_find_the_duplicates_in_a_list.html
 def find_duplicates(sequence):
@@ -237,8 +242,8 @@ def padding_set(padding, no_padding):
     
     if no_padding == True:
         NP[0] = 1
-    else:
-        PADDING[0] = padding
+
+    PADDING.append(padding)
 
 
 def __parse_args(args):
@@ -292,7 +297,7 @@ def __parse_args(args):
                                           "1=hardReset. (default: {0})"
                                      .format(DELAY_SECSEED_RESET))
     parser_delay_fuzzer.add_argument("-p", "--padding", metavar="P",
-                            type=parse_int_dec_or_hex, default=PADDING,
+                            type=parse_int_dec_or_hex, default=PADDING_DEFAULT,
                             help="padding to be used in target messages (default: 0)")
     parser_delay_fuzzer.add_argument("-np", "--no_padding",
                             action="store_true",
@@ -351,7 +356,7 @@ def __parse_args(args):
                                                "is None. (default: {0})"
                                           .format(DELAY_FUZZ_RESET))
     parser_randomness_fuzzer.add_argument("-p", "--padding", metavar="P",
-                            type=parse_int_dec_or_hex, default=PADDING,
+                            type=parse_int_dec_or_hex, default=PADDING_DEFAULT,
                             help="padding to be used in target messages (default: 0)")
     parser_randomness_fuzzer.add_argument("-np", "--no_padding",
                             action="store_true",

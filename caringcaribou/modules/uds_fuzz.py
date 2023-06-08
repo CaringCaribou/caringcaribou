@@ -40,6 +40,10 @@ def seed_randomness_fuzzer(args):
     reset_delay = args.delay
     reset_method = args.reset_method
     inter = args.inter_delay
+    padding = args.padding
+    no_padding = args.no_padding
+
+    padding_set(padding, no_padding)
 
     seed_list = []
 
@@ -121,6 +125,10 @@ def delay_fuzzer(args):
     target = args.target_seed
     reset_delay = args.delay
     loop = True
+    padding = args.padding
+    no_padding = args.no_padding
+
+    padding_set(padding, no_padding)
 
     seed_list = []
     try:
@@ -203,6 +211,9 @@ def raw_send(arb_id_request, arb_id_response, service, session_type):
         request[0] = service
         request[1] = session_type
 
+        IsoTp.NP[0] = NP[0]
+        IsoTp.PADDING[0] = PADDING[0]
+
         tp.set_filter_single_arbitration_id(arb_id_response)
         with Iso14229_1(tp) as uds:
             tp.send_request(request)
@@ -221,6 +232,13 @@ def str_to_hex(i, session_type):
         return session
     else:
         return
+    
+def padding_set(padding, no_padding):
+    
+    if no_padding == True:
+        NP[0] = 1
+    else:
+        PADDING[0] = padding
 
 
 def __parse_args(args):
@@ -273,6 +291,12 @@ def __parse_args(args):
                                           "likely need to increase this when using RTYPE: "
                                           "1=hardReset. (default: {0})"
                                      .format(DELAY_SECSEED_RESET))
+    parser_delay_fuzzer.add_argument("-p", "--padding", metavar="P",
+                            type=parse_int_dec_or_hex, default=PADDING,
+                            help="padding to be used in target messages (default: 0)")
+    parser_delay_fuzzer.add_argument("-np", "--no_padding",
+                            action="store_true",
+                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_delay_fuzzer.set_defaults(func=delay_fuzzer)
 
     # Parser for Delay fuzz testing
@@ -326,6 +350,12 @@ def __parse_args(args):
                                                "1=hardReset. Does nothing if RTYPE "
                                                "is None. (default: {0})"
                                           .format(DELAY_FUZZ_RESET))
+    parser_randomness_fuzzer.add_argument("-p", "--padding", metavar="P",
+                            type=parse_int_dec_or_hex, default=PADDING,
+                            help="padding to be used in target messages (default: 0)")
+    parser_randomness_fuzzer.add_argument("-np", "--no_padding",
+                            action="store_true",
+                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_randomness_fuzzer.set_defaults(func=seed_randomness_fuzzer)
 
     args = parser.parse_args(args)

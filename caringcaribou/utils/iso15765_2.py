@@ -355,32 +355,43 @@ class IsoTp:
             bytes_left_to_copy = message_length
 
             # Create first frame (FF)
-            if IsoTp.NP[0] == 1:
-                frame = [0] * (message_length + 2)
-                frame[0] = (IsoTp.FF_FRAME_ID << 4) | (message_length >> 8)
-                frame[1] = message_length & 0xFF
-                for i in range(0, message_length):
-                    frame[2 + i] = message[i]
-            else:
-                frame = IsoTp.PADDING[0] * IsoTp.MAX_FRAME_LENGTH
-                frame[0] = (IsoTp.FF_FRAME_ID << 4) | (message_length >> 8)
-                frame[1] = message_length & 0xFF
-                for i in range(0, IsoTp.MAX_FF_LENGTH):
-                    frame[2 + i] = message[i]
+            bytes_left_to_copy = message_length
+            frame = [0] * IsoTp.MAX_FRAME_LENGTH
+            
+            # Create first frame (FF)
+            frame[0] = (IsoTp.FF_FRAME_ID << 4) | (message_length >> 8)
+            frame[1] = message_length & 0xFF
+            for i in range(0, IsoTp.MAX_FF_LENGTH):
+                frame[2 + i] = message[i]
             frame_list.append(frame)
+
             # Create consecutive frames (CF)
             bytes_copied = IsoTp.MAX_FF_LENGTH
             bytes_left_to_copy -= bytes_copied
             sn = 0
+
             while bytes_left_to_copy > 0:
                 sn = (sn + 1) % 16
-                frame = [0] * IsoTp.MAX_FRAME_LENGTH
-                frame[0] = (IsoTp.CF_FRAME_ID << 4) | sn
-                # Fill current consecutive frame
-                for i in range(0, IsoTp.MAX_CF_LENGTH):
-                    if bytes_left_to_copy > 0:
-                        frame[1 + i] = message[bytes_copied]
-                        bytes_left_to_copy = bytes_left_to_copy - 1
-                        bytes_copied = bytes_copied + 1
+
+                if bytes_left_to_copy < 7 and IsoTp.NP[0] == 1:
+                    frame = [0] * bytes_left_to_copy
+                    frame[0] = (IsoTp.CF_FRAME_ID << 4) | sn
+                    # Fill current consecutive frame without padding
+                    for i in range(0, bytes_left_to_copy):
+                        if bytes_left_to_copy > 0:
+                            frame[1 + i] = message[bytes_copied]
+                            bytes_left_to_copy = bytes_left_to_copy - 1
+                            bytes_copied = bytes_copied + 1
+                else:    
+                    frame = [IsoTp.PADDING[0]] * IsoTp.MAX_FRAME_LENGTH
+                    frame[0] = (IsoTp.CF_FRAME_ID << 4) | sn
+                    # Fill current consecutive frame with padding
+                    for i in range(0, IsoTp.MAX_CF_LENGTH):
+                        if bytes_left_to_copy > 0:
+                            frame[1 + i] = message[bytes_copied]
+                            bytes_left_to_copy = bytes_left_to_copy - 1
+                            bytes_copied = bytes_copied + 1
+                
                 frame_list.append(frame)
+
         return frame_list

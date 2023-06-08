@@ -173,7 +173,12 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
     found_arbitration_ids = []
 
     with IsoTp(None, None) as tp:
+
+        IsoTp.NP[0] = NP[0]
+        IsoTp.PADDING[0] = PADDING[0]
+
         blacklist = set(blacklist_args)
+
         # Perform automatic blacklist scan
         if auto_blacklist_duration > 0:
             auto_bl_arb_ids = auto_blacklist(tp.bus,
@@ -290,6 +295,10 @@ def __uds_discovery_wrapper(args):
     delay = args.delay
     verify = not args.skipverify
     print_results = True
+    padding = args.padding
+    no_padding = args.no_padding
+
+    padding_set(padding, no_padding)
 
     try:
         arb_id_pairs = uds_discovery(min_id, max_id, blacklist,
@@ -337,6 +346,10 @@ def service_discovery(arb_id_request, arb_id_response, timeout,
 
     with IsoTp(arb_id_request=arb_id_request,
                arb_id_response=arb_id_response) as tp:
+        
+        IsoTp.NP[0] = NP[0]
+        IsoTp.PADDING[0] = PADDING[0]
+
         # Setup filter for incoming messages
         tp.set_filter_single_arbitration_id(arb_id_response)
         # Send requests
@@ -378,6 +391,11 @@ def __service_discovery_wrapper(args):
     arb_id_request = args.src
     arb_id_response = args.dst
     timeout = args.timeout
+    padding = args.padding
+    no_padding = args.no_padding
+
+    padding_set(padding, no_padding)
+
     # Probe services
     found_services = service_discovery(arb_id_request,
                                        arb_id_response, timeout)
@@ -544,6 +562,10 @@ def tester_present(arb_id_request, delay, duration,
           .format(arb_id_request))
     print("\nPress Ctrl+C to stop\n")
     with IsoTp(arb_id_request, None) as can_wrap:
+
+        IsoTp.NP[0] = NP[0]
+        IsoTp.PADDING[0] = PADDING[0]
+
         counter = 1
         while True:
             can_wrap.send_request(message_data)
@@ -594,6 +616,10 @@ def ecu_reset(arb_id_request, arb_id_response, reset_type, timeout):
 
     with IsoTp(arb_id_request=arb_id_request,
                arb_id_response=arb_id_response) as tp:
+        
+        IsoTp.NP[0] = NP[0]
+        IsoTp.PADDING[0] = PADDING[0]
+
         # Setup filter for incoming messages
         tp.set_filter_single_arbitration_id(arb_id_response)
         with Iso14229_1(tp) as uds:
@@ -611,6 +637,10 @@ def __ecu_reset_wrapper(args):
     arb_id_response = args.dst
     reset_type = args.reset_type
     timeout = args.timeout
+    padding = args.padding
+    no_padding = args.no_padding
+
+    padding_set(padding, no_padding)
 
     print("Sending ECU reset, type 0x{0:02x} to arbitration ID {1} "
           "(0x{1:02x})".format(reset_type, arb_id_request))
@@ -689,6 +719,10 @@ def __security_seed_wrapper(args):
     level = args.sec_level
     num_seeds = args.num
     reset_delay = args.delay
+    padding = args.padding
+    no_padding = args.no_padding
+
+    padding_set(padding, no_padding)
 
     seed_list = []
     try:
@@ -735,6 +769,10 @@ def __security_seed_wrapper(args):
 def extended_session(arb_id_request, arb_id_response, session_type):
     with IsoTp(arb_id_request=arb_id_request,
                arb_id_response=arb_id_response) as tp:
+        
+        IsoTp.NP[0] = NP[0]
+        IsoTp.PADDING[0] = PADDING[0]
+
         # Setup filter for incoming messages
         tp.set_filter_single_arbitration_id(arb_id_response)
         with Iso14229_1(tp) as uds:
@@ -774,6 +812,10 @@ def request_seed(arb_id_request, arb_id_response, level,
 
     with IsoTp(arb_id_request=arb_id_request,
                arb_id_response=arb_id_response) as tp:
+        
+        IsoTp.NP[0] = NP[0]
+        IsoTp.PADDING[0] = PADDING[0]
+
         # Setup filter for incoming messages
         tp.set_filter_single_arbitration_id(arb_id_response)
         with Iso14229_1(tp) as uds:
@@ -815,6 +857,10 @@ def send_key(arb_id_request, arb_id_response, level, key, timeout):
 
     with IsoTp(arb_id_request=arb_id_request,
                arb_id_response=arb_id_response) as tp:
+        
+        IsoTp.NP[0] = NP[0]
+        IsoTp.PADDING[0] = PADDING[0]
+
         # Setup filter for incoming messages
         tp.set_filter_single_arbitration_id(arb_id_response)
         with Iso14229_1(tp) as uds:
@@ -834,6 +880,11 @@ def __dump_dids_wrapper(args):
     min_did = args.min_did
     max_did = args.max_did
     print_results = True
+    padding = args.padding
+    no_padding = args.no_padding
+
+    padding_set(padding, no_padding)
+
     dump_dids(arb_id_request, arb_id_response, timeout, min_did, max_did,
               print_results)
 
@@ -850,6 +901,10 @@ def __auto_wrapper(args):
     timeout = args.timeout
     min_did = args.min_did
     max_did = args.max_did
+    padding = args.padding
+    no_padding = args.no_padding
+
+    padding_set(padding, no_padding)
 
     try:
         arb_id_pairs = uds_discovery(min_id, max_id, blacklist,
@@ -1076,6 +1131,10 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
     responses = []
     with IsoTp(arb_id_request=arb_id_request,
                arb_id_response=arb_id_response) as tp:
+        
+        IsoTp.NP[0] = NP[0]
+        IsoTp.PADDING[0] = PADDING[0]
+
         # Setup filter for incoming messages
         tp.set_filter_single_arbitration_id(arb_id_response)
         with Iso14229_1(tp) as uds:
@@ -1149,6 +1208,12 @@ def __parse_args(args):
                                   type=float, default=DELAY_DISCOVERY,
                                   help="D seconds delay between messages "
                                        "(default: {0})".format(DELAY_DISCOVERY))
+    parser_discovery.add_argument("-p", "--padding", metavar="P",
+                            type=parse_int_dec_or_hex, default=PADDING,
+                            help="padding to be used in target messages (default: 0)")
+    parser_discovery.add_argument("-np", "--no_padding",
+                            action="store_true",
+                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_discovery.set_defaults(func=__uds_discovery_wrapper)
 
     # Parser for diagnostics service discovery
@@ -1164,6 +1229,12 @@ def __parse_args(args):
                              help="wait T seconds for response before "
                                   "timeout (default: {0})"
                              .format(TIMEOUT_SERVICES))
+    parser_info.add_argument("-p", "--padding", metavar="P",
+                            type=parse_int_dec_or_hex, default=PADDING,
+                            help="padding to be used in target messages (default: 0)")
+    parser_info.add_argument("-np", "--no_padding",
+                            action="store_true",
+                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")    
     parser_info.set_defaults(func=__service_discovery_wrapper)
 
     # Parser for diagnostics session control subservice discovery
@@ -1211,6 +1282,12 @@ def __parse_args(args):
                                   type=float, metavar="T",
                                   help="wait T seconds for response before "
                                        "timeout")
+    parser_ecu_reset.add_argument("-p", "--padding", metavar="P",
+                            type=parse_int_dec_or_hex, default=PADDING,
+                            help="padding to be used in target messages (default: 0)")
+    parser_ecu_reset.add_argument("-np", "--no_padding",
+                            action="store_true",
+                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_ecu_reset.set_defaults(func=__ecu_reset_wrapper)
 
     # Parser for TesterPresent
@@ -1227,6 +1304,12 @@ def __parse_args(args):
                            help="automatically stop after S seconds")
     parser_tp.add_argument("-spr", action="store_true",
                            help="suppress positive response")
+    parser_tp.add_argument("-p", "--padding", metavar="P",
+                            type=parse_int_dec_or_hex, default=PADDING,
+                            help="padding to be used in target messages (default: 0)")
+    parser_tp.add_argument("-np", "--no_padding",
+                            action="store_true",
+                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_tp.set_defaults(func=__tester_present_wrapper)
 
     # Parser for SecuritySeedDump
@@ -1273,6 +1356,12 @@ def __parse_args(args):
                                      " seeds to capture before terminating. "
                                      "A '0' is interpreted as infinity. "
                                      "(default: 0)")
+    parser_secseed.add_argument("-p", "--padding", metavar="P",
+                            type=parse_int_dec_or_hex, default=PADDING,
+                            help="padding to be used in target messages (default: 0)")
+    parser_secseed.add_argument("-np", "--no_padding",
+                            action="store_true",
+                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_secseed.set_defaults(func=__security_seed_wrapper)
 
     # Parser for dump_did
@@ -1296,6 +1385,12 @@ def __parse_args(args):
                             type=parse_int_dec_or_hex,
                             default=DUMP_DID_MAX,
                             help="maximum device identifier (DID) to read (default: 0xFFFF)")
+    parser_did.add_argument("-p", "--padding", metavar="P",
+                            type=parse_int_dec_or_hex, default=PADDING,
+                            help="padding to be used in target messages (default: 0)")
+    parser_did.add_argument("-np", "--no_padding",
+                            action="store_true",
+                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_did.set_defaults(func=__dump_dids_wrapper)
 
     parser_auto = subparsers.add_parser("auto")
@@ -1338,6 +1433,12 @@ def __parse_args(args):
                              type=parse_int_dec_or_hex,
                              default=DUMP_DID_MAX,
                              help="maximum device identifier (DID) to read (default: 0xFFFF)")
+    parser_auto.add_argument("-p", "--padding", metavar="P",
+                            type=parse_int_dec_or_hex, default=PADDING,
+                            help="padding to be used in target messages (default: 0)")
+    parser_auto.add_argument("-np", "--no_padding",
+                            action="store_true",
+                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_auto.set_defaults(func=__auto_wrapper)
 
     args = parser.parse_args(args)

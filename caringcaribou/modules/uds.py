@@ -944,6 +944,8 @@ def __auto_wrapper(args):
                 if ServiceID.WRITE_DATA_BY_IDENTIFIER in found_services:
                     try:
                         for subservice_id in found_subservices:
+                            print("\rProbing service 0x2E under diagnostic session control sub-service 0x{0:02x}".format(subservice_id), end="")
+                            print("\n")
                             write_dids(subservice_id, client_id, server_id, timeout, min_did, max_did, print_results)
                     except KeyboardInterrupt:
                         print("Current test interrupted by user.")

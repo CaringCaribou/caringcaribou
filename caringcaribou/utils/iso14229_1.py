@@ -417,8 +417,8 @@ class Iso14229_1(object):
         request = [0] * (1 + 2)
 
         request[0] = ServiceID.WRITE_DATA_BY_IDENTIFIER
-        request[1] = (identifier >> 8) & 0xFF
-        request[2] = identifier & 0xFF
+        request[1] = (identifier[0] >> 8) & 0xFF
+        request[2] = identifier[0] & 0xFF
         request += data
         self.tp.send_request(request)
         response = self.receive_response(self.P3_CLIENT)

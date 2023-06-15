@@ -944,9 +944,14 @@ def __auto_wrapper(args):
                 if ServiceID.WRITE_DATA_BY_IDENTIFIER in found_services:
                     try:
                         for subservice_id in found_subservices:
+                            print("\n")
                             print("\rProbing service 0x2E under diagnostic session control sub-service 0x{0:02x}".format(subservice_id), end="")
                             print("\n")
-                            write_dids(subservice_id, client_id, server_id, timeout, min_did, max_did, print_results)
+                            # diagnostic = parse_int_dec_or_hex(int(subservice_id))
+                            try:
+                                write_dids(subservice_id, client_id, server_id, timeout, min_did, max_did, print_results)
+                            except ValueError:
+                                print("\nNegative response, switching to next Diagnostic Session.\n")
                     except KeyboardInterrupt:
                         print("Current test interrupted by user.")
 
@@ -1146,6 +1151,7 @@ def write_dids(diagnostic, arb_id_request, arb_id_response, timeout,
     """
 
     # Sanity checks
+    
     if isinstance(timeout, float) and timeout < 0.0:
         raise ValueError("Timeout value ({0}) cannot be negative"
                          .format(timeout))
@@ -1155,7 +1161,6 @@ def write_dids(diagnostic, arb_id_request, arb_id_response, timeout,
                          " got min:0x{0:x}, max:0x{1:x}".format(min_did, max_did))
     
     response_diag = extended_session(arb_id_request, arb_id_response, diagnostic)
-
     if not Iso14229_1.is_positive_response(response_diag):
         raise ValueError("Supplied Diagnostic Session Control subservice results in Negative Response")
 
@@ -1189,7 +1194,6 @@ def write_dids(diagnostic, arb_id_request, arb_id_response, timeout,
                         data.append(0xAA)
 
                     response_write = uds.write_data_by_identifier(identifier=[identifier], data=data)
-
                     if response_write and Iso14229_1.is_positive_response(response_write):
 
                         response_read = uds.read_data_by_identifier(identifier=[identifier])

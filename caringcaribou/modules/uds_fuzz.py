@@ -75,9 +75,10 @@ def seed_randomness_fuzzer(args):
                         print("\nInvalid response")
                     elif Iso14229_1.is_positive_response(response):
                         seed_list.append(list_to_hex_str(response[2:]))
-                        print("Seed received: {}\t(Total captured: {})"
+                        duplicate_count = find_duplicates(seed_list)
+                        print("Seed received: {}\t(Total Captured: {}, Total Duplicates: {})"
                               .format(list_to_hex_str(response[2:]),
-                                      len(seed_list)), end="\r")
+                                      len(seed_list), len(duplicate_count)), end="\r")
 
                         stdout.flush()
                     if inter:

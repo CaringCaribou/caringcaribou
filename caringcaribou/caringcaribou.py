@@ -75,7 +75,11 @@ def parse_arguments():
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=available_modules())
     parser.add_argument("-i", dest="interface", default=None,
-                        help="force interface, e.g. 'can1' or 'vcan0'")
+                        help="force interface, e.g. 'socketcan' or 'kvaser'")
+    parser.add_argument("-c", dest="channel", default=None,
+                        help="force channel, e.g. 'can1' or 'vcan0'")
+    parser.add_argument("-b", dest="bitrate", default=None,
+                        help="force bitrate, e.g. '250000' or '500000'")
     parser.add_argument("module",
                         help="Name of the module to run")
     parser.add_argument("module_args", metavar="...", nargs=argparse.REMAINDER,
@@ -110,6 +114,9 @@ def main():
     # Save interface to can_actions, for use in modules
     if args.interface:
         can_actions.DEFAULT_INTERFACE = args.interface
+        can_actions.DEFAULT_CHANNEL = args.channel
+        can_actions.DEFAULT_BITRATE = args.bitrate
+        
     try:
         # Load module
         cc_mod = load_module(args.module).load()

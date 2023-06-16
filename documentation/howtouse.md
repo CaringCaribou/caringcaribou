@@ -7,7 +7,7 @@ This will list all available modules at the bottom of the output:
 
 ```
 $ cc.py -h
-usage: cc.py [-h] [-i INTERFACE] module ...
+usage: cc.py [-h] [-i INTERFACE] [-c CHANNEL] [-b BITRATE] module ...
 
 -------------------
 CARING CARIBOU v0.x
@@ -27,7 +27,9 @@ positional arguments:
 
 optional arguments:
   -h, --help    show this help message and exit
-  -i INTERFACE  force interface, e.g. 'can1' or 'vcan0'
+  -i INTERFACE  force interface, e.g. 'socketcan', 'pcan', or 'vector'
+  -c CHANNEL    force channel, e.g. 'can0', 'can1', or 'vcan0'
+  -b BITRATE    force bitrate, e.g. '250000' or '500000'
 
 available modules:
   dcm, dump, fuzzer, listener, send, test, xcp

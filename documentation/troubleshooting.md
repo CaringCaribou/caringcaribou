@@ -23,7 +23,7 @@ Documentation for python-can: https://python-can.readthedocs.io/en/master/config
 
 ### Inactive CAN interface
 #### Symptoms
-Running a module with an interface specified through `-i` gives the following error:
+Running a module with a channel specified through `-c` gives the following error:
 `IOError: [Errno 19] No such device. This might be caused by an invalid or inactive CAN interface.`
 
 #### Solution
@@ -56,3 +56,11 @@ ImportError: No module named can
 
 #### Solution
 Install python-can. This can be done by running `pip install python-can`
+
+### Deprecated command line arguments
+#### Symptoms
+Running a module specifying a channel as an interface using `-i` (e.g. `cc.py -i can0`) gives the following error:
+`can.exceptions.CanInterfaceNotImplementedError: Unknown interface type "can0"`
+
+### Solutions
+Use the updated command line flags to specify the `interface` using `-i`, the `channel` using `-c` and the bitrate `-b` (e.g. `cc.py -i socketcan -c can0 -b 500000`).

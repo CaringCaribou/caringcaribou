@@ -1,4 +1,4 @@
-from caringcaribou.utils.can_actions import DEFAULT_INTERFACE
+from caringcaribou.utils.can_actions import DEFAULT_INTERFACE, DEFAULT_CHANNEL, DEFAULT_BITRATE
 from caringcaribou.utils.constants import ARBITRATION_ID_MAX_EXTENDED, ARBITRATION_ID_MAX
 import can
 import datetime
@@ -38,7 +38,7 @@ class IsoTp:
         # Setting default bus to None rather than the actual bus prevents a CanError when
         # called with a virtual CAN bus, while the OS is lacking a working CAN interface
         if bus is None:
-            self.bus = can.Bus(DEFAULT_INTERFACE)
+            self.bus = can.Bus(DEFAULT_INTERFACE, DEFAULT_CHANNEL, DEFAULT_BITRATE)
         else:
             self.bus = bus
         self.arb_id_request = arb_id_request

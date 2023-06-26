@@ -8,7 +8,7 @@ import time
 class IsoTp:
     """
     Implementation of ISO-15765-2, also known as ISO-TP. This is a multi-frame messaging protocol
-    over CAN which allows message payloads of up to 4095 bytes.
+    over CAN, which allows message payloads of up to 4095 bytes.
     """
 
     MAX_SF_LENGTH = 7
@@ -34,7 +34,7 @@ class IsoTp:
     MAX_FRAME_LENGTH = 8
     MAX_MESSAGE_LENGTH = 4095
 
-    def __init__(self, arb_id_request, arb_id_response, bus=None):
+    def __init__(self, arb_id_request, arb_id_response, bus=None, padding_value=0x00):
         # Setting default bus to None rather than the actual bus prevents a CanError when
         # called with a virtual CAN bus, while the OS is lacking a working CAN interface
         if bus is None:
@@ -43,6 +43,17 @@ class IsoTp:
             self.bus = bus
         self.arb_id_request = arb_id_request
         self.arb_id_response = arb_id_response
+        # Controls optional padding of SF messages and the last CF frame in multi-frame messages
+        # Disabled padding is _not_ part of ISO-15765-2, but might prove useful for testing against some targets
+        self.padding_value = padding_value
+        if padding_value is None:
+            self.padding_enabled = False
+        else:
+            self.padding_enabled = True
+            if not isinstance(padding_value, int):
+                raise TypeError("IsoTp: padding must be an integer or None, received '{0}'".format(padding_value))
+            if not 0x00 <= padding_value <= 0xFF:
+                raise ValueError("IsoTp: padding must be in range 0x00-0xFF (0-255), got '{0}'".format(padding_value))
 
     def __enter__(self):
         return self
@@ -161,7 +172,7 @@ class IsoTp:
         :param message: The message to send
         :return: None
         """
-        frames = self.get_frames_from_message(message)
+        frames = self.get_frames_from_message(message, padding_value=self.padding_value)
         self.transmit(frames, self.arb_id_request, self.arb_id_response)
 
     def send_response(self, message):
@@ -171,7 +182,7 @@ class IsoTp:
         :param message: The message to send
         :return: None
         """
-        frames = self.get_frames_from_message(message)
+        frames = self.get_frames_from_message(message, padding_value=self.padding_value)
         self.transmit(frames, self.arb_id_response, self.arb_id_request)
 
     def indication(self, wait_window=None, trim_padding=True, first_frame_only=False):
@@ -255,7 +266,7 @@ class IsoTp:
 
     def transmit(self, frames, arbitration_id, arbitration_id_flow_control):
         """
-        Transmits 'frames' in order on self.bus according to ISO-15765-2
+        Transmits 'frames' in order on the bus, according to ISO-15765-2
 
         :param frames: List of frames (which are in turn lists of values) to send
         :param arbitration_id: The arbitration ID used for sending
@@ -322,12 +333,19 @@ class IsoTp:
                         time.sleep(st_min / 1000)
 
     @staticmethod
-    def get_frames_from_message(message):
+    def get_frames_from_message(message, padding_value=0x00):
         """
         Returns a copy of 'message' split into frames,
         :param message: Message to split
+        :param padding_value: Integer value used to pad messages, or None to disable padding (not part of ISO-15765-3)
         :return: List of frames
         """
+        if padding_value is None:
+            padding_enabled = False
+            padding_value = 0x00
+        else:
+            padding_enabled = True
+
         frame_list = []
         message_length = len(message)
         if message_length > IsoTp.MAX_MESSAGE_LENGTH:
@@ -335,8 +353,11 @@ class IsoTp:
                 IsoTp.MAX_MESSAGE_LENGTH, message_length)
             raise ValueError(error_msg)
         if message_length <= IsoTp.MAX_SF_LENGTH:
-            # Single frame message
-            frame = [0] * IsoTp.MAX_FRAME_LENGTH
+            # Single frame (SF) message
+            if padding_enabled:
+                frame = [padding_value] * IsoTp.MAX_FRAME_LENGTH
+            else:
+                frame = [padding_value] * (message_length + 1)
             frame[0] = (IsoTp.SF_FRAME_ID << 4) | message_length
             for i in range(0, message_length):
                 frame[1 + i] = message[i]
@@ -344,8 +365,8 @@ class IsoTp:
         else:
             # Multiple frame message
             bytes_left_to_copy = message_length
-            frame = [0] * IsoTp.MAX_FRAME_LENGTH
             # Create first frame (FF)
+            frame = [padding_value] * IsoTp.MAX_FRAME_LENGTH
             frame[0] = (IsoTp.FF_FRAME_ID << 4) | (message_length >> 8)
             frame[1] = message_length & 0xFF
             for i in range(0, IsoTp.MAX_FF_LENGTH):
@@ -357,13 +378,17 @@ class IsoTp:
             sn = 0
             while bytes_left_to_copy > 0:
                 sn = (sn + 1) % 16
-                frame = [0] * IsoTp.MAX_FRAME_LENGTH
+                if not padding_enabled and bytes_left_to_copy < 7:
+                    # Skip padding on last CF
+                    frame = [padding_value] * (bytes_left_to_copy + 1)
+                else:
+                    frame = [padding_value] * IsoTp.MAX_FRAME_LENGTH
                 frame[0] = (IsoTp.CF_FRAME_ID << 4) | sn
-                # Fill current consecutive frame
-                for i in range(0, IsoTp.MAX_CF_LENGTH):
-                    if bytes_left_to_copy > 0:
-                        frame[1 + i] = message[bytes_copied]
-                        bytes_left_to_copy = bytes_left_to_copy - 1
-                        bytes_copied = bytes_copied + 1
+                # Fill current CF
+                bytes_to_copy_to_current_cf = min(IsoTp.MAX_CF_LENGTH, bytes_left_to_copy)
+                for i in range(bytes_to_copy_to_current_cf):
+                    frame[1 + i] = message[bytes_copied]
+                    bytes_left_to_copy = bytes_left_to_copy - 1
+                    bytes_copied = bytes_copied + 1
                 frame_list.append(frame)
         return frame_list

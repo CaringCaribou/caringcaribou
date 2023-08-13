@@ -3,7 +3,7 @@ The Security Access Service implemented in UDS, is used to modify the ECU data s
 
 Research showed that many manufacturers do not seed with enough entropy the seed/key algorithm of modern ECUs. In more detail ([source](https://www.reddit.com/r/CarHacking/comments/m044jp/simos18_supplier_bootloader_sboot_exploit_reading/)):
 
->  the random number generator is seeded with the system timer, which is not a source of entropy because it behaves predictably
+> the random number generator is seeded with the system timer, which is not a source of entropy because it behaves predictably
 
 The uds_fuzz module implements the appropriate fuzzing methodology to enumerate (seed_randomness_fuzzer) and exploit (delay_fuzzer) vulnerable ECUs.
 
@@ -40,7 +40,7 @@ Example usage:
 ## Seed Randomness Fuzzer
 Requests a security seed after a Hard ECUReset, using the supplied request sequence, to check for duplicate seeds. 
 
-In case that duplicate seeds are found by the tool, it means that the ECU is potentially  vulnerable and uses weak random number generation seeded by the system timer.
+If duplicate seeds are found by the tool, it means that the ECU is potentially vulnerable and uses weak random number generation seeded by the system timer.
 
 ```
 $ cc.py uds_fuzz seed_randomness_fuzzer -h

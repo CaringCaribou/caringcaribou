@@ -40,6 +40,16 @@ CARING CARIBOU v{1}
 """.format("-"*(16 + len(VERSION)), VERSION)
 
 
+def show_missing_canrc_instruction():
+    print("\nThis error is most likely due to missing a '.canrc' file for python-can in your home directory.\n"
+          "For Linux setups using a SocketCAN interface, try running the following command:\n\n"
+          "$ printf \"[default]\\n"
+          "interface = socketcan\\n"
+          "channel = can0\" > $HOME/.canrc\n\n"
+          "Additional supported interface types are listed at "
+          "https://python-can.readthedocs.io/en/stable/configuration.html#configuration-file")
+
+
 def available_modules_dict():
     modules = dict()
     for entry_point in pkg_resources.iter_entry_points("caringcaribou.modules"):
@@ -115,22 +125,31 @@ def main():
         cc_mod.module_main(args.module_args)
     except AttributeError:
         pass
-
-
-# Main wrapper
-if __name__ == '__main__':
-    try:
-        main()
     except KeyboardInterrupt:
         pass
-    except can.CanError as ex:
-        print("\nCanError: {0}".format(ex))
-    except IOError as ex:
-        if ex.errno is errno.ENODEV:
+    except NotImplementedError as e:
+        # Specifically catch errors due to missing python-can configuration file.
+        # This would be easy in Python 3 which uses 'can.exceptions.CanInterfaceNotImplementedError', but the Python 2
+        # implementation uses the broader 'NotImplementedError' (which we do not want to block from other usage, hence
+        # this string matching)
+        if e.args[0] in ("Unknown interface type \"None\"", "Invalid CAN Bus Type - None"):
+            print("\n---\n\nNotImplementedError: {0}".format(e))
+            show_missing_canrc_instruction()
+        else:
+            traceback.print_exc()
+    except can.CanError as e:
+        print("\nCanError: {0}".format(e))
+    except IOError as e:
+        if e.errno is errno.ENODEV:
             # Specifically catch "[Errno 19] No such device", which is caused by using an invalid interface
-            print("\nIOError: {0}. This might be caused by an invalid or inactive CAN interface.".format(ex))
+            print("\nIOError: {0}. This might be caused by an invalid or inactive CAN interface.".format(e))
         else:
             # Print original stack trace
             traceback.print_exc()
     finally:
         print("")
+
+
+# Main wrapper
+if __name__ == '__main__':
+    main()

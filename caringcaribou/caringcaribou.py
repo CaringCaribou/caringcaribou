@@ -41,11 +41,11 @@ CARING CARIBOU v{1}
 
 
 def available_modules_dict():
-    available_modules = dict()
+    modules = dict()
     for entry_point in pkg_resources.iter_entry_points("caringcaribou.modules"):
-        nicename = str(entry_point).split("=")[0].strip()
-        available_modules[nicename] = entry_point
-    return available_modules
+        nice_name = str(entry_point).split("=")[0].strip()
+        modules[nice_name] = entry_point
+    return modules
 
 
 def available_modules():
@@ -62,7 +62,6 @@ def available_modules():
     mod_str += ", ".join(modules)
     return mod_str
     
-
 
 def parse_arguments():
     """
@@ -114,7 +113,7 @@ def main():
         # Load module
         cc_mod = load_module(args.module).load()
         cc_mod.module_main(args.module_args)
-    except AttributeError as e:
+    except AttributeError:
         pass
 
 
@@ -124,12 +123,12 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         pass
-    except can.CanError as e:
-        print("\nCanError: {0}".format(e))
-    except IOError as e:
-        if e.errno is errno.ENODEV:
+    except can.CanError as ex:
+        print("\nCanError: {0}".format(ex))
+    except IOError as ex:
+        if ex.errno is errno.ENODEV:
             # Specifically catch "[Errno 19] No such device", which is caused by using an invalid interface
-            print("\nIOError: {0}. This might be caused by an invalid or inactive CAN interface.".format(e))
+            print("\nIOError: {0}. This might be caused by an invalid or inactive CAN interface.".format(ex))
         else:
             # Print original stack trace
             traceback.print_exc()

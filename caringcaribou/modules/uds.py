@@ -1078,7 +1078,7 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                 if response and Iso14229_1.is_positive_response(response):
                     responses.append((identifier, response))
                     if print_results:
-                        print('0x{:04x}'.format(identifier), list_to_hex_str(response))
+                        print('0x{:04x}'.format(identifier), list_to_hex_str(response[3:]))
             if print_results:
                 print("\nDone!")
             return responses

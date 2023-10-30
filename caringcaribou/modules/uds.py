@@ -585,6 +585,10 @@ def __tester_present_wrapper(args):
     delay = args.delay
     duration = args.duration
     suppress_positive_response = args.spr
+    padding = args.padding
+    no_padding = args.no_padding
+
+    padding_set(padding, no_padding)
 
     tester_present(arb_id_request, delay, duration,
                    suppress_positive_response)

@@ -208,6 +208,31 @@ optional arguments:
   --max_did MAX_DID  maximum device identifier (DID) to read (default: 0xFFFF)
 ```
 
+## Write DIDs
+Tests a range of Dynamic Data Identifiers (DIDs) and tries to write them with the UDS service Write Data by Identifier, under the supplied diagnostic session.
+
+```
+$ cc.py uds write_dids -h
+
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
+Loading module 'uds'
+
+usage: cc.py uds write_dids [-h] [-t T] [--min_did MIN_DID] [--max_did MAX_DID] dtype src dst
+
+positional arguments:
+  dtype              Diagnostic Session Control Subsession Byte
+  src                arbitration ID to transmit to
+  dst                arbitration ID to listen to
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -t T, --timeout T  wait T seconds for response before timeout
+  --min_did MIN_DID  minimum device identifier (DID) to write (default: 0x0000)
+```
+
 ## Auto
 Performs a fully automated diagnostics scan from start to finish, by using the already existing CC modules.
 

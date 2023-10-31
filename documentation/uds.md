@@ -12,6 +12,7 @@ Supported modes:
 * testerpresent - Force an elevated diagnostics session against an ECU to stay active
 * dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
 * auto - Fully automated diagnostics scan, by using the already existing UDS submodules
+* write_dids - Writes values of accessible Dynamic Data Identifiers (DIDs)
 
 As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific mode by specifying the mode followed by `-h`, e.g. `cc.py uds discovery -h` or `cc.py uds testerpresent -h`
 
@@ -24,16 +25,14 @@ CARING CARIBOU v0.x
 
 Loaded module 'uds'
 
-usage: cc.py uds [-h]
-                 {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids}
-                 ...
+usage: cc.py uds [-h] {discovery,services,subservices,ecu_reset,testerpresent,security_seed,dump_dids,auto,write_dids} ...
 
 Universal Diagnostic Services module for CaringCaribou
 
 positional arguments:
-  {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids}
+  {discovery,services,subservices,ecu_reset,testerpresent,security_seed,dump_dids,auto,write_dids}
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
 
 Example usage:
@@ -62,20 +61,20 @@ CARING CARIBOU v0.x
 
 Loaded module 'uds'
 
-usage: cc.py uds discovery [-h] [-min MIN] [-max MAX] [-b B [B ...]] [-ab N]
-                           [-sv] [-d D]
+usage: cc.py uds discovery [-h] [-min MIN] [-max MAX] [-b B [B ...]] [-ab N] [-sv] [-d D] [-p P] [-np]
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -min MIN              min arbitration ID to send request for
   -max MAX              max arbitration ID to send request for
   -b B [B ...], --blacklist B [B ...]
                         arbitration IDs to blacklist responses from
   -ab N, --autoblacklist N
-                        listen for false positives for N seconds and blacklist
-                        matching arbitration IDs before running discovery
+                        listen for false positives for N seconds and blacklist matching arbitration IDs before running discovery
   -sv, --skipverify     skip verification step (reduces result accuracy)
   -d D, --delay D       D seconds delay between messages (default: 0.01)
+  -p P, --padding P     padding to be used in target messages (default: 0)
+  -np, --no_padding     trigger for cases where no padding is required, to enable set the option to 1. (default: 0)
 ```
 
 ## Services
@@ -90,15 +89,17 @@ CARING CARIBOU v0.x
 
 Loaded module 'uds'
 
-usage: cc.py uds services [-h] [-t T] src dst
+usage: cc.py uds services [-h] [-t T] [-p P] [-np] src dst
 
 positional arguments:
   src                arbitration ID to transmit to
   dst                arbitration ID to listen to
 
-optional arguments:
+options:
   -h, --help         show this help message and exit
   -t T, --timeout T  wait T seconds for response before timeout (default: 0.2)
+  -p P, --padding P  padding to be used in target messages (default: 0)
+  -np, --no_padding  trigger for cases where no padding is required, to enable set the option to 1. (default: 0)
 ```
 
 ## Sub-services
@@ -113,7 +114,7 @@ CARING CARIBOU v0.x
 
 Loading module 'uds'
 
-usage: cc.py uds subservices [-h] [-t T] dtype stype src dst
+usage: cc.py uds subservices [-h] [-t T] [-p P] [-np] dtype stype src dst
 
 positional arguments:
   dtype              Diagnostic Session Control Subsession Byte
@@ -124,6 +125,8 @@ positional arguments:
 options:
   -h, --help         show this help message and exit
   -t T, --timeout T  wait T seconds for response before timeout (default: 0.02)
+  -p P, --padding P  padding to be used in target messages (default: 0)
+  -np, --no_padding  trigger for cases where no padding is required, to enable set the option to 1. (default: 0)
 ```
 
 
@@ -141,17 +144,18 @@ CARING CARIBOU v0.x
 
 Loaded module 'uds'
 
-usage: cc.py uds ecu_reset [-h] [-t T] type src dst
+usage: cc.py uds ecu_reset [-h] [-t T] [-p P] [-np] type src dst
 
 positional arguments:
-  type               Reset type: 1=hard, 2=key off/on, 3=soft, 4=enable rapid
-                     power shutdown, 5=disable rapid power shutdown
+  type               Reset type: 1=hard, 2=key off/on, 3=soft, 4=enable rapid power shutdown, 5=disable rapid power shutdown
   src                arbitration ID to transmit to
   dst                arbitration ID to listen to
 
-optional arguments:
+options:
   -h, --help         show this help message and exit
   -t T, --timeout T  wait T seconds for response before timeout
+  -p P, --padding P  padding to be used in target messages (default: 0)
+  -np, --no_padding  trigger for cases where no padding is required, to enable set the option to 1. (default: 0)
 ```
 
 ## Tester Present
@@ -170,16 +174,18 @@ CARING CARIBOU v0.x
 
 Loaded module 'uds'
 
-usage: cc.py uds testerpresent [-h] [-d D] [-dur S] [-spr] src
+usage: cc.py uds testerpresent [-h] [-d D] [-dur S] [-spr] [-p P] [-np] src
 
 positional arguments:
   src                   arbitration ID to transmit to
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -d D, --delay D       send TesterPresent every D seconds (default: 0.5)
   -dur S, --duration S  automatically stop after S seconds
   -spr                  suppress positive response
+  -p P, --padding P     padding to be used in target messages (default: 0)
+  -np, --no_padding     trigger for cases where no padding is required, to enable set the option to 1. (default: 0)
 ```
 
 ## Dump DIDs
@@ -194,18 +200,21 @@ CARING CARIBOU v0.x
 
 Loaded module 'uds'
 
-usage: cc.py uds dump_dids [-h] [-t T] [--min_did MIN_DID] [--max_did MAX_DID]
-                           src dst
+usage: cc.py uds dump_dids [-h] [-t T] [--min_did MIN_DID] [--max_did MAX_DID] [-p P] [-np] [-r REPORTING] src dst
 
 positional arguments:
-  src                arbitration ID to transmit to
-  dst                arbitration ID to listen to
+  src                   arbitration ID to transmit to
+  dst                   arbitration ID to listen to
 
-optional arguments:
-  -h, --help         show this help message and exit
-  -t T, --timeout T  wait T seconds for response before timeout
-  --min_did MIN_DID  minimum device identifier (DID) to read (default: 0x0000)
-  --max_did MAX_DID  maximum device identifier (DID) to read (default: 0xFFFF)
+options:
+  -h, --help            show this help message and exit
+  -t T, --timeout T     wait T seconds for response before timeout
+  --min_did MIN_DID     minimum device identifier (DID) to read (default: 0x0000)
+  --max_did MAX_DID     maximum device identifier (DID) to read (default: 0xFFFF)
+  -p P, --padding P     padding to be used in target messages (default: 0)
+  -np, --no_padding     trigger for cases where no padding is required, to enable set the option to 1. (default: 0)
+  -r REPORTING, --reporting REPORTING
+                        reporting to text file, to enable set the option to 1. (default: 0)
 ```
 
 ## Write DIDs
@@ -220,17 +229,20 @@ CARING CARIBOU v0.x
 
 Loading module 'uds'
 
-usage: cc.py uds write_dids [-h] [-t T] [--min_did MIN_DID] [--max_did MAX_DID] dtype src dst
+usage: cc.py uds write_dids [-h] [-t T] [--min_did MIN_DID] [--max_did MAX_DID] [-r REPORTING] dtype src dst
 
 positional arguments:
-  dtype              Diagnostic Session Control Subsession Byte
-  src                arbitration ID to transmit to
-  dst                arbitration ID to listen to
+  dtype                 Diagnostic Session Control Subsession Byte
+  src                   arbitration ID to transmit to
+  dst                   arbitration ID to listen to
 
-optional arguments:
-  -h, --help         show this help message and exit
-  -t T, --timeout T  wait T seconds for response before timeout
-  --min_did MIN_DID  minimum device identifier (DID) to write (default: 0x0000)
+options:
+  -h, --help            show this help message and exit
+  -t T, --timeout T     wait T seconds for response before timeout
+  --min_did MIN_DID     minimum device identifier (DID) to write (default: 0x0000)
+  --max_did MAX_DID     maximum device identifier (DID) to write (default: 0xFFFF)
+  -r REPORTING, --reporting REPORTING
+                        reporting to text file, to enable set the option to 1. (default: 0)
 ```
 
 ## Auto
@@ -245,7 +257,7 @@ CARING CARIBOU v0.x
 
 Loading module 'uds'
 
-usage: cc.py uds auto [-h] [-min MIN] [-max MAX] [-b B [B ...]] [-ab N] [-sv] [-d D] [-t T] [--min_did MIN_DID] [--max_did MAX_DID]
+usage: cc.py uds auto [-h] [-min MIN] [-max MAX] [-b B [B ...]] [-ab N] [-sv] [-d D] [-t T] [--min_did MIN_DID] [--max_did MAX_DID] [-p P] [-np] [-r REPORTING]
 
 options:
   -h, --help            show this help message and exit
@@ -260,4 +272,8 @@ options:
   -t T, --timeout T     wait T seconds for response before timeout (default: 0.2)
   --min_did MIN_DID     minimum device identifier (DID) to read (default: 0x0000)
   --max_did MAX_DID     maximum device identifier (DID) to read (default: 0xFFFF)
+  -p P, --padding P     padding to be used in target messages (default: 0)
+  -np, --no_padding     trigger for cases where no padding is required, to enable set the option to 1. (default: 0)
+  -r REPORTING, --reporting REPORTING
+                        reporting to text file, to enable set the option to 1. (default: 0)
 ```

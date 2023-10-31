@@ -113,6 +113,9 @@ PADDING_DEFAULT = 0x00
 PADDING = []
 NP = [0]
 
+REPORT = 0
+DOCUMENT = 0
+
 
 def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
                   delay, verify, print_results=True):
@@ -888,11 +891,44 @@ def __dump_dids_wrapper(args):
     print_results = True
     padding = args.padding
     no_padding = args.no_padding
+    reporting = args.reporting
+
+    if reporting == 1:
+        global DOCUMENT
+        DOCUMENT = 1
+        f = open("cc_uds_did.txt", "w")
+        f.write("Caring Caribou UDS DID Module\n\n\n")
+        f.close()
+
 
     padding_set(padding, no_padding)
 
-    dump_dids(arb_id_request, arb_id_response, timeout, min_did, max_did,
+    dump_dids(arb_id_request, arb_id_response, timeout, reporting, min_did, max_did,
               print_results)
+
+def report_print(text):
+
+    if REPORT == 1:    
+        print(text)
+        if DOCUMENT == 0:
+            report = open("cc_uds_auto_report.txt", "a")
+            report.write(text)
+            report.write("\n")
+            report.close()
+        elif DOCUMENT == 1:
+            report = open("cc_uds_did.txt", "a")
+            report.write(text)
+            report.write("\n")
+            report.close()
+        elif DOCUMENT == 2:
+            report = open("cc_uds_wdid.txt", "a")
+            report.write(text)
+            report.write("\n")
+            report.close()
+    else:
+        print(text)
+    
+
 
 
 def __auto_wrapper(args):
@@ -909,8 +945,18 @@ def __auto_wrapper(args):
     max_did = args.max_did
     padding = args.padding
     no_padding = args.no_padding
+    reporting = args.reporting
 
     padding_set(padding, no_padding)
+
+    if reporting == 1:
+        global REPORT
+        REPORT = 1
+        global DOCUMENT
+        DOCUMENT = 0
+        f = open("cc_uds_auto_report.txt", "w")
+        f.write("Caring Caribou UDS Auto Module Report\n\n\n")
+        f.close()
 
     try:
         arb_id_pairs = uds_discovery(min_id, max_id, blacklist,
@@ -920,20 +966,20 @@ def __auto_wrapper(args):
         print("\n")
         if len(arb_id_pairs) == 0:
             # No UDS discovered
-            print("\nDiagnostics service could not be found.")
+            report_print("\nDiagnostics service could not be found.")
         else:
 
             # Print result table
-            print("\nIdentified diagnostics:\n")
+            report_print("\nIdentified diagnostics:\n")
             table_line = "+------------+------------+"
-            print(table_line)
-            print("| CLIENT ID  | SERVER ID  |")
-            print(table_line)
+            report_print(table_line)
+            report_print("| CLIENT ID  | SERVER ID  |")
+            report_print(table_line)
             for (client_id, server_id) in arb_id_pairs:
-                print("| 0x{0:08x} | 0x{1:08x} |"
+                report_print("| 0x{0:08x} | 0x{1:08x} |"
                       .format(client_id, server_id))
-            print(table_line)
-            print("\n")
+            report_print(table_line)
+            report_print("\n")
 
             # Enumerate each pair
             for (client_id, server_id) in arb_id_pairs:
@@ -941,34 +987,37 @@ def __auto_wrapper(args):
                 args.src = client_id
                 args.dst = server_id
 
+                diag_line = "-" * 100
+                report_print(diag_line)
+
                 # Print Client/Server result table
-                print("\nTarget Diagnostic IDs:\n")
+                report_print("\nTarget Diagnostic IDs:\n")
                 table_line = "+------------+------------+"
-                print(table_line)
-                print("| CLIENT ID  | SERVER ID  |")
-                print(table_line)
-                print("| 0x{0:08x} | 0x{1:08x} |"
+                report_print(table_line)
+                report_print("| CLIENT ID  | SERVER ID  |")
+                report_print(table_line)
+                report_print("| 0x{0:08x} | 0x{1:08x} |"
                       .format(client_id, server_id))
-                print(table_line)
+                report_print(table_line)
 
                 print("\nEnumerating Services:\n")
 
                 found_services = service_discovery(client_id, server_id, timeout)
                 found_subservices = []
 
-                print("\nIdentified services:\n")
+                report_print("\nIdentified services:\n")
 
                 # Print available services result table
                 for service_id in found_services:
                     service_name = UDS_SERVICE_NAMES.get(service_id, "Unknown service")
-                    print("Supported service 0x{0:02x}: {1}"
+                    report_print("Supported service 0x{0:02x}: {1}"
                           .format(service_id, service_name))
 
-                print("\n")
+                report_print("\n")
 
                 if ServiceID.READ_DATA_BY_IDENTIFIER in found_services:
                     try:
-                        dump_dids(client_id, server_id, timeout, min_did, max_did, print_results)
+                        dump_dids(client_id, server_id, timeout, reporting, min_did, max_did, print_results)
                     except KeyboardInterrupt:
                         print("Current test interrupted by user.")
 
@@ -1009,13 +1058,13 @@ def __auto_wrapper(args):
                     
                         # Print results
                         if len(found_subservices) == 0:
-                            print("\nNo Diagnostic Session Control Sub-Services were discovered\n", end=' ')
+                            report_print("\nNo Diagnostic Session Control Sub-Services were discovered\n")
                         else:
-                            print("\n")
-                            print("\nDiscovered Diagnostic Session Control Sub-Services:\n", end=' ')
+                            report_print("\n")
+                            report_print("\nDiscovered Diagnostic Session Control Sub-Services:\n")
                             for subservice_id in found_subservices:
                                 nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)])
-                                print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=' ')
+                                report_print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description))
                     except KeyboardInterrupt:
                         print("Current test interrupted by user.")
 
@@ -1027,7 +1076,7 @@ def __auto_wrapper(args):
                             print("\n")
                             # diagnostic = parse_int_dec_or_hex(int(subservice_id))
                             try:
-                                write_dids(subservice_id, client_id, server_id, timeout, min_did, max_did, print_results)
+                                write_dids(subservice_id, client_id, server_id, timeout, reporting, min_did, max_did, print_results)
                             except ValueError:
                                 print("\nNegative response, switching to next Diagnostic Session.\n")
                     except KeyboardInterrupt:
@@ -1036,7 +1085,7 @@ def __auto_wrapper(args):
                 if ServiceID.ECU_RESET in found_services:
                     
                     try:
-                        print("\n")
+                        report_print("\n")
                         print("\nEnumerating ECUReset Service:\n")
 
                         found_subservices = []
@@ -1074,13 +1123,13 @@ def __auto_wrapper(args):
 
                         # Print results
                         if len(found_subservices) == 0:
-                            print("\nNo ECUReset Sub-Services were discovered.\n", end=' ')
+                            report_print("\nNo ECUReset Sub-Services were discovered.\n")
                         else:
-                            print("\n")
-                            print("\nDiscovered ECUReset Sub-Services:\n", end=' ')
+                            report_print("\n")
+                            report_print("\nDiscovered ECUReset Sub-Services:\n")
                             for subservice_id in found_subservices:
                                 nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)])
-                                print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=' ')
+                                report_print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description))
                     
                     except KeyboardInterrupt:
                         print("Current test interrupted by user.")
@@ -1091,7 +1140,7 @@ def __auto_wrapper(args):
 
                         found_subdiag = []
                         found_subsec = []
-                        print("\n")
+                        report_print("\n")
                         for subservice_id in found_subservices:
                             for level in range(1, 256):
                                 print(
@@ -1107,31 +1156,31 @@ def __auto_wrapper(args):
                                     found_subdiag.append(subservice_id)
                                     found_subsec.append(level)
                         if len(found_subsec) == 0:
-                            print("\nNo Security Access Sub-Services were discovered.\n")
+                            report_print("\nNo Security Access Sub-Services were discovered.\n")
                         else:
-                            print("\n")
-                            print("\nDiscovered Security Access Sub Services:\n")
-                            print("\n")
+                            report_print("\n")
+                            report_print("\nDiscovered Security Access Sub Services:\n")
+                            report_print("\n")
                             table_line_sec = "+----------------------+-------------------+"
-                            print(table_line_sec)
-                            print("|  Diagnostic Session  |  Security Access  |")
-                            print(table_line_sec)
+                            report_print(table_line_sec)
+                            report_print("|  Diagnostic Session  |  Security Access  |")
+                            report_print(table_line_sec)
                             for counter in range(len(found_subsec)):
                                 diag = found_subdiag[counter]
                                 sec = found_subsec[counter]
-                                print("|         0x{0:02x}         |         0x{1:02x}      |"
+                                report_print("|         0x{0:02x}         |         0x{1:02x}      |"
                                     .format(diag, sec))
                                 counter += 1
-                            print(table_line_sec)
+                            report_print(table_line_sec)
                         
                     except KeyboardInterrupt:
                         print("Current test interrupted by user.")
 
     except ValueError as e:
-        print("\nDiscovery failed: {0}".format(e), end=" ")
+        report_print("\nDiscovery failed: {0}".format(e))
 
 
-def dump_dids(arb_id_request, arb_id_response, timeout,
+def dump_dids(arb_id_request, arb_id_response, timeout, reporting, 
               min_did=DUMP_DID_MIN, max_did=DUMP_DID_MAX, print_results=True):
     """
     Sends read data by identifier (DID) messages to 'arb_id_request'.
@@ -1164,6 +1213,10 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
         raise ValueError("max_did must not be smaller than min_did -"
                          " got min:0x{0:x}, max:0x{1:x}".format(min_did, max_did))
 
+    if reporting == 1:
+        global REPORT
+        REPORT = 1
+
     responses = []
     with IsoTp(arb_id_request=arb_id_request,
                arb_id_response=arb_id_response) as tp:
@@ -1181,8 +1234,8 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
             if print_results:
                 print('Dumping DIDs in range 0x{:04x}-0x{:04x}\n'.format(
                     min_did, max_did))
-                print('Identified DIDs:')
-                print('DID    Value (hex)')
+                report_print('Identified DIDs:')
+                report_print('DID    Value (hex)')
             for identifier in range(min_did, max_did + 1):
                 response = uds.read_data_by_identifier(identifier=[identifier])
 
@@ -1190,9 +1243,12 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                 if response and Iso14229_1.is_positive_response(response):
                     responses.append((identifier, response))
                     if print_results:
-                        print('0x{:04x}'.format(identifier), list_to_hex_str(response))
+                        did = '0x{:04x}'.format(identifier), list_to_hex_str(response)
+                        report_print(str(did))
+
             if print_results:
                 print("\nDone!")
+                report_print("\n")
             return responses
         
 def __write_dids_wrapper(args):
@@ -1204,10 +1260,19 @@ def __write_dids_wrapper(args):
     min_did = args.min_did
     max_did = args.max_did
     print_results = True
-    write_dids(diagnostic, arb_id_request, arb_id_response, timeout, min_did, max_did,
+    reporting = args.reporting
+
+    if reporting == 1:
+        global DOCUMENT
+        DOCUMENT = 2
+        f = open("cc_uds_wdid.txt", "w")
+        f.write("Caring Caribou UDS Write DID Module\n\n\n")
+        f.close()
+
+    write_dids(diagnostic, arb_id_request, arb_id_response, timeout, reporting, min_did, max_did,
               print_results)
 
-def write_dids(diagnostic, arb_id_request, arb_id_response, timeout,
+def write_dids(diagnostic, arb_id_request, arb_id_response, timeout, reporting,
               min_did=DUMP_DID_MIN, max_did=DUMP_DID_MAX, print_results=True):
     """
     Sends write data by identifier (DID) messages to 'arb_id_request'.
@@ -1242,6 +1307,10 @@ def write_dids(diagnostic, arb_id_request, arb_id_response, timeout,
         raise ValueError("max_did must not be smaller than min_did -"
                          " got min:0x{0:x}, max:0x{1:x}".format(min_did, max_did))
     
+    if reporting == 1:
+        global REPORT
+        REPORT = 1
+
     response_diag = extended_session(arb_id_request, arb_id_response, diagnostic)
     if not Iso14229_1.is_positive_response(response_diag):
         raise ValueError("Supplied Diagnostic Session Control subservice results in Negative Response")
@@ -1259,8 +1328,9 @@ def write_dids(diagnostic, arb_id_request, arb_id_response, timeout,
             if print_results:
                 print('Testing DIDs in range 0x{:04x}-0x{:04x}\n'.format(
                     min_did, max_did))
-                print('Identified Writable DIDs:')
-                print('DID    Value After Write (hex)')
+                report_print("\n")
+                report_print('Identified Writable DIDs:')
+                report_print('DID    Value After Write (hex)')
 
             for identifier in range(min_did, max_did + 1):
 
@@ -1283,10 +1353,12 @@ def write_dids(diagnostic, arb_id_request, arb_id_response, timeout,
                         responses.append((identifier, response_read))
 
                         if print_results:
-                            print('0x{:04x}'.format(identifier), list_to_hex_str(response_read))
+                            did = '0x{:04x}'.format(identifier), list_to_hex_str(response_read)
+                            report_print(str(did))
             
             if print_results:
                 print("\nDone!")
+                report_print("\n")
             return responses
 
 
@@ -1521,6 +1593,9 @@ def __parse_args(args):
     parser_did.add_argument("-np", "--no_padding",
                             action="store_true",
                             help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
+    parser_did.add_argument("-r", "--reporting", default=0,
+                            type=parse_int_dec_or_hex,
+                            help="reporting to text file, to enable set the option to 1. (default: 0)")
     parser_did.set_defaults(func=__dump_dids_wrapper)
 
     # Parser for auto
@@ -1570,6 +1645,9 @@ def __parse_args(args):
     parser_auto.add_argument("-np", "--no_padding",
                             action="store_true",
                             help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
+    parser_auto.add_argument("-r", "--reporting", default=0,
+                            type=parse_int_dec_or_hex,
+                            help="reporting to text file, to enable set the option to 1. (default: 0)")
     parser_auto.set_defaults(func=__auto_wrapper)
 
     # Parser for write_did
@@ -1596,6 +1674,9 @@ def __parse_args(args):
                             type=parse_int_dec_or_hex,
                             default=DUMP_DID_MAX,
                             help="maximum device identifier (DID) to write (default: 0xFFFF)")
+    parser_wdid.add_argument("-r", "--reporting", default=0,
+                            type=parse_int_dec_or_hex,
+                            help="reporting to text file, to enable set the option to 1. (default: 0)")
     parser_wdid.set_defaults(func=__write_dids_wrapper)
 
     args = parser.parse_args(args)

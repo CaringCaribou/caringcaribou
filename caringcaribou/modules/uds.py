@@ -5,7 +5,7 @@ from caringcaribou.utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX
 from caringcaribou.utils.constants import ARBITRATION_ID_MIN
 from caringcaribou.utils.iso15765_2 import IsoTp
 from caringcaribou.utils.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, Services, ServiceID
-from sys import stdout, version_info
+from sys import stdout, version_info, stderr
 import argparse
 import datetime
 import time
@@ -1072,6 +1072,7 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                 print('Identified DIDs:')
                 print('DID    Value (hex)')
             for identifier in range(min_did, max_did + 1):
+                print(f'0x{identifier:04x}', end='\r', file=stderr)
                 response = uds.read_data_by_identifier(identifier=[identifier])
 
                 # Only keep positive responses
@@ -1080,7 +1081,8 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                     if print_results:
                         print('0x{:04x}'.format(identifier), list_to_hex_str(response))
             if print_results:
-                print("\nDone!")
+                print("\033[K", file=stderr) # clear line
+                print("Done!")
             return responses
 
 

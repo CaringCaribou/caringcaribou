@@ -28,7 +28,7 @@ def fancy_header():
     :rtype: str
     """
     return r"""{0}
-CARING CARIBOU v{1}
+CARING CARIBOU NEXT v{1}
 \_\_    _/_/
     \__/
     (oo)\_______

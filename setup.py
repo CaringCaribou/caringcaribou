@@ -12,7 +12,7 @@ version = "1"
 dl_version = "master" if "dev" in version else "v{}".format(version)
 
 print(r"""-----------------------------------
- Installing Caring Caribou version {0}
+ Installing Caring Caribou Next version {0}
 -----------------------------------
 """.format(version))
 

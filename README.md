@@ -1,12 +1,12 @@
 # Caring Caribou Next
 A fork of a friendly automotive security exploration tool.
 
-\_\_    _/_/<br />
-    \__/<br />
-    (oo)\_______<br />
-    (__)\       )\/<br />
-        ||-----||<br />
-        ||     ||<br />
+    \_\_    _/_/
+        \__/
+        (oo)\_______
+        (__)\       )\/
+            ||-----||
+            ||     ||
 
 ## Rationale
 This work was initiated as part of the research project HEAVENS (HEAling Vulnerabilities to ENhance Software Security and Safety), and was forked to act as a quick way to perform changes for personal use, and for people that are intrested on those changes.

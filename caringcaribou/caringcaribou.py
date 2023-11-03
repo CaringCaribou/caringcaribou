@@ -50,7 +50,7 @@ def available_modules_dict():
 
 def available_modules():
     """
-    Get a string showing available CaringCaribou modules.
+    Get a string showing available CaringCaribouNext modules.
     Modules are listed in setup.py: entry_points['caringcaribou.modules']
 
     :return: A string listing available modules
@@ -71,7 +71,7 @@ def parse_arguments():
     :return: Namespace containing module name and arguments
     :rtype: argparse.Namespace
     """
-    parser = argparse.ArgumentParser(description="{0}A friendly car security exploration tool".format(fancy_header()),
+    parser = argparse.ArgumentParser(description="{0}A fork of a friendly car security exploration tool".format(fancy_header()),
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=available_modules())
     parser.add_argument("-i", dest="interface", default=None,

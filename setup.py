@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 """
-Caring Caribou
-==============
-- A friendly automotive security exploration tool, initiated as part of the research project HEAVENS (HEAling Vulnerabilities to ENhance Software Security and Safety), now a stand-alone project.
-- A zero-knowledge tool that can be dropped onto an automotive network and collect information regarding what services and vulnerabilities exist.
+Caring Caribou Next
+===================
+- This work was initiated as part of the research project HEAVENS (HEAling Vulnerabilities to ENhance Software Security and Safety), and was forked to act as a quick way to perform changes for personal use, and for people that are intrested on those changes.
+- While caringcaribou is not perfect, it can act as a quick evaluation utility, which can help with exploration of a target ECU over several target networks/interfaces. This project is not meant to be a complete one button solution, but a tool that can give researchers a quick and easy head start into the path of ECU exploration.
 """
 
 from setuptools import find_packages, setup
 
-version = "0.4"
+version = "1"
 dl_version = "master" if "dev" in version else "v{}".format(version)
 
 print(r"""-----------------------------------
@@ -17,11 +17,11 @@ print(r"""-----------------------------------
 """.format(version))
 
 setup(
-    name="caringcaribou",
+    name="caringcaribounext",
     version=version,
-    author="Kasper Karlsson",
+    author="Thomas Sermpinis",
     # author_email="TBD",
-    description="A friendly automotive security exploration tool",
+    description="A fork of a friendly automotive security exploration tool",
     long_description=__doc__,
     keywords=["automotive", "security", "CAN", "automotive protocols", "fuzzing"],
     url="https://github.com/CaringCaribou/caringcaribou/",
@@ -35,7 +35,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "cc.py=caringcaribou.caringcaribou:main",
+            "ccn.py=caringcaribou.caringcaribou:main",
             "caringcaribou=caringcaribou.caringcaribou:main",
         ],
         "caringcaribou.modules": [
@@ -54,6 +54,6 @@ setup(
 )
 
 print(r"""-----------------------------------------------------------
- Installation completed, run `cc.py --help` to get started
+ Installation completed, run `ccn.py --help` to get started
 -----------------------------------------------------------
 """)

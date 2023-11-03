@@ -1283,7 +1283,7 @@ def dump_dids(arb_id_request, arb_id_response, timeout, reporting,
                 if response and Iso14229_1.is_positive_response(response):
                     responses.append((identifier, response))
                     if print_results:
-                        did = '0x{:04x}'.format(identifier), list_to_hex_str(response)
+                        did = '0x{:04x}'.format(identifier), list_to_hex_str(response[3:])
                         report_print(str(did))
 
             if print_results:
@@ -1393,7 +1393,7 @@ def write_dids(diagnostic, arb_id_request, arb_id_response, timeout, reporting,
                         responses.append((identifier, response_read))
 
                         if print_results:
-                            did = '0x{:04x}'.format(identifier), list_to_hex_str(response_read)
+                            did = '0x{:04x}'.format(identifier), list_to_hex_str(response_read[3:])
                             report_print(str(did))
             
             if print_results:

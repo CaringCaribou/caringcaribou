@@ -9,14 +9,14 @@ import traceback
 import pkg_resources
 
 
-VERSION = "0.4"
+VERSION = "1"
 
 
 def show_script_header():
     """Show script header"""
     print(r"""
 {0}
-CARING CARIBOU v{1}
+CARING CARIBOU NEXT v{1}
 {0}
 """.format("-"*(16 + len(VERSION)), VERSION))
 

@@ -709,7 +709,7 @@ def __parse_args(args):
         prog="cc.py doip",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="DoIP module for "
-                    "CaringCaribou",
+                    "CaringCaribouNext",
         epilog="""Example usage:
   cc.py doip discovery
   cc.py doip discovery -blacklist 0x123 0x456

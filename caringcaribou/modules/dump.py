@@ -51,14 +51,14 @@ def parse_args(args):
     :param args: List of arguments
     :return: Argument namespace
     """
-    parser = argparse.ArgumentParser(prog="cc.py dump",
+    parser = argparse.ArgumentParser(prog="ccn.py dump",
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     description="CAN traffic dump module for CaringCaribou",
+                                     description="CAN traffic dump module for CaringCaribouNext",
                                      epilog="""Example usage:
-  cc.py dump
-  cc.py dump -s 1.0
-  cc.py dump -f output.txt
-  cc.py dump -c -f output.txt 0x733 0x734""")
+  ccn.py dump
+  ccn.py dump -s 1.0
+  ccn.py dump -f output.txt
+  ccn.py dump -c -f output.txt 0x733 0x734""")
     parser.add_argument("-f", "--file",
                         metavar="F",
                         help="Write output to file F (default: stdout)")

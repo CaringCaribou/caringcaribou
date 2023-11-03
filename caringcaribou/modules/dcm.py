@@ -425,17 +425,17 @@ def parse_args(args):
     :return: Namespace containing action and action-specific arguments
     :rtype: argparse.Namespace
     """
-    parser = argparse.ArgumentParser(prog="cc.py dcm",
+    parser = argparse.ArgumentParser(prog="ccn.py dcm",
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     description="""Diagnostics module for CaringCaribou""",
+                                     description="""Diagnostics module for CaringCaribouNext""",
                                      epilog="""Example usage:
-  cc.py dcm discovery
-  cc.py dcm discovery -blacklist 0x123 0x456
-  cc.py dcm discovery -autoblacklist 10
-  cc.py dcm services 0x733 0x633
-  cc.py dcm subfunc 0x733 0x633 0x22 2 3
-  cc.py dcm dtc 0x7df 0x7e8
-  cc.py dcm testerpresent 0x733""")
+  ccn.py dcm discovery
+  ccn.py dcm discovery -blacklist 0x123 0x456
+  ccn.py dcm discovery -autoblacklist 10
+  ccn.py dcm services 0x733 0x633
+  ccn.py dcm subfunc 0x733 0x633 0x22 2 3
+  ccn.py dcm dtc 0x7df 0x7e8
+  ccn.py dcm testerpresent 0x733""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 

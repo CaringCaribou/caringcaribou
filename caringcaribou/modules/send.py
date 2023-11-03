@@ -226,16 +226,16 @@ def parse_args(args):
     :return: Argument namespace
     :rtype: argparse.Namespace
     """
-    parser = argparse.ArgumentParser(prog="cc.py send",
+    parser = argparse.ArgumentParser(prog="ccn.py send",
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     description="Raw message transmission module for CaringCaribou.\n"
+                                     description="Raw message transmission module for CaringCaribouNext.\n"
                                                  "Messages can be passed as command line arguments or through a file.",
                                      epilog="""Example usage:
-  cc.py send message 0x7a0#c0.ff.ee.00.11.22.33.44
-  cc.py send message -d 0.5 123#de.ad.be.ef 124#01.23.45
-  cc.py send message -p 0x100#11 0x100#22.33
-  cc.py send file can_dump.txt
-  cc.py send file -d 0.2 can_dump.txt""")
+  ccn.py send message 0x7a0#c0.ff.ee.00.11.22.33.44
+  ccn.py send message -d 0.5 123#de.ad.be.ef 124#01.23.45
+  ccn.py send message -p 0x100#11 0x100#22.33
+  ccn.py send file can_dump.txt
+  ccn.py send file -d 0.2 can_dump.txt""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 

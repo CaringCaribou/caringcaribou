@@ -484,16 +484,16 @@ def parse_args(args):
     :return: Namespace containing action and action-specific arguments
     :rtype: argparse.Namespace
     """
-    parser = argparse.ArgumentParser(prog="cc.py xcp",
+    parser = argparse.ArgumentParser(prog="ccn.py xcp",
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     description="""XCP module for CaringCaribou""",
+                                     description="""XCP module for CaringCaribouNext""",
                                      epilog="""Example usage:
-  cc.py xcp discovery
-  cc.py xcp discovery -blacklist 0x100 0xabc
-  cc.py xcp discovery -autoblacklist 10
-  cc.py xcp commands 0x3e8 0x3e9
-  cc.py xcp info 1000 1001
-  cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex""")
+  ccn.py xcp discovery
+  ccn.py xcp discovery -blacklist 0x100 0xabc
+  ccn.py xcp discovery -autoblacklist 10
+  ccn.py xcp commands 0x3e8 0x3e9
+  ccn.py xcp info 1000 1001
+  ccn.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 

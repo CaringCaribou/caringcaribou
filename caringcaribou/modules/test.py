@@ -12,7 +12,7 @@ def print_interface_header():
 
 
 def module_main(_):
-    """Runs all Caring Caribou unit tests"""
+    """Runs all Caring Caribou Next unit tests"""
     print_interface_header()
     # Run tests
     test_suite = unittest.TestLoader().loadTestsFromModule(caringcaribou.tests)

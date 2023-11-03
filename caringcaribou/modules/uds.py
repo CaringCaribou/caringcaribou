@@ -1405,20 +1405,20 @@ def write_dids(diagnostic, arb_id_request, arb_id_response, timeout, reporting,
 def __parse_args(args):
     """Parser for module arguments"""
     parser = argparse.ArgumentParser(
-        prog="cc.py uds",
+        prog="ccn.py uds",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="Universal Diagnostic Services module for "
-                    "CaringCaribou",
+                    "CaringCaribouNext",
         epilog="""Example usage:
-  cc.py uds discovery
-  cc.py uds discovery -blacklist 0x123 0x456
-  cc.py uds discovery -autoblacklist 10
-  cc.py uds services 0x733 0x633
-  cc.py uds ecu_reset 1 0x733 0x633
-  cc.py uds testerpresent 0x733
-  cc.py uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
-  cc.py uds dump_dids 0x733 0x633
-  cc.py uds dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1""")
+  ccn.py uds discovery
+  ccn.py uds discovery -blacklist 0x123 0x456
+  ccn.py uds discovery -autoblacklist 10
+  ccn.py uds services 0x733 0x633
+  ccn.py uds ecu_reset 1 0x733 0x633
+  ccn.py uds testerpresent 0x733
+  ccn.py uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
+  ccn.py uds dump_dids 0x733 0x633
+  ccn.py uds dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 

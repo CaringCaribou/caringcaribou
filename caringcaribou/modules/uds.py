@@ -5,6 +5,7 @@ from caringcaribou.utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX
 from caringcaribou.utils.constants import ARBITRATION_ID_MIN
 from caringcaribou.utils.iso15765_2 import IsoTp
 from caringcaribou.utils.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, Services, ServiceID
+from caringcaribou.modules.uds_fuzz import seed_randomness_fuzzer, find_duplicates
 from sys import stdout, version_info
 import argparse
 import datetime
@@ -969,7 +970,7 @@ def __auto_wrapper(args):
             report_print("\nDiagnostics service could not be found.")
         else:
 
-            # Print result table
+            # Print result table of discovered diagnostics
             report_print("\nIdentified diagnostics:\n")
             table_line = "+------------+------------+"
             report_print(table_line)
@@ -1172,7 +1173,46 @@ def __auto_wrapper(args):
                                     .format(diag, sec))
                                 counter += 1
                             report_print(table_line_sec)
-                        
+
+                            #Seed Randomness Evaluation
+                            if input("Do you want to perform seed randomness evaluation with uds_fuzz module? (y/n)") == "y":
+                                for counter in range(len(found_subsec)):
+                                    diag = found_subdiag[counter]
+                                    sec = found_subsec[counter]
+                                    report_print("\n")
+                                    report_print("\nTarget Security Access Subservice:\n")
+                                    report_print("\n")
+                                    table_line_sec = "+----------------------+-------------------+"
+                                    report_print(table_line_sec)
+                                    report_print("|  Diagnostic Session  |  Security Access  |")
+                                    report_print(table_line_sec)
+                                    for counter in range(len(found_subsec)):
+                                        diag = found_subdiag[counter]
+                                        sec = found_subsec[counter]
+                                        report_print("|         0x{0:02x}         |         0x{1:02x}      |"
+                                            .format(diag, sec))
+                                        counter += 1
+                                    report_print(table_line_sec)
+                                    if ServiceID.ECU_RESET in found_services:
+                                        reset_type = parse_int_dec_or_hex('1')
+                                        session_type = "10{0:02x}27{1:02x}".format(diag, sec)
+                                        iterations = parse_int_dec_or_hex('100')
+                                        reset_delay = 3.901
+                                        reset_method = parse_int_dec_or_hex('1')
+                                        inter = 0.1
+                                        seed_list = seed_randomness_fuzzer(client_id, server_id, reset_type, session_type, iterations, reset_delay, reset_method, inter, padding, no_padding)
+                                        # Print captured seeds and found duplicates
+                                        if len(seed_list) > 0:
+                                            print("\n")
+                                            report_print("\nDuplicates discovered: \n")
+                                            report_print(find_duplicates(seed_list))
+                                            report_print("\n")
+                                        else:
+                                            report_print("\nNo Duplicates Found in 100 itterations. Consider manual investigation. \n")
+                                            report_print("\n")
+                                    else:
+                                        print("ECUReset service not available. Skipping Seed Randomness evaluation.")
+
                     except KeyboardInterrupt:
                         print("Current test interrupted by user.")
 

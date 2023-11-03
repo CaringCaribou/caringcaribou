@@ -1,7 +1,6 @@
 from __future__ import print_function
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
 from caringcaribou.utils.iso14229_1 import Iso14229_1, ServiceID
-from caringcaribou.modules.uds import print_negative_response
 from caringcaribou.utils.iso15765_2 import IsoTp
 from sys import stdout
 import argparse
@@ -34,9 +33,23 @@ def find_duplicates(sequence):
     duplicates = set(i for i in sequence if i in first_seen or first_seen_add(i))
     return duplicates
 
+def print_negative_response(response):
+    """
+    Helper function for decoding and printing a negative response received
+    from a UDS server.
 
-def seed_randomness_fuzzer(args):
-    """Wrapper used to initiate security randomness fuzzer"""
+    :param response: Response data after CAN-TP layer has been removed
+    :type response: [int]
+
+    :return: Nothing
+    """
+    nrc = response[2]
+    nrc_description = NRC_NAMES.get(nrc, "Unknown NRC value")
+    print("Received negative response code (NRC) 0x{0:02x}: {1}"
+          .format(nrc, nrc_description))
+
+def __seed_randomness_fuzzer_wrapper(args):
+    """Wrapper used to initiate a seed randomness fuzz"""
     arb_id_request = args.src
     arb_id_response = args.dst
     reset_type = args.reset
@@ -48,6 +61,20 @@ def seed_randomness_fuzzer(args):
     padding = args.padding
     no_padding = args.no_padding
 
+    seed_list = seed_randomness_fuzzer(arb_id_request, arb_id_response, reset_type, session_type, iterations, reset_delay, reset_method, inter, padding, no_padding)
+
+    # Print captured seeds and found duplicates
+    if len(seed_list) > 0:
+        print("\n")
+        print("Security Access Seeds captured:")
+        for seed in seed_list:
+            print(seed)
+        print("\nDuplicates found: \n", find_duplicates(seed_list))
+
+
+def seed_randomness_fuzzer(arb_id_request, arb_id_response, reset_type, session_type, iterations, reset_delay, reset_method, inter, padding, no_padding):
+    """Wrapper used to initiate security randomness fuzzer"""
+    
     padding_set(padding, no_padding)
 
     seed_list = []
@@ -111,13 +138,7 @@ def seed_randomness_fuzzer(args):
         print(e)
         return
 
-    # Print captured seeds and found duplicates
-    if len(seed_list) > 0:
-        print("\n")
-        print("Security Access Seeds captured:")
-        for seed in seed_list:
-            print(seed)
-        print("\nDuplicates found: \n", find_duplicates(seed_list))
+    return seed_list
 
 
 def delay_fuzzer(args):
@@ -358,7 +379,7 @@ def __parse_args(args):
     parser_randomness_fuzzer.add_argument("-np", "--no_padding",
                             action="store_true",
                             help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
-    parser_randomness_fuzzer.set_defaults(func=seed_randomness_fuzzer)
+    parser_randomness_fuzzer.set_defaults(func=__seed_randomness_fuzzer_wrapper)
 
     args = parser.parse_args(args)
     return args

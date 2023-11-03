@@ -18,7 +18,7 @@ def show_script_header():
 {0}
 CARING CARIBOU NEXT v{1}
 {0}
-""".format("-"*(16 + len(VERSION)), VERSION))
+""".format("-"*(21 + len(VERSION)), VERSION))
 
 
 def fancy_header():
@@ -37,7 +37,7 @@ CARING CARIBOU NEXT v{1}
         ||     ||
 {0}
 
-""".format("-"*(16 + len(VERSION)), VERSION)
+""".format("-"*(21 + len(VERSION)), VERSION)
 
 
 def available_modules_dict():

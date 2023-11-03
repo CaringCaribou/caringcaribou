@@ -897,8 +897,8 @@ def __dump_dids_wrapper(args):
     if reporting == 1:
         global DOCUMENT
         DOCUMENT = 1
-        f = open("cc_uds_did.txt", "w")
-        f.write("Caring Caribou UDS DID Module\n\n\n")
+        f = open("ccn_uds_did.txt", "w")
+        f.write("Caring Caribou Next UDS DID Module\n\n\n")
         f.close()
 
 
@@ -912,17 +912,17 @@ def report_print(text):
     if REPORT == 1:    
         print(text)
         if DOCUMENT == 0:
-            report = open("cc_uds_auto_report.txt", "a")
+            report = open("ccn_uds_auto_report.txt", "a")
             report.write(text)
             report.write("\n")
             report.close()
         elif DOCUMENT == 1:
-            report = open("cc_uds_did.txt", "a")
+            report = open("ccn_uds_did.txt", "a")
             report.write(text)
             report.write("\n")
             report.close()
         elif DOCUMENT == 2:
-            report = open("cc_uds_wdid.txt", "a")
+            report = open("ccn_uds_wdid.txt", "a")
             report.write(text)
             report.write("\n")
             report.close()
@@ -955,8 +955,8 @@ def __auto_wrapper(args):
         REPORT = 1
         global DOCUMENT
         DOCUMENT = 0
-        f = open("cc_uds_auto_report.txt", "w")
-        f.write("Caring Caribou UDS Auto Module Report\n\n\n")
+        f = open("ccn_uds_auto_report.txt", "w")
+        f.write("Caring Caribou Next UDS Auto Module Report\n\n\n")
         f.close()
 
     try:
@@ -1306,7 +1306,7 @@ def __write_dids_wrapper(args):
         global DOCUMENT
         DOCUMENT = 2
         f = open("cc_uds_wdid.txt", "w")
-        f.write("Caring Caribou UDS Write DID Module\n\n\n")
+        f.write("Caring Caribou Next UDS Write DID Module\n\n\n")
         f.close()
 
     write_dids(diagnostic, arb_id_request, arb_id_response, timeout, reporting, min_did, max_did,

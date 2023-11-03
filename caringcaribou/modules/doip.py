@@ -706,21 +706,21 @@ def seed_randomness_fuzzer(args):
 def __parse_args(args):
     """Parser for module arguments"""
     parser = argparse.ArgumentParser(
-        prog="cc.py doip",
+        prog="ccn.py doip",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="DoIP module for "
                     "CaringCaribouNext",
         epilog="""Example usage:
-  cc.py doip discovery
-  cc.py doip discovery -blacklist 0x123 0x456
-  cc.py doip discovery -autoblacklist 10
-  cc.py doip services 0x733 0x633
-  cc.py doip ecu_reset 1 0x733 0x633
-  cc.py doip testerpresent 0x733
-  cc.py doip security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
-  cc.py doip dump_dids 0x733 0x633
-  cc.py doip dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1
-  cc.py doip seed_randomness_fuzzer 2 2 0x733 0x633 -m 1 -t 10 -d 50 -id 4""")
+  ccn.py doip discovery
+  ccn.py doip discovery -blacklist 0x123 0x456
+  ccn.py doip discovery -autoblacklist 10
+  ccn.py doip services 0x733 0x633
+  ccn.py doip ecu_reset 1 0x733 0x633
+  ccn.py doip testerpresent 0x733
+  ccn.py doip security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
+  ccn.py doip dump_dids 0x733 0x633
+  ccn.py doip dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1
+  ccn.py doip seed_randomness_fuzzer 2 2 0x733 0x633 -m 1 -t 10 -d 50 -id 4""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 

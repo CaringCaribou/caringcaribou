@@ -708,12 +708,12 @@ def parse_args(args):
                                      description="Fuzzing module for CaringCaribouNext",
                                      epilog="""Example usage:
 
-./ccn.py fuzzer random
-./ccn.py fuzzer random -min 4 -seed 0xabc123 -f log.txt
-./ccn.py fuzzer brute 0x123 12ab..78
-./ccn.py fuzzer mutate 7f.. 12ab....
-./ccn.py fuzzer replay log.txt
-./ccn.py fuzzer identify log.txt""")
+ccn.py fuzzer random
+ccn.py fuzzer random -min 4 -seed 0xabc123 -f log.txt
+ccn.py fuzzer brute 0x123 12ab..78
+ccn.py fuzzer mutate 7f.. 12ab....
+ccn.py fuzzer replay log.txt
+ccn.py fuzzer identify log.txt""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 

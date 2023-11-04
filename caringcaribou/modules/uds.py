@@ -1316,8 +1316,15 @@ def __dump_mem_wrapper(args):
     memory_length_byte_size = args.memory_length_byte_size
     session_type = args.sess_type
     print_results = True
+    padding = args.padding
+    no_padding = args.no_padding
+    
+
+    padding_set(padding, no_padding)
+
     dump_memory(arb_id_request, arb_id_response, timeout, start_addr, mem_length, mem_size, address_byte_size,
                 memory_length_byte_size, session_type, print_results)
+    
 def dump_memory(arb_id_request, arb_id_response, timeout,
                 start_addr=MEM_START_ADDR, mem_length=MEM_LEN, mem_size=MEM_SIZE, address_byte_size=ADDR_BYTE_SIZE,
                 memory_length_byte_size=MEM_LEN_BYTE_SIZE, session_type=3, print_results=True):
@@ -1370,6 +1377,10 @@ def dump_memory(arb_id_request, arb_id_response, timeout,
     responses = []
     with IsoTp(arb_id_request=arb_id_request,
                arb_id_response=arb_id_response) as tp:
+        
+        IsoTp.NP[0] = NP[0]
+        IsoTp.PADDING[0] = PADDING[0]
+
         # Setup filter for incoming messages
         tp.set_filter_single_arbitration_id(arb_id_response)
         with Iso14229_1(tp) as uds:
@@ -1405,6 +1416,8 @@ def __write_dids_wrapper(args):
     max_did = args.max_did
     print_results = True
     reporting = args.reporting
+    padding = args.padding
+    no_padding = args.no_padding
 
     if reporting == 1:
         global DOCUMENT
@@ -1412,6 +1425,8 @@ def __write_dids_wrapper(args):
         f = open("cc_uds_wdid.txt", "w")
         f.write("Caring Caribou Next UDS Write DID Module\n\n\n")
         f.close()
+
+    padding_set(padding, no_padding)
 
     write_dids(diagnostic, arb_id_request, arb_id_response, timeout, reporting, min_did, max_did,
               print_results)
@@ -1463,6 +1478,10 @@ def write_dids(diagnostic, arb_id_request, arb_id_response, timeout, reporting,
     with IsoTp(arb_id_request=arb_id_request,
                arb_id_response=arb_id_response) as tp:
         # Setup filter for incoming messages
+
+        IsoTp.NP[0] = NP[0]
+        IsoTp.PADDING[0] = PADDING[0]
+
         tp.set_filter_single_arbitration_id(arb_id_response)
         with Iso14229_1(tp) as uds:
             # Set timeout
@@ -1832,6 +1851,12 @@ def __parse_args(args):
                             type=parse_int_dec_or_hex,
                             default=SESSION_TYPE,
                             help="Session Type for activating service (default: 3)")
+    parser_mem.add_argument("-p", "--padding", metavar="P",
+                            type=parse_int_dec_or_hex, default=PADDING_DEFAULT,
+                            help="padding to be used in target messages (default: 0)")
+    parser_mem.add_argument("-np", "--no_padding",
+                            action="store_true",
+                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_mem.set_defaults(func=__dump_mem_wrapper)
 
 
@@ -1862,6 +1887,12 @@ def __parse_args(args):
     parser_wdid.add_argument("-r", "--reporting", default=0,
                             type=parse_int_dec_or_hex,
                             help="reporting to text file, to enable set the option to 1. (default: 0)")
+    parser_wdid.add_argument("-p", "--padding", metavar="P",
+                            type=parse_int_dec_or_hex, default=PADDING_DEFAULT,
+                            help="padding to be used in target messages (default: 0)")
+    parser_wdid.add_argument("-np", "--no_padding",
+                            action="store_true",
+                            help="trigger for cases where no padding is required, to enable set the option to 1. (default: 0)")
     parser_wdid.set_defaults(func=__write_dids_wrapper)
 
     args = parser.parse_args(args)

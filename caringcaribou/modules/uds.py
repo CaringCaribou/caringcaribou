@@ -44,7 +44,12 @@ UDS_SERVICE_NAMES = {
     0x84: "SECURED_DATA_TRANSMISSION",
     0x85: "CONTROL_DTC_SETTING",
     0x86: "RESPONSE_ON_EVENT",
-    0x87: "LINK_CONTROL"
+    0x87: "LINK_CONTROL",
+    0xBA: "SYSTEM_SUPPLIER_BA",
+    0xBB: "SYSTEM_SUPPLIER_BB",
+    0xBC: "SYSTEM_SUPPLIER_BC",
+    0xBD: "SYSTEM_SUPPLIER_BD",
+    0xBE: "SYSTEM_SUPPLIER_BE",
 }
 
 NRC_NAMES = {
@@ -108,6 +113,13 @@ BYTE_MAX = 0xFF
 DUMP_DID_MIN = 0x0000
 DUMP_DID_MAX = 0xFFFF
 DUMP_DID_TIMEOUT = 0.2
+
+MEM_START_ADDR = 0
+MEM_LEN = 1
+MEM_SIZE = 1
+ADDR_BYTE_SIZE = 2
+MEM_LEN_BYTE_SIZE = 1
+SESSION_TYPE = 3
 
 PADDING_DEFAULT = 0x00
 
@@ -1290,6 +1302,98 @@ def dump_dids(arb_id_request, arb_id_response, timeout, reporting,
                 print("\nDone!")
                 report_print("\n")
             return responses
+
+
+def __dump_mem_wrapper(args):
+    """Wrapper used to initiate data identifier dump"""
+    arb_id_request = args.src
+    arb_id_response = args.dst
+    timeout = args.timeout
+    start_addr = args.start_addr
+    mem_length = args.mem_length
+    mem_size = args.mem_size
+    address_byte_size = args.address_byte_size
+    memory_length_byte_size = args.memory_length_byte_size
+    session_type = args.sess_type
+    print_results = True
+    dump_memory(arb_id_request, arb_id_response, timeout, start_addr, mem_length, mem_size, address_byte_size,
+                memory_length_byte_size, session_type, print_results)
+def dump_memory(arb_id_request, arb_id_response, timeout,
+                start_addr=MEM_START_ADDR, mem_length=MEM_LEN, mem_size=MEM_SIZE, address_byte_size=ADDR_BYTE_SIZE,
+                memory_length_byte_size=MEM_LEN_BYTE_SIZE, session_type=3, print_results=True):
+    """
+    Sends read data by identifier (DID) messages to 'arb_id_request'.
+    Returns a list of positive responses received from 'arb_id_response' within
+    'timeout' seconds or an empty list if no positive responses were received.
+    :param arb_id_request: arbitration ID for requests
+    :param arb_id_response: arbitration ID for responses
+    :param timeout: seconds to wait for response before timeout, or None
+                    for default UDS timeout
+    :param start_addr: starting address to read
+    :param mem_length: maximum device identifier to read
+    :param mem_size: number of bytes to read from the controller
+    :param address_byte_size: number of bytes of the memory address parameter
+    :param memory_length_byte_size: number of bytes of the memory length parameter
+    :param session_type: session level
+    :param print_results: whether progress should be printed to stdout
+    :type address_byte_size: int
+    :type memory_length_byte_size: int
+    :type arb_id_request: int
+    :type arb_id_response: int
+    :type timeout: float or None
+    :type start_addr: int
+    :type mem_length: int
+    :type mem_size: int
+    :type session_type: int
+    :type print_results: bool
+    :return: list of tuples containing memory address and response bytes on success,
+             empty list if no responses
+    :rtype [(int, [int])] or []
+    """
+    _max_memory_space = (2 ** (8 * address_byte_size) - 1)
+    # Sanity checks
+    if isinstance(timeout, float) and timeout < 0.0:
+        raise ValueError("Timeout value ({0}) cannot be negative"
+                         .format(timeout))
+    if start_addr < 0:
+        raise ValueError("Start Address '{:x}' must be a positive integer".format(start_addr))
+    if start_addr + mem_length > _max_memory_space:
+        raise OverflowError("Start Address (0x{:x}) plus Memory Length (0x{:x}) "
+                            "will exceed the maximum memory address space (0x{:x})"
+                            .format(start_addr, mem_length, _max_memory_space))
+    # Extended diagnostics
+    response = extended_session(arb_id_request,
+                                arb_id_response,
+                                session_type)
+    if not Iso14229_1.is_positive_response(response):
+        raise ValueError("Unable to enter extended session...\n")
+    responses = []
+    with IsoTp(arb_id_request=arb_id_request,
+               arb_id_response=arb_id_response) as tp:
+        # Setup filter for incoming messages
+        tp.set_filter_single_arbitration_id(arb_id_response)
+        with Iso14229_1(tp) as uds:
+            # Set timeout
+            if timeout is not None:
+                uds.P3_CLIENT = timeout
+            if print_results:
+                print('Dumping Memory in range 0x{:x}-0x{:x}\n'.format(
+                    start_addr, start_addr + mem_length))
+                print('Identified Addresses:')
+                print('Address    Value (hex)')
+            for identifier in range(start_addr, start_addr + mem_length, mem_size):
+                response = uds.read_memory_by_address(memory_address=identifier, memory_size=mem_size,
+
+                                                      address_and_length_format=(memory_length_byte_size << 4) + address_byte_size)
+
+                # Only keep positive responses
+                if response and Iso14229_1.is_positive_response(response):
+                    responses.append((identifier, response))
+                    if print_results:
+                        print('0x{:x}'.format(identifier), list_to_hex_str(response))
+            if print_results:
+                print("\nDone!")
+            return responses
         
 def __write_dids_wrapper(args):
     """Wrapper used to initiate data identifier dump"""
@@ -1689,6 +1793,47 @@ def __parse_args(args):
                             type=parse_int_dec_or_hex,
                             help="reporting to text file, to enable set the option to 1. (default: 0)")
     parser_auto.set_defaults(func=__auto_wrapper)
+
+
+    # Parser for dump_mem
+    parser_mem = subparsers.add_parser("dump_mem")
+    parser_mem.add_argument("src",
+                            type=parse_int_dec_or_hex,
+                            help="arbitration ID to transmit to")
+    parser_mem.add_argument("dst",
+                            type=parse_int_dec_or_hex,
+                            help="arbitration ID to listen to")
+    parser_mem.add_argument("-t", "--timeout",
+                            type=float, metavar="T",
+                            default=DUMP_DID_TIMEOUT,
+                            help="wait T seconds for response before "
+                                 "timeout")
+    parser_mem.add_argument("--start_addr",
+                            type=parse_int_dec_or_hex,
+                            default=MEM_START_ADDR,
+                            help="starting address (default: 0x0000)")
+    parser_mem.add_argument("--mem_length",
+                            type=parse_int_dec_or_hex,
+                            default=MEM_LEN,
+                            help="number of bytes to read (default: 1)")
+    parser_mem.add_argument("--mem_size",
+                            type=parse_int_dec_or_hex,
+                            default=MEM_SIZE,
+                            help="numbers of bytes to return per request (default: 1)")
+    parser_mem.add_argument("--address_byte_size",
+                            type=parse_int_dec_or_hex,
+                            default=ADDR_BYTE_SIZE,
+                            help="numbers of bytes of the address (default: 2)")
+    parser_mem.add_argument("--memory_length_byte_size",
+                            type=parse_int_dec_or_hex,
+                            default=ADDR_BYTE_SIZE,
+                            help="numbers of bytes of the memory length parameter (default: 1)")
+    parser_mem.add_argument("--sess_type",
+                            type=parse_int_dec_or_hex,
+                            default=SESSION_TYPE,
+                            help="Session Type for activating service (default: 3)")
+    parser_mem.set_defaults(func=__dump_mem_wrapper)
+
 
     # Parser for write_did
     parser_wdid = subparsers.add_parser("write_dids")

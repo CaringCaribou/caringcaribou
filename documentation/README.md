@@ -9,7 +9,9 @@ Discovers and utilizes various ISO 14229-1 services.
 - ecu_reset - Reset an ECU
 - testerpresent - Force an elevated session against an ECU to stay active
 - dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
+- write_dids - Tries to write values of Dynamic Data Identifiers (DIDs)
 - auto - Fully automated diagnostics scan, by using the already existing UDS submodules
+- dump_mem - Dumps memory of ECU
 
 Details here: [uds module](documentation/uds.md)
 

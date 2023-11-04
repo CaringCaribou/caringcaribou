@@ -346,8 +346,8 @@ class Iso14229_1(object):
         :return: Response data if successful,
                  None otherwise
         """
-        addr_sz_fmt = (address_and_length_format >> 4) & 0xF
-        data_sz_fmt = (address_and_length_format & 0xF)
+        addr_sz_fmt = address_and_length_format & 0xF
+        data_sz_fmt = (address_and_length_format >> 4) & 0xF
 
         request = [0] * (1 + 1 + addr_sz_fmt + data_sz_fmt)
         request[0] = ServiceID.READ_MEMORY_BY_ADDRESS

@@ -1078,8 +1078,12 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                 # Only keep positive responses
                 if response and Iso14229_1.is_positive_response(response):
                     responses.append((identifier, response))
-                    if print_results:
-                        print('0x{:04x}'.format(identifier), list_to_hex_str(response))
+                    # only display the data record portion of the payload
+                    # response[0] = response SID (0x62)
+                    # response[1:3] = Data Identifier (DID)
+                    # response[3:] = data
+                    if print_results and len(response) > 3:
+                        print('0x{:04x}'.format(identifier), list_to_hex_str(response[3:]))
             if print_results:
                 print("\033[K", file=stderr) # clear line
                 print("Done!")

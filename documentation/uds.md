@@ -40,6 +40,8 @@ Example usage:
   cc.py uds discovery
   cc.py uds discovery -blacklist 0x123 0x456
   cc.py uds discovery -autoblacklist 10
+  cc.py uds discovery --no-pad
+  cc.py uds discovery --padding 0xAA
   cc.py uds services 0x733 0x633
   cc.py uds ecu_reset 1 0x733 0x633
   cc.py uds testerpresent 0x733

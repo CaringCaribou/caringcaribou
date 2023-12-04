@@ -110,7 +110,7 @@ DUMP_DID_TIMEOUT = 0.2
 
 
 def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
-                  delay, verify, print_results=True):
+                  delay, verify, padding, print_results=True):
     """Scans for diagnostics support by brute forcing session control
         messages to different arbitration IDs.
 
@@ -169,7 +169,7 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
 
     found_arbitration_ids = []
 
-    with IsoTp(None, None) as tp:
+    with IsoTp(None, None, padding_value=None) as tp:
         blacklist = set(blacklist_args)
         # Perform automatic blacklist scan
         if auto_blacklist_duration > 0:
@@ -180,7 +180,7 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
             blacklist |= auto_bl_arb_ids
 
         # Prepare session control frame
-        sess_ctrl_frm = tp.get_frames_from_message(session_control_data)
+        sess_ctrl_frm = tp.get_frames_from_message(session_control_data, padding_value=padding)
         send_arb_id = min_id - 1
         while send_arb_id < max_id:
             send_arb_id += 1
@@ -287,11 +287,16 @@ def __uds_discovery_wrapper(args):
     delay = args.delay
     verify = not args.skipverify
     print_results = True
+    padding=args.padding
+    no_pad=args.no_pad
+    if(no_pad):
+        padding=None
+
 
     try:
         arb_id_pairs = uds_discovery(min_id, max_id, blacklist,
                                      auto_blacklist_duration,
-                                     delay, verify, print_results)
+                                     delay, verify, padding, print_results)
         if len(arb_id_pairs) == 0:
             # No UDS discovered
             print("\nDiagnostics service could not be found.")
@@ -837,7 +842,7 @@ def __auto_wrapper(args):
     try:
         arb_id_pairs = uds_discovery(min_id, max_id, blacklist,
                                      auto_blacklist_duration,
-                                     delay, verify, print_results)
+                                     delay, verify, padding, print_results)
 
         print("\n")
         if len(arb_id_pairs) == 0:
@@ -1138,6 +1143,14 @@ def __parse_args(args):
                                   type=float, default=DELAY_DISCOVERY,
                                   help="D seconds delay between messages "
                                        "(default: {0})".format(DELAY_DISCOVERY))
+    parser_discovery.add_argument("--no-pad",
+                                  action="store_true", default=False,
+                                  dest="no_pad",
+                                  help="Disable padding")
+    parser_discovery.add_argument("--padding",
+                                  type=parse_int_dec_or_hex, default=0x00,
+                                  help="Specify padding value")
+
     parser_discovery.set_defaults(func=__uds_discovery_wrapper)
 
     # Parser for diagnostics service discovery

@@ -5,6 +5,7 @@ import argparse
 import can
 import errno
 from .utils import can_actions
+import sys
 import traceback
 import pkg_resources
 
@@ -16,9 +17,9 @@ def show_script_header():
     """Show script header"""
     print(r"""
 {0}
-CARING CARIBOU v{1}
+CARING CARIBOU v{1} - python {2}
 {0}
-""".format("-"*(16 + len(VERSION)), VERSION))
+""".format("-"*(16 + len(VERSION)), VERSION, sys.version))
 
 
 def fancy_header():
@@ -28,7 +29,7 @@ def fancy_header():
     :rtype: str
     """
     return r"""{0}
-CARING CARIBOU v{1}
+CARING CARIBOU v{1} - python {2}
 \_\_    _/_/
     \__/
     (oo)\_______
@@ -37,7 +38,7 @@ CARING CARIBOU v{1}
         ||     ||
 {0}
 
-""".format("-"*(16 + len(VERSION)), VERSION)
+""".format("-"*(16 + len(VERSION)), VERSION, sys.version)
 
 
 def show_missing_canrc_instruction():

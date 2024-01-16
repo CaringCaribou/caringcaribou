@@ -8,7 +8,7 @@ Caring Caribou
 
 from setuptools import find_packages, setup
 
-version = "0.4"
+version = "0.5"
 dl_version = "master" if "dev" in version else "v{}".format(version)
 
 print(r"""-----------------------------------

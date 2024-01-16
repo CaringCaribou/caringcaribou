@@ -1,4 +1,4 @@
-'''
+"""
 module_template.py
 
 This file contains a template for a simple CaringCaribou module.
@@ -10,9 +10,9 @@ Steps to add this module to CaringCaribou and run it:
 
     $ cp module_template.py my_module.py
 
-2. In `setup.py`, add an entry under `caringcaribou.modules`, 
+2. In `setup.py`, add an entry under `caringcaribou.modules`,
    referencing your new module like:
-   `my_module = caringcaribou.modules.my_module`  
+   `my_module = caringcaribou.modules.my_module`
 
 3. Run: `setup.py install`
 
@@ -22,7 +22,7 @@ Steps to add this module to CaringCaribou and run it:
 5. Run the following command to run module and show usage instructions:
 
     $ cc.py my_module -h
-'''
+"""
 from __future__ import print_function
 import argparse
 import time

@@ -113,7 +113,7 @@ In order to communicate over CAN without access to a physical CAN bus, it is pos
 ## Example use
 In this example we have connected a compatible [hardware](https://github.com/CaringCaribou/caringcaribou/blob/master/README.md#hardware-requirements) (PiCAN) to our client computer (a Raspberry Pi) and installed the software according to the [instructions](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/howtoinstall.md#raspberry-pi).
 
-The PiCAN is then connected to a CAN bus that features one or more ECUs. Since we know very little about the target ECUs, a great start is to do some discovery. Currently three types of discovery is available; dcm discovery, xcp discovery and the listener.
+The PiCAN is then connected to a CAN bus that features one or more ECUs. Since we know very little about the target ECUs, a great start is to do some discovery. Currently, three types of discovery are available; dcm discovery, xcp discovery and the listener.
 
 #### The listener
 Let's start with the listener:

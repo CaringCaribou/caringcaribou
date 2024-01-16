@@ -174,7 +174,7 @@ def get_random_data(min_length, max_length):
     data_length = random.randint(min_length, max_length)
     # Generate random bytes
     data = []
-    for i in range(data_length):
+    for _ in range(data_length):
         data_byte = random.randint(BYTE_MIN, BYTE_MAX)
         data.append(data_byte)
     return data

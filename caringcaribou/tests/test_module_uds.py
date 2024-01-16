@@ -164,7 +164,7 @@ class UdsModuleTestCase(unittest.TestCase):
                                  key_result, expected_key_result))
 
     def test_security_access_request_seed_invalid_level(self):
-        # Level 0x00 lies outside of allowed interval
+        # Level 0x00 lies outside the allowed interval
         level = 0x00
         data_record = []
         timeout = None

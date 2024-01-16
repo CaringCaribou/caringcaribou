@@ -258,7 +258,7 @@ def dcm_discovery(args):
 
 def service_discovery(args):
     """
-    Scans for supported DCM services. Prints a list of all supported services afterwards.
+    Scans for supported DCM services. Prints a list of all supported services afterward.
 
     :param args: A namespace containing src and dst
     """

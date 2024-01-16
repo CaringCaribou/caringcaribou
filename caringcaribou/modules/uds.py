@@ -727,7 +727,7 @@ def extended_session(arb_id_request, arb_id_response, session_type):
 
 def request_seed(arb_id_request, arb_id_response, level,
                  data_record, timeout):
-    """Sends an Request seed message to 'arb_id_request'. Returns the
+    """Sends a Request seed message to 'arb_id_request'. Returns the
        first response received from 'arb_id_response' within 'timeout'
        seconds or None otherwise.
 
@@ -1085,7 +1085,7 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                     if print_results and len(response) > 3:
                         print('0x{:04x}'.format(identifier), list_to_hex_str(response[3:]))
             if print_results:
-                print("\033[K", file=stderr) # clear line
+                print("\033[K", file=stderr)  # clear line
                 print("Done!")
             return responses
 

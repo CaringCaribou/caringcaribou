@@ -7,7 +7,7 @@ import argparse
 
 def start_listener(falling_sort):
     """
-    Counts messages per arbitration ID. Prints a list of IDs afterwards, sorted by number of hits.
+    Counts messages per arbitration ID. Prints a list of IDs afterward, sorted by number of hits.
 
     :param falling_sort: bool indicating whether results should be sorted in falling order
     """

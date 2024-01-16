@@ -121,7 +121,7 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
         expected_nrc = iso14229_1.NegativeResponseCodes.REQUEST_OUT_OF_RANGE
         length_and_format = MockEcuIso14229.REQUEST_ADDRESS_LENGTH_AND_FORMAT
         start_address = 0
-        # Request memory outside of the available address space, which should result in a failure
+        # Request memory outside the available address space, which should result in a failure
         request_data_size = len(MockEcuIso14229.DATA) + 1
         result = self.diagnostics.read_memory_by_address(address_and_length_format=length_and_format,
                                                          memory_address=start_address,

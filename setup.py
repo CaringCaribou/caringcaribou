@@ -2,8 +2,10 @@
 """
 Caring Caribou
 ==============
-- A friendly automotive security exploration tool, initiated as part of the research project HEAVENS (HEAling Vulnerabilities to ENhance Software Security and Safety), now a stand-alone project.
-- A zero-knowledge tool that can be dropped onto an automotive network and collect information regarding what services and vulnerabilities exist.
+- A friendly automotive security exploration tool, initiated as part of the research project HEAVENS (HEAling
+  Vulnerabilities to ENhance Software Security and Safety), now a stand-alone project.
+- A zero-knowledge tool that can be dropped onto an automotive network and collect information regarding what
+  services and vulnerabilities exist.
 """
 
 from setuptools import find_packages, setup

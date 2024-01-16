@@ -29,7 +29,7 @@ Running a module with an interface specified through `-i` gives the following er
 #### Solution
 Activate your CAN interface - this needs to be done after each reboot of your system.
 
-For physical interfaces (note: bitrates may vary depending on the CAN bus you are connected to):
+For physical interfaces (note: bit rates may vary depending on the CAN bus you are connected to):
 ```
 echo "Setting up CAN interface can0"
 sudo modprobe can

@@ -1,5 +1,5 @@
 # DoIP - Diagnostic communication over Internet Protocol
-This module can be used to enumerate and perform security testing on DoIP upon the ISO 13400-2. It is mainly build targeting the UDSonIP (ISO 14229-5) protocol implementation in Caring Caribou, but it is supposed to be extended for further DoIP testing even outside of the UDS implementation.
+This module can be used to enumerate and perform security testing on DoIP upon the ISO 13400-2. It is mainly build targeting the UDSonIP (ISO 14229-5) protocol implementation in Caring Caribou, but it is supposed to be extended for further DoIP testing even outside the UDS implementation.
 
 *Note: This module requires the packages `doipclient` and `udsoncan`, which only support Python 3.6+. These can be installed through `$ pip install doipclient udsoncan`.  If your system uses Python 2 as default python interpreter, you may have to use `$ pip3 install doipclient udsoncan` or `$ python3 -m pip install doipclient udsoncan` (and make sure to run Caring Caribou through `python3`) instead.*
 

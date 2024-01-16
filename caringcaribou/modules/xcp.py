@@ -191,7 +191,7 @@ def xcp_arbitration_id_discovery(args):
         """
         Returns a bool indicating whether 'data' is a valid XCP response
 
-        :param data: list of message data bytes
+        :param msg: list of message data bytes
         :return: True if data is a valid XCP response,
                  False otherwise
         """
@@ -447,7 +447,7 @@ def xcp_memory_dump(args):
         else:
             print("Unexpected connect reply: {0}\n".format(msg))
 
-    # Calculate address bytes (4 bytes, least significant first)
+    # Calculate address bytes (4 bytes, the least significant first)
     r = []
     n = start_address
     bytes_left = length

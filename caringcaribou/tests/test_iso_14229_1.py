@@ -75,8 +75,15 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
     def test_read_data_by_identifier_success(self):
         service_id = iso14229_1.ServiceID.READ_DATA_BY_IDENTIFIER
         identifier = [MockEcuIso14229.IDENTIFIER_REQUEST_POSITIVE]
-        expected_response = [MockEcuIso14229.IDENTIFIER_REQUEST_POSITIVE_RESPONSE]
+        expected_response = [0x00,
+                             MockEcuIso14229.IDENTIFIER_REQUEST_POSITIVE,
+                             MockEcuIso14229.IDENTIFIER_REQUEST_POSITIVE_RESPONSE]
         result = self.diagnostics.read_data_by_identifier(identifier=identifier)
+
+        # result looks like [0x62, DID_ADDR_UPPER, DID_ADDR_LOWER, RESULT]
+        #rsp_pos = result[0]
+        #rx_identifier = result[1:3]
+        print(result)
         self.verify_positive_response(service_id, result, expected_response)
 
     def test_read_data_by_identifier_failure(self):

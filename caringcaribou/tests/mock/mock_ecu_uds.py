@@ -145,12 +145,14 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         :return: Response to be sent
         """
         service_id = data[0]
+        data_id = data[1:3]
         request = data[2]
 
         if request == self.IDENTIFIER_REQUEST_POSITIVE:
             # Request for positive response
             # TODO Actually read a parameter from memory
-            payload = [self.IDENTIFIER_REQUEST_POSITIVE_RESPONSE]
+            payload = data_id
+            payload.append(self.IDENTIFIER_REQUEST_POSITIVE_RESPONSE)
             response_data = self.create_positive_response(service_id, payload)
         elif request == self.IDENTIFIER_REQUEST_NEGATIVE:
             # Request for negative response - use Conditions Not Correct

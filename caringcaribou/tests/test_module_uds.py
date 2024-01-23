@@ -205,3 +205,20 @@ class UdsModuleTestCase(unittest.TestCase):
                 self.assertListEqual(expected_responses[0], full_response)
             elif full_response[0:2] == [1,1]:
                 self.assertListEqual(expected_responses[1], full_response)
+
+        # check if we read a DID and the response comes back with a different DID
+        # testing harness will respond with DID + 1 when reading DID 0xfffe
+        expected_response_cnt = 0
+        expected_responses = [[0x62, 0x00, 0x01, 0x72]]
+        responses = uds.dump_dids(arb_id_request=self.ARB_ID_REQUEST,
+                                  arb_id_response=self.ARB_ID_RESPONSE,
+                                  timeout=timeout,
+                                  min_did=0xfffe,
+                                  max_did=0xfffe,
+                                  print_results=print_results)
+
+        # check there are proper number of responses - should be 0
+        # since we don't keep responses that don't align with the requested DID
+        self.assertEqual(expected_response_cnt, len(responses))
+
+

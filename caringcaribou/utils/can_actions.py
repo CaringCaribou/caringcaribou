@@ -109,9 +109,14 @@ class CanActions:
         self.clear_listeners()
         self.add_listener(listener)
 
-    def send(self, data, arb_id=None, is_extended=None, is_error=False, is_remote=False):
+    def send(self, data, arb_id=None, is_extended=None, is_error=False, is_remote=False, is_fd=False):
+        # Handle message larger than the standard format allows
         if len(data) > constants.MAX_MESSAGE_LENGTH:
-            raise IndexError("Invalid CAN message length: {0}".format(len(data)))
+            # Force CAN FD (Flexible Data-Rate) message if this is supported by the bus
+            if self.bus.protocol == can.bus.CanProtocol.CAN_FD:
+                is_fd = True
+            else:
+                raise IndexError("Invalid CAN message length: {0}".format(len(data)))
         # Fallback to default arbitration ID (self.arb_id) if no other ID is specified
         if arb_id is None:
             if self.arb_id is None:
@@ -124,7 +129,8 @@ class CanActions:
                           data=data,
                           is_extended_id=is_extended,
                           is_error_frame=is_error,
-                          is_remote_frame=is_remote)
+                          is_remote_frame=is_remote,
+                          is_fd=is_fd)
         self.bus.send(msg)
 
     def bruteforce_arbitration_id(self, data, callback, min_id, max_id,

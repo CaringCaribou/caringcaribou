@@ -145,17 +145,25 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         :return: Response to be sent
         """
         service_id = data[0]
+        data_id = data[1:3]
         request = data[2]
 
         if request == self.IDENTIFIER_REQUEST_POSITIVE:
             # Request for positive response
             # TODO Actually read a parameter from memory
-            payload = [self.IDENTIFIER_REQUEST_POSITIVE_RESPONSE]
+            payload = data_id
+            payload.append(self.IDENTIFIER_REQUEST_POSITIVE_RESPONSE)
             response_data = self.create_positive_response(service_id, payload)
         elif request == self.IDENTIFIER_REQUEST_NEGATIVE:
             # Request for negative response - use Conditions Not Correct
             nrc = NegativeResponseCodes.CONDITIONS_NOT_CORRECT
             response_data = self.create_negative_response(service_id, nrc)
+        # special DID that responds with DID + 1
+        elif data_id == [0xff, 0xfe]:
+            print('found special DID')
+            payload = [0xff, 0xff, self.IDENTIFIER_REQUEST_POSITIVE_RESPONSE]
+            print(f'payload={payload}')
+            response_data = self.create_positive_response(service_id, payload)
         else:
             # Unmatched request - use a general reject response
             nrc = NegativeResponseCodes.GENERAL_REJECT

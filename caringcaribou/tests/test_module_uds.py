@@ -176,17 +176,16 @@ class UdsModuleTestCase(unittest.TestCase):
                              timeout=timeout)
 
     def test_dump_dids(self):
-        # mock ECU responds to DIDs 0x0001, 0x0101, 0x0201...0xff01
-        # response data is always 6272
-        # scanning 0x0000...0x0101 should yield 2 positive responses out of 258 requests
-        # and each response will contain 6272
+        # mock ECU responds to DIDs 0x0001, 0x0101, 0x0201...
+        # response data is always 62, 00, 01, 72
+        # scanning 0x0000...0x0101 should yield 1 positive responses out of 258 requests
         #
         timeout = None
         min_did = 0x0000
-        max_did = 0x0101
+        max_did = 0x0100
         print_results = False
-        expected_response_cnt = 2
-        expected_response = [0x62, 0x72]
+        expected_response_cnt = 1
+        expected_responses = [[0x62, 0x00, 0x01, 0x72]]
         responses = uds.dump_dids(arb_id_request=self.ARB_ID_REQUEST,
                                   arb_id_response=self.ARB_ID_RESPONSE,
                                   timeout=timeout,
@@ -199,4 +198,27 @@ class UdsModuleTestCase(unittest.TestCase):
 
         # next check the responses contain the proper data
         for response in responses:
-            self.assertListEqual(expected_response, response[1])
+            # response is a tuple (data_identifier, response)
+            identifier = response[0]
+            full_response = response[1:][0] # data comes out 
+            if full_response[0:2] == [0, 1]:
+                self.assertListEqual(expected_responses[0], full_response)
+            elif full_response[0:2] == [1,1]:
+                self.assertListEqual(expected_responses[1], full_response)
+
+        # check if we read a DID and the response comes back with a different DID
+        # testing harness will respond with DID + 1 when reading DID 0xfffe
+        expected_response_cnt = 0
+        expected_responses = [[0x62, 0x00, 0x01, 0x72]]
+        responses = uds.dump_dids(arb_id_request=self.ARB_ID_REQUEST,
+                                  arb_id_response=self.ARB_ID_RESPONSE,
+                                  timeout=timeout,
+                                  min_did=0xfffe,
+                                  max_did=0xfffe,
+                                  print_results=print_results)
+
+        # check there are proper number of responses - should be 0
+        # since we don't keep responses that don't align with the requested DID
+        self.assertEqual(expected_response_cnt, len(responses))
+
+

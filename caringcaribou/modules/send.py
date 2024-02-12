@@ -1,6 +1,6 @@
 from caringcaribou.utils.can_actions import CanActions
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
-from caringcaribou.utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
+import caringcaribou.utils.constants as constants
 from time import sleep
 from sys import exit
 import argparse
@@ -27,7 +27,7 @@ class CanMessage:
         # Negative delays are not allowed
         self.delay = max([delay, 0.0])
         if is_extended is None:
-            self.is_extended = arb_id > ARBITRATION_ID_MAX
+            self.is_extended = arb_id > constants.ARBITRATION_ID_MAX
         else:
             self.is_extended = is_extended
         self.is_error = is_error
@@ -52,11 +52,12 @@ def parse_messages(msgs, delay, pad):
             arb_id = parse_int_dec_or_hex(msg_parts[0])
             if arb_id is None:
                 raise ValueError("Invalid arbitration ID: '{0}'".format(msg_parts[0]))
-            if arb_id > ARBITRATION_ID_MAX_EXTENDED:
-                raise ValueError("Arbitration ID too large (max is 0x{0:x})".format(ARBITRATION_ID_MAX_EXTENDED))
+            if arb_id > constants.ARBITRATION_ID_MAX_EXTENDED:
+                raise ValueError("Arbitration ID too large (max is 0x{0:x})".format(
+                    constants.ARBITRATION_ID_MAX_EXTENDED))
             # Check data length
             byte_list = msg_parts[1].split(".")
-            if not 0 < len(byte_list) <= 8:
+            if not 0 < len(byte_list) <= constants.MAX_MESSAGE_LENGTH:
                 raise ValueError("Invalid data length: {0}".format(len(byte_list)))
             # Validate data bytes
             msg_data = []
@@ -67,7 +68,7 @@ def parse_messages(msgs, delay, pad):
                 msg_data.append(byte_int)
             if pad:
                 # Pad to 8 bytes
-                msg_data.extend([PADDING_BYTE] * (8 - len(msg_data)))
+                msg_data.extend([PADDING_BYTE] * (constants.MAX_MESSAGE_LENGTH - len(msg_data)))
             fixed_msg = CanMessage(arb_id, msg_data, delay)
             message_list.append(fixed_msg)
         # No delay before sending first message

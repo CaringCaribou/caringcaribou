@@ -158,11 +158,9 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             # Request for negative response - use Conditions Not Correct
             nrc = NegativeResponseCodes.CONDITIONS_NOT_CORRECT
             response_data = self.create_negative_response(service_id, nrc)
-        # special DID that responds with DID + 1
         elif data_id == [0xff, 0xfe]:
-            print('found special DID')
+            # DID which responds with DID + 1
             payload = [0xff, 0xff, self.IDENTIFIER_REQUEST_POSITIVE_RESPONSE]
-            print(f'payload={payload}')
             response_data = self.create_positive_response(service_id, payload)
         else:
             # Unmatched request - use a general reject response

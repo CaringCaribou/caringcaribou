@@ -83,7 +83,6 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
         # result looks like [0x62, DID_ADDR_UPPER, DID_ADDR_LOWER, RESULT]
         #rsp_pos = result[0]
         #rx_identifier = result[1:3]
-        print(result)
         self.verify_positive_response(service_id, result, expected_response)
 
     def test_read_data_by_identifier_failure(self):

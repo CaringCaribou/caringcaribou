@@ -1,6 +1,6 @@
 from __future__ import print_function
-from caringcaribou.utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED, ARBITRATION_ID_MIN, BYTE_MAX, BYTE_MIN
 from sys import stdout, version_info
+import caringcaribou.utils.constants as constants
 import can
 import time
 
@@ -110,7 +110,7 @@ class CanActions:
         self.add_listener(listener)
 
     def send(self, data, arb_id=None, is_extended=None, is_error=False, is_remote=False):
-        if len(data) > 8:
+        if len(data) > constants.MAX_MESSAGE_LENGTH:
             raise IndexError("Invalid CAN message length: {0}".format(len(data)))
         # Fallback to default arbitration ID (self.arb_id) if no other ID is specified
         if arb_id is None:
@@ -119,7 +119,7 @@ class CanActions:
             arb_id = self.arb_id
         # Force extended flag if it is unspecified and arbitration ID is larger than the standard format allows
         if is_extended is None:
-            is_extended = arb_id > ARBITRATION_ID_MAX
+            is_extended = arb_id > constants.ARBITRATION_ID_MAX
         msg = can.Message(arbitration_id=arb_id,
                           data=data,
                           is_extended_id=is_extended,
@@ -131,13 +131,13 @@ class CanActions:
                                   callback_end=None):
         # Set limits
         if min_id is None:
-            min_id = ARBITRATION_ID_MIN
+            min_id = constants.ARBITRATION_ID_MIN
         if max_id is None:
-            if min_id <= ARBITRATION_ID_MAX:
-                max_id = ARBITRATION_ID_MAX
+            if min_id <= constants.ARBITRATION_ID_MAX:
+                max_id = constants.ARBITRATION_ID_MAX
             else:
                 # If min_id is extended, use an extended default max_id as well
-                max_id = ARBITRATION_ID_MAX_EXTENDED
+                max_id = constants.ARBITRATION_ID_MAX_EXTENDED
         # Sanity checks
         if min_id > max_id:
             if callback_end:
@@ -149,7 +149,7 @@ class CanActions:
             self.notifier.listeners = [callback(arb_id)]
             # Use standard addressing (11 bits arbitration ID) instead of extended (29 bits) when possible
             extended = False
-            if arb_id > ARBITRATION_ID_MAX:
+            if arb_id > constants.ARBITRATION_ID_MAX:
                 extended = True
             msg = can.Message(arbitration_id=arb_id, data=data, is_extended_id=extended)
             self.bus.send(msg)
@@ -163,8 +163,8 @@ class CanActions:
             self.clear_listeners()
             callback_end("Bruteforce of range 0x{0:x}-0x{1:x} completed".format(min_id, max_id))
 
-    def bruteforce_data(self, data, bruteforce_index, callback, min_value=BYTE_MIN, max_value=BYTE_MAX,
-                        callback_end=None):
+    def bruteforce_data(self, data, bruteforce_index, callback, min_value=constants.BYTE_MIN,
+                        max_value=constants.BYTE_MAX, callback_end=None):
         self.bruteforce_running = True
         for value in range(min_value, max_value + 1):
             self.notifier.listeners = [callback(value)]
@@ -179,7 +179,7 @@ class CanActions:
             callback_end()
 
     def bruteforce_data_new(self, data, bruteforce_indices, callback,
-                            min_value=BYTE_MIN, max_value=BYTE_MAX,
+                            min_value=constants.BYTE_MIN, max_value=constants.BYTE_MAX,
                             callback_done=None):
         def send(msg_data, idxs):
             self.notifier.listeners = [callback(["{0:02x}".format(msg_data[a]) for a in idxs])]

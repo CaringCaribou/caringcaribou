@@ -162,7 +162,7 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
         elif data_id == [0xff, 0xfe]:
             print('found special DID')
             payload = [0xff, 0xff, self.IDENTIFIER_REQUEST_POSITIVE_RESPONSE]
-            print(f'{payload=}')
+            print(f'payload={payload}')
             response_data = self.create_positive_response(service_id, payload)
         else:
             # Unmatched request - use a general reject response

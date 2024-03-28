@@ -6,7 +6,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'xcp'
 
-usage: cc.py xcp [-h] {discovery,info,dump} ...
+usage: caringcaribou xcp [-h] {discovery,info,dump} ...
 
 XCP module for CaringCaribou
 
@@ -17,9 +17,9 @@ optional arguments:
  -h, --help            show this help message and exit
 
 Example usage:
- cc.py xcp discovery
- cc.py xcp info 1000 1001
- cc.py xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex
+ caringcaribou xcp discovery
+ caringcaribou xcp info 1000 1001
+ caringcaribou xcp dump 0x3e8 0x3e9 0x1fffb000 0x4800 -f bootloader.hex
  ```
  
 ## Discovery
@@ -30,7 +30,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'xcp'
 
-usage: cc.py xcp discovery [-h] [-min MIN] [-max MAX]
+usage: caringcaribou xcp discovery [-h] [-min MIN] [-max MAX]
 
 optional arguments:
  -h, --help            show this help message and exit
@@ -47,7 +47,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'xcp'
 
-usage: cc.py xcp info [-h] src dst
+usage: caringcaribou xcp info [-h] src dst
 
 positional arguments:
   src         arbitration ID to transmit from
@@ -66,7 +66,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'xcp'
 
-usage: cc.py xcp dump [-h] [-f F] src dst start length
+usage: caringcaribou xcp dump [-h] [-f F] src dst start length
 
 positional arguments:
   src         arbitration ID to transmit from

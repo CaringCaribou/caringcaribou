@@ -1,6 +1,6 @@
 # Dump
 ````
-$ cc.py dump -h
+$ caringcaribou dump -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -8,7 +8,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'dump'
 
-usage: cc.py dump [-h] [-f F] [-c] [W [W ...]]
+usage: caringcaribou dump [-h] [-f F] [-c] [W [W ...]]
 
 CAN traffic dump module for CaringCaribou
 
@@ -21,7 +21,7 @@ optional arguments:
   -c              Output on candump format
 
 Example usage:
-  cc.py dump
-  cc.py dump -f output.txt
-  cc.py dump -c -f output.txt 0x733 0x734
+  caringcaribou dump
+  caringcaribou dump -f output.txt
+  caringcaribou dump -c -f output.txt 0x733 0x734
  ```

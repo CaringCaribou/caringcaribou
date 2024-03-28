@@ -1,6 +1,6 @@
 # Listener
 ````
-$ cc.py listener -h
+$ caringcaribou listener -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -8,7 +8,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'listener'
 
-usage: cc.py listener [-h] [-r]
+usage: caringcaribou listener [-h] [-r]
 
 Passive listener module for CaringCaribou
 

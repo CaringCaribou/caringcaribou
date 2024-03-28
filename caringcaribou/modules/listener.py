@@ -42,7 +42,7 @@ def parse_args(args):
     :return: Argument namespace
     :rtype: argparse.Namespace
     """
-    parser = argparse.ArgumentParser(prog="cc.py listener",
+    parser = argparse.ArgumentParser(prog="caringcaribou listener",
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description="Passive listener module for CaringCaribou")
     parser.add_argument("-r", "--reverse",

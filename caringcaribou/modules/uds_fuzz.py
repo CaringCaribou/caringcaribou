@@ -210,13 +210,13 @@ def str_to_hex(i, session_type):
 def __parse_args(args):
     """Parser for module arguments"""
     parser = argparse.ArgumentParser(
-        prog="cc.py uds_fuzz",
+        prog="caringcaribou uds_fuzz",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="UDS seed randomness fuzzer and tester module for "
                     "CaringCaribou",
         epilog="""Example usage:
-  cc.py uds_fuzz seed_randomness_fuzzer 100311022701 0x733 0x633 -d 4 -r 1 -id 2 -m 0
-  cc.py uds_fuzz delay_fuzzer 100311022701 0x03 0x733 0x633""")
+  caringcaribou uds_fuzz seed_randomness_fuzzer 100311022701 0x733 0x633 -d 4 -r 1 -id 2 -m 0
+  caringcaribou uds_fuzz delay_fuzzer 100311022701 0x03 0x733 0x633""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 

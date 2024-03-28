@@ -13,7 +13,7 @@ MESSAGE_DELAY = 0.1
 DELAY_STEP = 0.02
 NOTIFIER_STOP_DURATION = 0.5
 
-# Global CAN interface setting, which can be set through the -i flag to cc.py
+# Global CAN interface setting, which can be set through the -i flag to caringcaribou.py
 # The value None corresponds to the default CAN interface (typically can0)
 DEFAULT_INTERFACE = None
 

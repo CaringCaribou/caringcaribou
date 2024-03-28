@@ -4,7 +4,7 @@ This page aims to present solutions to some common errors.
 
 ### Missing default configuration file for python-can
 #### Symptoms
-Running `cc.py` and specifying an interface via `-i` gives the following error:
+Running `caringcaribou` and specifying an interface via `-i` gives the following error:
 `NotImplementedError: Invalid CAN Bus Type - None`
 
 #### Solution
@@ -46,10 +46,10 @@ sudo ip link set vcan0 up
 
 ### Missing python-can
 #### Symptoms
-Running `cc.py` gives the following error message:
+Running `caringcaribou` gives the following error message:
 ```
 Traceback (most recent call last):
-  File "cc.py", line 5, in <module>
+  File "caringcaribou", line 5, in <module>
     import can
 ImportError: No module named can
 ```

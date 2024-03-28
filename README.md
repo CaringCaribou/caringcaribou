@@ -17,21 +17,21 @@ Install the tool:
 
 The best way to understand how to use Caring Caribou is to look at the help screen:
 
-    cc.py --help
+    caringcaribou --help
 
 This will list all available modules at the bottom of the output. Help for specific modules works the same way. For example, the help screen for the `send` module is shown by running
 
-    cc.py send --help
+    caringcaribou send --help
 
 The module help always includes some usage examples. If the module has multiple sub functions, these have similar help screens as well:
 
-    cc.py send message -h
-    cc.py send file -h
+    caringcaribou send message -h
+    caringcaribou send file -h
 
 More detailed usage information is available [in the documentation on usage](documentation/howtouse.md).
 
 ## Features and Architecture
-Caring Caribou is based on a main entry point, `cc.py`, which runs the show. This enables an easy drop-in architecture for new modules, which are located in the `caringcaribou/modules` folder.
+Caring Caribou is based on a main entry point in `caringcaribou.py` which runs the show. This enables an easy drop-in architecture for new modules, which are located in the `caringcaribou/modules` folder.
 
 The `caringcaribou/utils` folder contains various higher level CAN protocol implementations and shared functions, meant to be used by modules.
 
@@ -141,9 +141,9 @@ Some sort of CAN bus interface (http://elinux.org/CAN_Bus#CAN_Support_in_Linux)
 - Create a python file with a function `module_main(args)` (or copy the template) in the `caringcaribou/modules` directory.
 - In `setup.py`, add an entry under `caringcaribou.modules`, referencing your new module like: `my_module = caringcaribou.modules.my_module`
 - Run `python setup.py install`
-- Verify that the module is available, should be listed in the output of `cc.py -h`
+- Verify that the module is available, it should be listed in the output of `caringcaribou -h`
 
-If your new module is located in `caringcaribou/modules/foo.py` you will run it with the command `cc.py foo`.
+If your new module is located in `caringcaribou/modules/foo.py` you will run it with the command `caringcaribou foo`.
 Additional arguments (if any) are passed as arguments to the `module_main` function.
 
 

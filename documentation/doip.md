@@ -14,10 +14,10 @@ Supported modes:
 * testerpresent - Force an elevated diagnostics session against an ECU to stay active
 * seed_randomness_fuzzer - ECUReset method fuzzing for seed randomness evaluation
 
-As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific mode by specifying the mode followed by `-h`, e.g. `cc.py doip discovery -h` or `cc.py doip testerpresent -h`
+As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific mode by specifying the mode followed by `-h`, e.g. `caringcaribou doip discovery -h` or `caringcaribou doip testerpresent -h`
 
 ```
-$ cc.py doip -h
+$ caringcaribou doip -h
 
 
 -------------------
@@ -26,7 +26,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'doip'
 
-usage: cc.py doip [-h] {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids,seed_randomness_fuzzer} ...
+usage: caringcaribou doip [-h] {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids,seed_randomness_fuzzer} ...
 
 DoIP module for CaringCaribou
 
@@ -37,16 +37,16 @@ optional arguments:
   -h, --help            show this help message and exit
 
 Example usage:
-  cc.py doip discovery
-  cc.py doip discovery -blacklist 0x123 0x456
-  cc.py doip discovery -autoblacklist 10
-  cc.py doip services 0x733 0x633
-  cc.py doip ecu_reset 1 0x733 0x633
-  cc.py doip testerpresent 0x733
-  cc.py doip security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
-  cc.py doip dump_dids 0x733 0x633
-  cc.py doip dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1
-  cc.py doip seed_randomness_fuzzer 2 2 0x733 0x633 -m 1 -t 10 -d 50 -id 4
+  caringcaribou doip discovery
+  caringcaribou doip discovery -blacklist 0x123 0x456
+  caringcaribou doip discovery -autoblacklist 10
+  caringcaribou doip services 0x733 0x633
+  caringcaribou doip ecu_reset 1 0x733 0x633
+  caringcaribou doip testerpresent 0x733
+  caringcaribou doip security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
+  caringcaribou doip dump_dids 0x733 0x633
+  caringcaribou doip dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1
+  caringcaribou doip seed_randomness_fuzzer 2 2 0x733 0x633 -m 1 -t 10 -d 50 -id 4
 ```
 
 ## Discovery
@@ -55,15 +55,15 @@ Scans for arbitration IDs where an ECU responds to UDS requests.
 The ID of both the request and the matching response are printed. These are typically used as inputs for other UDS modes.
 
 ```
-$ cc.py doip discovery -h
+$ caringcaribou doip discovery -h
 
 -------------------
-CARING CARIBOU v0.3
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'doip'
 
-usage: cc.py doip discovery [-h] [-min MIN] [-max MAX] [-b B [B ...]] [-ab N] [-d D]
+usage: caringcaribou doip discovery [-h] [-min MIN] [-max MAX] [-b B [B ...]] [-ab N] [-d D]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -80,15 +80,15 @@ optional arguments:
 Scans an ECU (or rather, a given pair of request/response arbitration IDs) for supported diagnostics services.
 
 ```
-$ cc.py doip services -h
+$ caringcaribou doip services -h
 
 -------------------
-CARING CARIBOU v0.3
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'doip'
 
-usage: cc.py doip services [-h] [-t T] src dst
+usage: caringcaribou doip services [-h] [-t T] src dst
 
 positional arguments:
   src                arbitration ID to transmit to
@@ -105,15 +105,15 @@ Requests a restart of an ECU.
 It is common for an ECU to support multiple reset types.
 
 ```
-$ cc.py doip ecu_reset -h
+$ caringcaribou doip ecu_reset -h
 
 -------------------
-CARING CARIBOU v0.3
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'doip'
 
-usage: cc.py doip ecu_reset [-h] type src dst
+usage: caringcaribou doip ecu_reset [-h] type src dst
 
 positional arguments:
   type        Reset type: 1=hard, 2=key off/on, 3=soft, 4=enable rapid power shutdown, 5=disable rapid power shutdown
@@ -132,15 +132,15 @@ Elevated sessions (often referred to as "unlocked servers") automatically fall b
 By continuing to send Tester Present messages after a server (ECU) has been unlocked (e.g. by an official diagnostics tool), it can be kept in an unlocked state for an arbitrary amount of time in order to allow continued access to protected services.
 
 ```
-$ cc.py doip testerpresent -h
+$ caringcaribou doip testerpresent -h
 
 -------------------
-CARING CARIBOU v0.3
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'doip'
 
-usage: cc.py doip testerpresent [-h] [-d D] [-dur S] src dst
+usage: caringcaribou doip testerpresent [-h] [-d D] [-dur S] src dst
 
 positional arguments:
   src                   arbitration ID to transmit to
@@ -156,15 +156,15 @@ optional arguments:
 Scans a range of Dynamic Data Identifiers (DIDs) and dumps their values.
 
 ```
-$ cc.py doip dump_dids -h
+$ caringcaribou doip dump_dids -h
 
 -------------------
-CARING CARIBOU v0.3
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'doip'
 
-usage: cc.py doip dump_dids [-h] [-t T] [--min_did MIN_DID] [--max_did MAX_DID] src dst
+usage: caringcaribou doip dump_dids [-h] [-t T] [--min_did MIN_DID] [--max_did MAX_DID] src dst
 
 positional arguments:
   src                arbitration ID to transmit to
@@ -183,15 +183,15 @@ Requests a security seed after a Hard ECUReset, using the supplied request seque
 In case that duplicate seeds are found by the tool, it means that the ECU is potentially  vulnerable and uses weak random number generation seeded by the system timer.
 
 ```
-$ cc.py doip seed_randomness_fuzzer -h
+$ caringcaribou doip seed_randomness_fuzzer -h
 
 -------------------
-CARING CARIBOU v0.3
+CARING CARIBOU v0.x
 -------------------
 
 Loaded module 'doip'
 
-usage: cc.py doip seed_randomness_fuzzer [-h] [-t ITERATIONS] [-r RTYPE] [-id RTYPE] [-m RMETHOD] [-d D] stype level src dst
+usage: caringcaribou doip seed_randomness_fuzzer [-h] [-t ITERATIONS] [-r RTYPE] [-id RTYPE] [-m RMETHOD] [-d D] stype level src dst
 
 positional arguments:
   stype                 Session Type: 1=defaultSession 2=programmingSession 3=extendedSession 4=safetySession

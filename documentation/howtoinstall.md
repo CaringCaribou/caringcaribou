@@ -65,11 +65,11 @@ The contents of this file might e.g. be:
 ##### Test it
 Run the following command:
 
-    cc.py dump
+    caringcaribou dump
 
 If packets are received, everything is good to go!
 
-### Windows 7 
+### Windows 7
 The simplest solution is to download
 [VMware Player](https://my.vmware.com/en/web/vmware/free#desktop_end_user_computing/vmware_workstation_player/12_0)
 , install a Linux distribution and to follow the Linux guide above.

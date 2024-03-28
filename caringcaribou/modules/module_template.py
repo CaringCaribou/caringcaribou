@@ -17,11 +17,11 @@ Steps to add this module to CaringCaribou and run it:
 3. Run: `setup.py install`
 
 4. Verify that the module is available,
-   it should be listed in the output of `cc.py -h`
+   it should be listed in the output of `caringcaribou -h`
 
 5. Run the following command to run module and show usage instructions:
 
-    $ cc.py my_module -h
+    $ caringcaribou my_module -h
 """
 from __future__ import print_function
 import argparse
@@ -81,13 +81,13 @@ def parse_args(args):
     :return: Argument namespace
     :rtype: argparse.Namespace
     """
-    parser = argparse.ArgumentParser(prog="cc.py module_template",
+    parser = argparse.ArgumentParser(prog="caringcaribou module_template",
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description="Descriptive message for the template module",
                                      epilog="""Example usage:
-  cc.py module_template
-  cc.py module_template -id 123
-  cc.py module_template -id 0x1FF""")
+  caringcaribou module_template
+  caringcaribou module_template -id 123
+  caringcaribou module_template -id 0x1FF""")
     parser.add_argument("-id", type=parse_int_dec_or_hex,
                         default=0, help="arbitration ID to use")
     args = parser.parse_args(args)
@@ -96,9 +96,9 @@ def parse_args(args):
 
 def module_main(arg_list):
     """
-    Module main wrapper. This is the entry point of the module when called by cc.py
+    Module main wrapper. This is the entry point of the module when called by caringcaribou
 
-    :param arg_list: Module argument list passed by cc.py
+    :param arg_list: Module argument list passed by caringcaribou
     """
     try:
         # Parse arguments

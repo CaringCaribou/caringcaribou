@@ -1,6 +1,6 @@
 # DCM
 ```
-$ cc.py dcm -h
+$ caringcaribou dcm -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -8,7 +8,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'dcm'
 
-usage: cc.py dcm [-h] {discovery,services,subfunc,dtc} ...
+usage: caringcaribou dcm [-h] {discovery,services,subfunc,dtc} ...
 
 Diagnostics module for CaringCaribou
 
@@ -19,15 +19,15 @@ optional arguments:
   -h, --help            show this help message and exit
 
 Example usage:
-  cc.py dcm discovery
-  cc.py dcm services 0x733 0x633
-  cc.py dcm subfunc 0x733 0x633 0x22 2 3
-  cc.py dcm dtc 0x7df 0x7e8
+  caringcaribou dcm discovery
+  caringcaribou dcm services 0x733 0x633
+  caringcaribou dcm subfunc 0x733 0x633 0x22 2 3
+  caringcaribou dcm dtc 0x7df 0x7e8
  ```
 
 ## Discovery
 ```
-$ cc.py dcm discovery -h
+$ caringcaribou dcm discovery -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -35,7 +35,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'dcm'
 
-usage: cc.py dcm discovery [-h] [-min MIN] [-max MAX] [-nostop]
+usage: caringcaribou dcm discovery [-h] [-min MIN] [-max MAX] [-nostop]
                            [-blacklist B [B ...]] [-autoblacklist N]
 
 optional arguments:
@@ -50,7 +50,7 @@ optional arguments:
 
 ## Services
 ````
-$ cc.py dcm services -h
+$ caringcaribou dcm services -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -58,7 +58,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'dcm'
 
-usage: cc.py dcm services [-h] src dst
+usage: caringcaribou dcm services [-h] src dst
 
 positional arguments:
   src         arbitration ID to transmit from
@@ -70,7 +70,7 @@ optional arguments:
 
 ## Subfunc
 ````
-$ cc.py dcm subfunc -h
+$ caringcaribou dcm subfunc -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -78,7 +78,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'dcm'
 
-usage: cc.py dcm subfunc [-h] [-show] src dst service i [i ...]
+usage: caringcaribou dcm subfunc [-h] [-show] src dst service i [i ...]
 
 positional arguments:
   src         arbitration ID to transmit from
@@ -93,7 +93,7 @@ optional arguments:
 
 ## DTC
 ````
-$ cc.py dcm dtc -h
+$ caringcaribou dcm dtc -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -101,7 +101,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'dcm'
 
-usage: cc.py dcm dtc [-h] [-clear] src dst
+usage: caringcaribou dcm dtc [-h] [-clear] src dst
 
 positional arguments:
   src         arbitration ID to transmit from

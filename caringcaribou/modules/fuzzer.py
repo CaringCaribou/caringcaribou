@@ -703,17 +703,17 @@ def parse_args(args):
     :rtype: argparse.Namespace
     """
     global DELAY_BETWEEN_MESSAGES
-    parser = argparse.ArgumentParser(prog="cc.py fuzzer",
+    parser = argparse.ArgumentParser(prog="caringcaribou fuzzer",
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description="Fuzzing module for CaringCaribou",
                                      epilog="""Example usage:
 
-./cc.py fuzzer random
-./cc.py fuzzer random -min 4 -seed 0xabc123 -f log.txt
-./cc.py fuzzer brute 0x123 12ab..78
-./cc.py fuzzer mutate 7f.. 12ab....
-./cc.py fuzzer replay log.txt
-./cc.py fuzzer identify log.txt""")
+caringcaribou fuzzer random
+caringcaribou fuzzer random -min 4 -seed 0xabc123 -f log.txt
+caringcaribou fuzzer brute 0x123 12ab..78
+caringcaribou fuzzer mutate 7f.. 12ab....
+caringcaribou fuzzer replay log.txt
+caringcaribou fuzzer identify log.txt""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 
@@ -783,7 +783,7 @@ def module_main(arg_list):
     """
     Fuzz module main wrapper.
 
-    :param arg_list: Module argument list passed by cc.py
+    :param arg_list: Module argument list passed by caringcaribou.py
     """
     try:
         # Parse arguments

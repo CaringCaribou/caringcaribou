@@ -13,10 +13,10 @@ Supported modes:
 * dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
 * auto - Fully automated diagnostics scan, by using the already existing UDS submodules
 
-As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific mode by specifying the mode followed by `-h`, e.g. `cc.py uds discovery -h` or `cc.py uds testerpresent -h`
+As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific mode by specifying the mode followed by `-h`, e.g. `caringcaribou uds discovery -h` or `caringcaribou uds testerpresent -h`
 
 ```
-$ cc.py uds -h
+$ caringcaribou uds -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -24,7 +24,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'uds'
 
-usage: cc.py uds [-h]
+usage: caringcaribou uds [-h]
                  {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids}
                  ...
 
@@ -37,15 +37,15 @@ optional arguments:
   -h, --help            show this help message and exit
 
 Example usage:
-  cc.py uds discovery
-  cc.py uds discovery -blacklist 0x123 0x456
-  cc.py uds discovery -autoblacklist 10
-  cc.py uds services 0x733 0x633
-  cc.py uds ecu_reset 1 0x733 0x633
-  cc.py uds testerpresent 0x733
-  cc.py uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
-  cc.py uds dump_dids 0x733 0x633
-  cc.py uds dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1
+  caringcaribou uds discovery
+  caringcaribou uds discovery -blacklist 0x123 0x456
+  caringcaribou uds discovery -autoblacklist 10
+  caringcaribou uds services 0x733 0x633
+  caringcaribou uds ecu_reset 1 0x733 0x633
+  caringcaribou uds testerpresent 0x733
+  caringcaribou uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
+  caringcaribou uds dump_dids 0x733 0x633
+  caringcaribou uds dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1
 ```
 
 ## Discovery
@@ -54,7 +54,7 @@ Scans for arbitration IDs where an ECU responds to UDS requests.
 The ID of both the request and the matching response are printed. These are typically used as inputs for other UDS modes.
 
 ```
-$ cc.py uds discovery -h
+$ caringcaribou uds discovery -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -62,7 +62,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'uds'
 
-usage: cc.py uds discovery [-h] [-min MIN] [-max MAX] [-b B [B ...]] [-ab N]
+usage: caringcaribou uds discovery [-h] [-min MIN] [-max MAX] [-b B [B ...]] [-ab N]
                            [-sv] [-d D]
 
 optional arguments:
@@ -82,7 +82,7 @@ optional arguments:
 Scans an ECU (or rather, a given pair of request/response arbitration IDs) for supported diagnostics services.
 
 ```
-$ cc.py uds services -h
+$ caringcaribou uds services -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -90,7 +90,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'uds'
 
-usage: cc.py uds services [-h] [-t T] src dst
+usage: caringcaribou uds services [-h] [-t T] src dst
 
 positional arguments:
   src                arbitration ID to transmit to
@@ -105,7 +105,7 @@ optional arguments:
 Scans a diagnostics service ID for supported sub-service IDs.
 
 ```
-$ cc.py uds subservices -h
+$ caringcaribou uds subservices -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -113,7 +113,7 @@ CARING CARIBOU v0.x
 
 Loading module 'uds'
 
-usage: cc.py uds subservices [-h] [-t T] dtype stype src dst
+usage: caringcaribou uds subservices [-h] [-t T] dtype stype src dst
 
 positional arguments:
   dtype              Diagnostic Session Control Subsession Byte
@@ -133,7 +133,7 @@ Requests a restart of an ECU.
 It is common for an ECU to support multiple reset types.
 
 ```
-$ cc.py uds ecu_reset -h
+$ caringcaribou uds ecu_reset -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -141,7 +141,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'uds'
 
-usage: cc.py uds ecu_reset [-h] [-t T] type src dst
+usage: caringcaribou uds ecu_reset [-h] [-t T] type src dst
 
 positional arguments:
   type               Reset type: 1=hard, 2=key off/on, 3=soft, 4=enable rapid
@@ -162,7 +162,7 @@ Elevated sessions (often referred to as "unlocked servers") automatically fall b
 By continuing to send Tester Present messages after a server (ECU) has been unlocked (e.g. by an official diagnostics tool), it can be kept in an unlocked state for an arbitrary amount of time in order to allow continued access to protected services.
 
 ```
-$ cc.py uds testerpresent -h
+$ caringcaribou uds testerpresent -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -170,7 +170,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'uds'
 
-usage: cc.py uds testerpresent [-h] [-d D] [-dur S] [-spr] src
+usage: caringcaribou uds testerpresent [-h] [-d D] [-dur S] [-spr] src
 
 positional arguments:
   src                   arbitration ID to transmit to
@@ -186,7 +186,7 @@ optional arguments:
 Scans a range of Dynamic Data Identifiers (DIDs) and dumps their values.
 
 ```
-$ cc.py uds dump_dids -h
+$ caringcaribou uds dump_dids -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -194,7 +194,7 @@ CARING CARIBOU v0.x
 
 Loaded module 'uds'
 
-usage: cc.py uds dump_dids [-h] [-t T] [--min_did MIN_DID] [--max_did MAX_DID]
+usage: caringcaribou uds dump_dids [-h] [-t T] [--min_did MIN_DID] [--max_did MAX_DID]
                            src dst
 
 positional arguments:
@@ -212,7 +212,7 @@ optional arguments:
 Performs a fully automated diagnostics scan from start to finish, by using the already existing CC modules.
 
 ```
-$ cc.py uds auto -h
+$ caringcaribou uds auto -h
 
 -------------------
 CARING CARIBOU v0.x
@@ -220,7 +220,7 @@ CARING CARIBOU v0.x
 
 Loading module 'uds'
 
-usage: cc.py uds auto [-h] [-min MIN] [-max MAX] [-b B [B ...]] [-ab N] [-sv] [-d D] [-t T] [--min_did MIN_DID] [--max_did MAX_DID]
+usage: caringcaribou uds auto [-h] [-min MIN] [-max MAX] [-b B [B ...]] [-ab N] [-sv] [-d D] [-t T] [--min_did MIN_DID] [--max_did MAX_DID]
 
 options:
   -h, --help            show this help message and exit

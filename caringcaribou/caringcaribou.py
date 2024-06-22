@@ -7,7 +7,8 @@ import errno
 from .utils import can_actions
 import sys
 import traceback
-import pkg_resources
+import importlib
+import importlib.resources
 
 
 VERSION = "0.6"
@@ -53,9 +54,20 @@ def show_missing_canrc_instruction():
 
 def available_modules_dict():
     modules = dict()
-    for entry_point in pkg_resources.iter_entry_points("caringcaribou.modules"):
-        nice_name = str(entry_point).split("=")[0].strip()
-        modules[nice_name] = entry_point
+    package_name = 'caringcaribou.modules'
+
+    # List all the available resources in the package
+    module_names = importlib.resources.contents(package_name)
+    module_names = [name for name in module_names if name.endswith('.py') and name != '__init__.py']
+
+    for module_name in module_names:
+        nice_name = module_name[:-3]  # Strip the .py extension
+        module_full_name = f'{package_name}.{nice_name}'
+        try:
+            module = importlib.import_module(module_full_name)
+            modules[nice_name] = module
+        except ImportError as e:
+            print(f"Could not import module {module_full_name}: {e}")
     return modules
 
 

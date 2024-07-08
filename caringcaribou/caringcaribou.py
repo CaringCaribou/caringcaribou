@@ -7,7 +7,8 @@ import errno
 from .utils import can_actions
 import sys
 import traceback
-import pkg_resources
+import importlib
+import importlib.resources
 
 
 VERSION = "0.6"
@@ -53,9 +54,16 @@ def show_missing_canrc_instruction():
 
 def available_modules_dict():
     modules = dict()
-    for entry_point in pkg_resources.iter_entry_points("caringcaribou.modules"):
-        nice_name = str(entry_point).split("=")[0].strip()
-        modules[nice_name] = entry_point
+    package_name = 'caringcaribou.modules'
+
+    # List all the available resources in the package
+    module_names = importlib.resources.contents(package_name)
+    module_names = [name for name in module_names if name.endswith(".py") and name != "__init__.py"]
+
+    for module_name in module_names:
+        nice_name = module_name[:-3]  # Strip the .py extension
+        module_full_name = f"{package_name}.{nice_name}"
+        modules[nice_name] = module_full_name
     return modules
 
 
@@ -104,7 +112,8 @@ def load_module(module_name):
     """
     try:
         print("Loading module '{0}'\n".format(module_name))
-        cc_mod = available_modules_dict()[module_name]
+        full_module_name = available_modules_dict()[module_name]
+        cc_mod = importlib.import_module(full_module_name)
         return cc_mod
     except KeyError as e:
         print("Load module failed: module {0} is not available".format(e))
@@ -122,7 +131,7 @@ def main():
         can_actions.DEFAULT_INTERFACE = args.interface
     try:
         # Load module
-        cc_mod = load_module(args.module).load()
+        cc_mod = load_module(args.module)
         cc_mod.module_main(args.module_args)
     except AttributeError:
         pass

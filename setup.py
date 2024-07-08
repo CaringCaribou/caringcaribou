@@ -25,7 +25,6 @@ setup(
     # author_email="TBD",
     description="A friendly automotive security exploration tool",
     long_description=__doc__,
-    keywords=["automotive", "security", "CAN", "automotive protocols", "fuzzing"],
     url="https://github.com/CaringCaribou/caringcaribou/",
     download_url="https://github.com/CaringCaribou/caringcaribou/tarball/{}".format(dl_version),
     license="GPLv3",

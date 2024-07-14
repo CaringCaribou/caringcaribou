@@ -1188,13 +1188,14 @@ def read_memory(arb_id_request, arb_id_response, timeout,
                     start_addr, start_addr + mem_length-1))
                 print('Identified Addresses:')
                 print('Address    Value (hex)')
+            expected_service_response_id = uds.get_service_response_id(ServiceID.READ_MEMORY_BY_ADDRESS)
             for identifier in range(start_addr, start_addr + mem_length, mem_size):
                 response = uds.read_memory_by_address(memory_address=identifier, memory_size=mem_size,
                                                       address_and_length_format=(memory_length_byte_size << 4) + address_byte_size)
 
                 if response and Iso14229_1.is_positive_response(response):
                     # Filter extraneous results, ie keep only $23 responses
-                    if response[0] == 0x63:
+                    if response[0] == expected_service_response_id:
                         responses.append((identifier, response))
                         # response [0] = positive response SID (0x63)
                         # response [1:] = data returned from memory read

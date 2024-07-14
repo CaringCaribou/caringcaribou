@@ -231,7 +231,7 @@ class UdsModuleTestCase(unittest.TestCase):
         print_results = False
 
         expected_response = [0x63]
-        expected_response.extend(list(range(1,0x11)))
+        expected_response.extend(list(range(1, 0x11)))
         responses = uds.read_memory(arb_id_request=self.ARB_ID_REQUEST,
                                     arb_id_response=self.ARB_ID_RESPONSE,
                                     timeout=timeout,

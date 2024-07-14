@@ -117,7 +117,6 @@ ADDR_BYTE_SIZE = 4
 MEM_LEN_BYTE_SIZE = 2
 
 
-
 def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
                   delay, verify, print_results=True):
     """Scans for diagnostics support by brute forcing session control
@@ -1103,12 +1102,13 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                 # response[0] = response SID (0x62)
                 # response[1:3] = Data Identifier (DID)
                 # response[3:] = data
-                if print_results: 
+                if print_results:
                     print('0x{:04x}'.format(identifier), list_to_hex_str(response[3:]))
             if print_results:
                 print("\033[K", file=stderr)  # clear line
                 print("Done!")
             return responses
+
 
 def __read_mem_wrapper(args):
     """Wrapper used to initiate memory read"""
@@ -1124,10 +1124,10 @@ def __read_mem_wrapper(args):
     outfile = args.outfile
 
     results = read_memory(arb_id_request, arb_id_response, timeout, start_addr, mem_length, mem_size, address_byte_size,
-                memory_length_byte_size, print_results)
+                          memory_length_byte_size, print_results)
     if outfile:
         with open(outfile, 'w') as f:
-            for addr,data in results:
+            for addr, data in results:
                 f.write(f'{addr:08x} {bytes(data[1:]).hex()}\n')
 
 
@@ -1193,22 +1193,24 @@ def read_memory(arb_id_request, arb_id_response, timeout,
                                                       address_and_length_format=(memory_length_byte_size << 4) + address_byte_size)
 
                 if response and Iso14229_1.is_positive_response(response):
-                    # filter extraneous results ie keep only $23 responses
+                    # Filter extraneous results, ie keep only $23 responses
                     if response[0] == 0x63:
                         responses.append((identifier, response))
                         # response [0] = positive response SID (0x63)
                         # response [1:] = data returned from memory read
                         if print_results and len(response) >= 2:
                             print('0x{:08x}'.format(identifier), list_to_hex_str(response[1:]))
-                # got a response but it's negative
+                # Got a response but it's negative
                 # TODO - respond differently based on response
                 # e.g. service not supported in active session vs service not supported vs authorization required
-                # right now user has to decode the NRC which is not great but we need to write code to translate raw NRC to human redable
+                # right now user has to decode the NRC which is not great but we need to write code to translate raw NRC
+                # to human readable
                 elif response:
-                    print(f"Could not dump 0x{mem_size:04x} bytes of memory from address 0x{identifier:08x} - received response: {bytes(response).hex(' ')}")
-                        # this would be a good place to add code to unlock the ECU (if you know how and have the key)
-                        # but to keep this general, we'll just notify user
-                        
+                    print(f"Could not dump 0x{mem_size:04x} bytes of memory from address 0x{identifier:08x} - "
+                          f"received response: {bytes(response).hex(' ')}")
+                    # This would be a good place to add code to unlock the ECU (if you know how and have the key)
+                    # but to keep this general, we'll just notify user
+
             if print_results:
                 print("\nDone!")
             return responses

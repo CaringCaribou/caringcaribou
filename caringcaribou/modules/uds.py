@@ -1201,13 +1201,21 @@ def read_memory(arb_id_request, arb_id_response, timeout,
                         if print_results and len(response) >= 2:
                             print('0x{:08x}'.format(identifier), list_to_hex_str(response[1:]))
                 # Got a response but it's negative
-                # TODO - respond differently based on response
-                # e.g. service not supported in active session vs service not supported vs authorization required
-                # right now user has to decode the NRC which is not great but we need to write code to translate raw NRC
-                # to human readable
                 elif response:
                     print(f"Could not dump 0x{mem_size:04x} bytes of memory from address 0x{identifier:08x} - "
                           f"received response: {bytes(response).hex(' ')}")
+                    # Lookup table for applicable NRC values
+                    status = response[2]
+                    nrc_description = ""
+                    if status == NegativeResponseCodes.INCORRECT_MESSAGE_LENGTH_OR_INVALID_FORMAT:
+                        nrc_description = "incorrectMessageLengthOrInvalidFormat"
+                    elif status == NegativeResponseCodes.CONDITIONS_NOT_CORRECT:
+                        nrc_description = "conditionsNotCorrect"
+                    elif status == NegativeResponseCodes.REQUEST_OUT_OF_RANGE:
+                        nrc_description = "requestOutOfRange"
+                    elif status == NegativeResponseCodes.SECURITY_ACCESS_DENIED:
+                        nrc_description = "securityAccessDenied"
+                    print(f"Negative Response Code (NRC): {hex(status)} {nrc_description}")
                     # This would be a good place to add code to unlock the ECU (if you know how and have the key)
                     # but to keep this general, we'll just notify user
 

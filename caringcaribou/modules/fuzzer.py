@@ -9,11 +9,6 @@ from caringcaribou.utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MIN
 from time import sleep
 
 
-# Python 2/3 compatibility
-if version_info[0] == 2:
-    range = xrange
-    input = raw_input
-
 # Number of seconds to wait between messages
 DELAY_BETWEEN_MESSAGES = 0.01
 # Message data length limits

@@ -133,7 +133,7 @@ Implementation of the ISO-15765-2 standard (ISO-TP). This is a transport protoco
 Some sort of CAN bus interface (http://elinux.org/CAN_Bus#CAN_Support_in_Linux)
 
 ## Software requirements
-- Python 2.7 or 3.x
+- Python 3.7 or higher
 - python-can
 - a pretty modern linux kernel
 

@@ -11,7 +11,7 @@ import importlib
 import importlib.resources
 
 
-VERSION = "0.6"
+VERSION = "0.7"
 
 
 def show_script_header():
@@ -137,16 +137,10 @@ def main():
         pass
     except KeyboardInterrupt:
         pass
-    except NotImplementedError as e:
-        # Specifically catch errors due to missing python-can configuration file.
-        # This would be easy in Python 3 which uses 'can.exceptions.CanInterfaceNotImplementedError', but the Python 2
-        # implementation uses the broader 'NotImplementedError' (which we do not want to block from other usage, hence
-        # this string matching)
-        if e.args[0] in ("Unknown interface type \"None\"", "Invalid CAN Bus Type - None"):
-            print("\n---\n\nNotImplementedError: {0}".format(e))
-            show_missing_canrc_instruction()
-        else:
-            traceback.print_exc()
+    except can.exceptions.CanInterfaceNotImplementedError as e:
+        # This error is likely caused by missing python-can configuration file
+        print("\n---\n\nCanInterfaceNotImplementedError: {0}".format(e))
+        show_missing_canrc_instruction()
     except can.CanError as e:
         print("\nCanError: {0}".format(e))
     except IOError as e:

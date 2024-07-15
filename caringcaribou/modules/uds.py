@@ -10,9 +10,6 @@ import argparse
 import datetime
 import time
 
-# Handle large ranges efficiently in both python 2 and 3
-if version_info[0] == 2:
-    range = xrange
 
 UDS_SERVICE_NAMES = {
     0x10: "DIAGNOSTIC_SESSION_CONTROL",

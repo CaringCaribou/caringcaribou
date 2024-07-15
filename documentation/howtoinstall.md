@@ -8,12 +8,6 @@ Install the tool along with dependencies (python-can) with: `python setup.py ins
 
 You still need to configure your CAN interface per the instructions below.
 
-Package installation tested on:
-
-- [X] Python 3.10
-- [ ] Python 3.6 - 3.9
-- [X] Python 2.7
-
 ### Linux
 The setup consists of two steps. First we need to get the USB-to-Can device working and secondly configure Python-Can
 for the device.
@@ -47,8 +41,7 @@ Tested with python-can 1.5.2 and 2.0.0a2.
 
     ```
     $ python
-    Python 2.7.13 (default, Jan 19 2017, 14:48:08) 
-    [GCC 6.3.0 20170118] on linux2
+    Python 3.10.12 (main, Mar 22 2024, 16:50:05) [GCC 11.4.0] on linux
     Type "help", "copyright", "credits" or "license" for more information.
     >>> import can
     >>> 

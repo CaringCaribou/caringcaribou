@@ -14,10 +14,6 @@ import time
 import sys
 import struct
 
-# Handle large ranges efficiently in both python 2 and 3
-if version_info[0] == 2:
-    range = xrange
-
 UDS_SERVICE_NAMES = {
     0x10: "DIAGNOSTIC_SESSION_CONTROL",
     0x11: "ECU_RESET",

@@ -11,6 +11,7 @@ Supported modes:
 * ecu_reset - Reset an ECU
 * testerpresent - Force an elevated diagnostics session against an ECU to stay active
 * dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
+* read_mem - Read memory from an ECU
 * auto - Fully automated diagnostics scan, by using the already existing UDS submodules
 
 As always, module help can be shown by adding the `-h` flag (as shown below). You can also show help for a specific mode by specifying the mode followed by `-h`, e.g. `caringcaribou uds discovery -h` or `caringcaribou uds testerpresent -h`
@@ -25,13 +26,13 @@ CARING CARIBOU v0.x
 Loaded module 'uds'
 
 usage: caringcaribou uds [-h]
-                 {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids}
+                 {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids,read_mem}
                  ...
 
 Universal Diagnostic Services module for CaringCaribou
 
 positional arguments:
-  {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids}
+  {discovery,services,ecu_reset,testerpresent,security_seed,dump_dids,read_mem}
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -46,6 +47,7 @@ Example usage:
   caringcaribou uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
   caringcaribou uds dump_dids 0x733 0x633
   caringcaribou uds dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1
+  caringcaribou uds read_mem 0x733 0x633 --start_addr 0x0 --mem_length 0x1000 --mem_size 0x100 --outfile memory_0_1000_100
 ```
 
 ## Discovery

@@ -221,4 +221,29 @@ class UdsModuleTestCase(unittest.TestCase):
         # since we don't keep responses that don't align with the requested DID
         self.assertEqual(expected_response_cnt, len(responses))
 
+    def test_read_mem(self):
+        timeout = None
+        start_addr = 1
+        mem_length = 0x10
+        mem_size = 0x10
+        address_byte_size = 2
+        memory_length_byte_size = 2
+        print_results = False
 
+        expected_response = [0x63]
+        expected_response.extend(list(range(1, 0x11)))
+        responses = uds.read_memory(arb_id_request=self.ARB_ID_REQUEST,
+                                    arb_id_response=self.ARB_ID_RESPONSE,
+                                    timeout=timeout,
+                                    start_addr=start_addr,
+                                    mem_length=mem_length,
+                                    mem_size=mem_size,
+                                    address_byte_size=address_byte_size,
+                                    memory_length_byte_size=memory_length_byte_size,
+                                    print_results=print_results)
+        # make sure we got a response
+        # response looks like ((1, [0x63, 1, 2...]))
+        # so we need the second element of the first element
+        expected_response_cnt = 1
+        self.assertEqual(expected_response_cnt, len(responses))
+        self.assertListEqual(responses[0][1], expected_response)

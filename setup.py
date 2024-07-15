@@ -13,9 +13,9 @@ from setuptools import find_packages, setup
 version = "0.7"
 dl_version = "master" if "dev" in version else "v{}".format(version)
 
-print(r"""-----------------------------------
+print(r"""---------------------------------------
  Installing Caring Caribou version {0}
------------------------------------
+---------------------------------------
 """.format(version))
 
 setup(

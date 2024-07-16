@@ -476,7 +476,8 @@ def __sub_discovery_wrapper(args):
     else:
         print("\nSub-Services Discovered for Service {0:02x} - {1}:\n".format(service, service_name, end=' '))
         for subservice_id in found_subservices:
-            nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)])
+            nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)],
+                                            "Unknown NRC value")
             print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=' ')
 
 
@@ -936,7 +937,8 @@ def __auto_wrapper(args):
                         print("\n")
                         print("\nDiscovered Diagnostic Session Control Sub-Services:\n", end=' ')
                         for subservice_id in found_subservices:
-                            nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)])
+                            nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)],
+                                                            "Unknown NRC value")
                             print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=' ')
 
                 if ServiceID.ECU_RESET in found_services:
@@ -984,7 +986,8 @@ def __auto_wrapper(args):
                         print("\n")
                         print("\nDiscovered ECUReset Sub-Services:\n", end=' ')
                         for subservice_id in found_subservices:
-                            nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)])
+                            nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)],
+                                                            "Unknown NRC value")
                             print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=' ')
 
                 if ServiceID.SECURITY_ACCESS in found_services:
@@ -1204,15 +1207,7 @@ def read_memory(arb_id_request, arb_id_response, timeout,
                           f"received response: {bytes(response).hex(' ')}")
                     # Lookup table for applicable NRC values
                     status = response[2]
-                    nrc_description = ""
-                    if status == NegativeResponseCodes.INCORRECT_MESSAGE_LENGTH_OR_INVALID_FORMAT:
-                        nrc_description = "incorrectMessageLengthOrInvalidFormat"
-                    elif status == NegativeResponseCodes.CONDITIONS_NOT_CORRECT:
-                        nrc_description = "conditionsNotCorrect"
-                    elif status == NegativeResponseCodes.REQUEST_OUT_OF_RANGE:
-                        nrc_description = "requestOutOfRange"
-                    elif status == NegativeResponseCodes.SECURITY_ACCESS_DENIED:
-                        nrc_description = "securityAccessDenied"
+                    nrc_description = NRC_NAMES.get(status, "Unknown NRC value")
                     print(f"Negative Response Code (NRC): {hex(status)} {nrc_description}")
                     # This would be a good place to add code to unlock the ECU (if you know how and have the key)
                     # but to keep this general, we'll just notify user

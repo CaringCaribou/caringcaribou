@@ -1,10 +1,4 @@
 import time
-# Fix for backward compatibility with Python versions older than 3.3,
-# where time.process_time is not available
-try:
-    time.process_time
-except AttributeError:
-    time.process_time = time.clock
 
 
 class DynamicallyDefinedIdentifierArg(object):

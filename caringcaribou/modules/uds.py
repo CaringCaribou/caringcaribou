@@ -112,6 +112,19 @@ ADDR_BYTE_SIZE = 4
 MEM_LEN_BYTE_SIZE = 2
 
 
+def print_negative_response_code(nrc):
+    """
+    Prints the given Negative Response Code (NRC) value in a human-readable form.
+
+    :param nrc: NRC value
+    :type nrc: int
+
+    :return: Nothing
+    """
+    nrc_description = NRC_NAMES.get(nrc, "Unknown NRC value")
+    print(f"Negative Response Code (NRC): {hex(nrc)} - {nrc_description}")
+
+
 def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
                   delay, verify, print_results=True):
     """Scans for diagnostics support by brute forcing session control
@@ -649,23 +662,8 @@ def __ecu_reset_wrapper(args):
                                              reset_type))
         else:
             # Negative response handling
-            print_negative_response(response)
-
-
-def print_negative_response(response):
-    """
-    Helper function for decoding and printing a negative response received
-    from a UDS server.
-
-    :param response: Response data after CAN-TP layer has been removed
-    :type response: [int]
-
-    :return: Nothing
-    """
-    nrc = response[2]
-    nrc_description = NRC_NAMES.get(nrc, "Unknown NRC value")
-    print("Received negative response code (NRC) 0x{0:02x}: {1}"
-          .format(nrc, nrc_description))
+            nrc = response[2]
+            print_negative_response_code(nrc)
 
 
 def __security_seed_wrapper(args):
@@ -702,7 +700,9 @@ def __security_seed_wrapper(args):
                               len(seed_list)), end="\r")
                 stdout.flush()
             else:
-                print_negative_response(response)
+                # Negative response handling
+                nrc = response[2]
+                print_negative_response_code(nrc)
                 break
             if reset_type:
                 ecu_reset(arb_id_request, arb_id_response, reset_type, None)
@@ -1203,17 +1203,14 @@ def read_memory(arb_id_request, arb_id_response, timeout,
                         # response [1:] = data returned from memory read
                         if print_results and len(response) >= 2:
                             print('0x{:08x}'.format(identifier), list_to_hex_str(response[1:]))
-                # Got a response but it's negative
+                # Negative response handling
                 elif response:
                     print(f"Could not dump 0x{mem_size:04x} bytes of memory from address 0x{identifier:08x} - "
                           f"received response: {bytes(response).hex(' ')}")
-                    # Lookup table for applicable NRC values
-                    status = response[2]
-                    nrc_description = NRC_NAMES.get(status, "Unknown NRC value")
-                    print(f"Negative Response Code (NRC): {hex(status)} {nrc_description}")
+                    nrc = response[2]
+                    print_negative_response_code(nrc)
                     # This would be a good place to add code to unlock the ECU (if you know how and have the key)
                     # but to keep this general, we'll just notify user
-
             if print_results:
                 print("\nDone!")
             return responses

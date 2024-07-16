@@ -1,4 +1,3 @@
-from __future__ import print_function
 from caringcaribou.utils.can_actions import CanActions
 from caringcaribou.utils.common import parse_int_dec_or_hex
 from sys import stdout

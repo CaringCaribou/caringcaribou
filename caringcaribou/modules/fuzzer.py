@@ -1,5 +1,4 @@
-from __future__ import print_function
-from sys import version_info, stdout
+from sys import stdout
 import argparse
 import random
 from itertools import product

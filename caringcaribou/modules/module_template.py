@@ -23,7 +23,6 @@ Steps to add this module to CaringCaribou and run it:
 
     $ caringcaribou my_module -h
 """
-from __future__ import print_function
 import argparse
 import time
 from caringcaribou.utils.can_actions import CanActions

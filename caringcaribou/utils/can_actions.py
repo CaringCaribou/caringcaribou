@@ -1,5 +1,4 @@
-from __future__ import print_function
-from sys import stdout, version_info
+from sys import stdout
 import caringcaribou.utils.constants as constants
 import can
 import time

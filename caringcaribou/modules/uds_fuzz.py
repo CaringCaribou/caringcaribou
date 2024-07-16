@@ -1,4 +1,3 @@
-from __future__ import print_function
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
 from caringcaribou.utils.iso14229_1 import Iso14229_1
 from caringcaribou.modules.uds import ecu_reset, print_negative_response, request_seed, extended_session
@@ -194,15 +193,13 @@ def delay_fuzzer(args):
 
 
 def str_to_hex(i, session_type):
+    # FIXME: This function should probably have a more descriptive name
     max_index = i + 3
     if len(session_type) >= max_index:
-        session = []
-        session.append('0x')
-        session.append(session_type[i + 2])
-        session.append(session_type[i + 3])
-        session = ''.join(session)
-        session = int(session, 16)
-        return session
+        session = ['0x', session_type[i + 2], session_type[i + 3]]
+        session_str = ''.join(session)
+        session_int = int(session_str, 16)
+        return session_int
     else:
         return
 

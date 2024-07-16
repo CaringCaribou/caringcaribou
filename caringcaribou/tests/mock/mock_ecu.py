@@ -1,4 +1,3 @@
-from __future__ import print_function
 from caringcaribou.utils.can_actions import DEFAULT_INTERFACE
 import can
 

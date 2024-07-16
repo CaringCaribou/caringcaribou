@@ -1,4 +1,3 @@
-from __future__ import print_function
 from caringcaribou.utils.can_actions import DEFAULT_INTERFACE
 from caringcaribou.tests.mock.mock_ecu_uds import MockEcuIso14229
 from caringcaribou.utils import iso14229_1

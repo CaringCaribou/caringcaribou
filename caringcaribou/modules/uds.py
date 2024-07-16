@@ -1,15 +1,13 @@
-from __future__ import print_function
 from caringcaribou.utils.can_actions import auto_blacklist
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex
 from caringcaribou.utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
 from caringcaribou.utils.constants import ARBITRATION_ID_MIN
 from caringcaribou.utils.iso15765_2 import IsoTp
 from caringcaribou.utils.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, Services, ServiceID
-from sys import stdout, version_info, stderr
+from sys import stdout, stderr
 import argparse
 import datetime
 import time
-
 
 UDS_SERVICE_NAMES = {
     0x10: "DIAGNOSTIC_SESSION_CONTROL",
@@ -444,7 +442,8 @@ def sub_discovery(arb_id_request, arb_id_response, diagnostic, service, timeout,
                 if Iso14229_1.is_positive_response(response):
                     found_subservices.append(i)
                     subservice_status.append(0x00)
-                elif response_id == Constants.NR_SI and response_service_id == service and status != NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED:
+                elif (response_id == Constants.NR_SI and response_service_id == service and
+                      status != NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED):
                     # Any other response than "service not supported" counts
                     found_subservices.append(i)
                     subservice_status.append(response_service_id)
@@ -923,7 +922,8 @@ def __auto_wrapper(args):
                             if Iso14229_1.is_positive_response(response):
                                 found_subservices.append(i)
                                 subservice_status.append(0x00)
-                            elif response_id == Constants.NR_SI and response_service_id == 0x10 and status != NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED:
+                            elif (response_id == Constants.NR_SI and response_service_id == 0x10 and
+                                  status != NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED):
                                 # Any other response than "service not supported" counts
                                 found_subservices.append(i)
                                 subservice_status.append(response_service_id)
@@ -972,7 +972,8 @@ def __auto_wrapper(args):
                             if Iso14229_1.is_positive_response(response):
                                 found_subservices.append(i)
                                 subservice_status.append(0x00)
-                            elif response_id == Constants.NR_SI and response_service_id == 0x11 and status != NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED:
+                            elif (response_id == Constants.NR_SI and response_service_id == 0x11 and
+                                  status != NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED):
                                 # Any other response than "service not supported" counts
                                 found_subservices.append(i)
                                 subservice_status.append(response_service_id)
@@ -998,8 +999,8 @@ def __auto_wrapper(args):
                     for subservice_id in found_subservices:
                         for level in range(1, 256):
                             print(
-                                "\rProbing security access sub-service 0x{0:02x} in diagnostic session 0x{1:02x}.".format(
-                                    level, subservice_id), end=" ")
+                                "\rProbing security access sub-service "
+                                "0x{0:02x} in diagnostic session 0x{1:02x}.".format(level, subservice_id), end=" ")
                             extended_session(client_id, server_id, 1)
                             extended_session(client_id, server_id, subservice_id)
                             response = raw_send(client_id, server_id, 39, level)
@@ -1185,13 +1186,14 @@ def read_memory(arb_id_request, arb_id_response, timeout,
                 uds.P3_CLIENT = timeout
             if print_results:
                 print('Dumping Memory in range 0x{:08x}-0x{:08x}\n'.format(
-                    start_addr, start_addr + mem_length-1))
+                    start_addr, start_addr + mem_length - 1))
                 print('Identified Addresses:')
                 print('Address    Value (hex)')
             expected_service_response_id = uds.get_service_response_id(ServiceID.READ_MEMORY_BY_ADDRESS)
             for identifier in range(start_addr, start_addr + mem_length, mem_size):
+                address_and_length_format = (memory_length_byte_size << 4) + address_byte_size
                 response = uds.read_memory_by_address(memory_address=identifier, memory_size=mem_size,
-                                                      address_and_length_format=(memory_length_byte_size << 4) + address_byte_size)
+                                                      address_and_length_format=address_and_length_format)
 
                 if response and Iso14229_1.is_positive_response(response):
                     # Filter extraneous results, ie keep only $23 responses

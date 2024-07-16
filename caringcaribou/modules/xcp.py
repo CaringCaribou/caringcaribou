@@ -1,4 +1,3 @@
-from __future__ import print_function
 from caringcaribou.utils.can_actions import CanActions, auto_blacklist
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex
 from datetime import datetime, timedelta

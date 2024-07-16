@@ -112,6 +112,20 @@ ADDR_BYTE_SIZE = 4
 MEM_LEN_BYTE_SIZE = 2
 
 
+def get_negative_response_code_name(nrc):
+    """
+    Returns the name of the given Negative Response Code (NRC) value.
+
+    :param nrc: NRC value
+    :type nrc: int
+
+    :return: NRC name of the given NRC value
+    :rtype: str
+    """
+    nrc_name = NRC_NAMES.get(nrc, "Unknown NRC value")
+    return nrc_name
+
+
 def print_negative_response_code(nrc):
     """
     Prints the given Negative Response Code (NRC) value in a human-readable form.
@@ -121,8 +135,8 @@ def print_negative_response_code(nrc):
 
     :return: Nothing
     """
-    nrc_description = NRC_NAMES.get(nrc, "Unknown NRC value")
-    print(f"Negative Response Code (NRC): {hex(nrc)} - {nrc_description}")
+    nrc_name = get_negative_response_code_name(nrc)
+    print(f"Negative Response Code (NRC): {hex(nrc)} - {nrc_name}")
 
 
 def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
@@ -491,9 +505,9 @@ def __sub_discovery_wrapper(args):
     else:
         print("\nSub-Services Discovered for Service {0:02x} - {1}:\n".format(service, service_name, end=" "))
         for subservice_id in found_subservices:
-            nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)],
-                                            "Unknown NRC value")
-            print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=" ")
+            nrc = subservice_status[found_subservices.index(subservice_id)]
+            nrc_name = get_negative_response_code_name(nrc)
+            print("\n0x{0:02x} : {1}".format(subservice_id, nrc_name), end=" ")
 
 
 def raw_send(arb_id_request, arb_id_response, service, session_type):
@@ -943,9 +957,9 @@ def __auto_wrapper(args):
                         print("\n")
                         print("\nDiscovered Diagnostic Session Control Sub-Services:\n", end=" ")
                         for subservice_id in found_subservices:
-                            nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)],
-                                                            "Unknown NRC value")
-                            print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=" ")
+                            nrc = subservice_status[found_subservices.index(subservice_id)]
+                            nrc_name = get_negative_response_code_name(nrc)
+                            print("\n0x{0:02x} : {1}".format(subservice_id, nrc_name), end=" ")
 
                 if ServiceID.ECU_RESET in found_services:
 
@@ -993,9 +1007,9 @@ def __auto_wrapper(args):
                         print("\n")
                         print("\nDiscovered ECUReset Sub-Services:\n", end=" ")
                         for subservice_id in found_subservices:
-                            nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)],
-                                                            "Unknown NRC value")
-                            print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=" ")
+                            nrc = subservice_status[found_subservices.index(subservice_id)]
+                            nrc_name = get_negative_response_code_name(nrc)
+                            print("\n0x{0:02x} : {1}".format(subservice_id, nrc_name), end=" ")
 
                 if ServiceID.SECURITY_ACCESS in found_services:
 
@@ -1212,7 +1226,7 @@ def read_memory(arb_id_request, arb_id_response, timeout,
                 # Negative response handling
                 elif response:
                     print(f"Could not dump 0x{mem_size:04x} bytes of memory from address 0x{identifier:08x} - "
-                          f"received response: {bytes(response).hex(" ")}")
+                          f"received response: {bytes(response).hex(' ')}")
                     nrc = response[2]
                     print_negative_response_code(nrc)
                     # This would be a good place to add code to unlock the ECU (if you know how and have the key)

@@ -127,8 +127,9 @@ def print_negative_response_code(nrc):
 
 def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
                   delay, verify, print_results=True):
-    """Scans for diagnostics support by brute forcing session control
-        messages to different arbitration IDs.
+    """
+    Scans for diagnostics support by brute forcing session control
+    messages to different arbitration IDs.
 
     Returns a list of all (client_arb_id, server_arb_id) pairs found.
 
@@ -170,7 +171,7 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
                          " got min:0x{0:x}, max:0x{1:x}".format(min_id, max_id))
     if auto_blacklist_duration < 0:
         raise ValueError("auto_blacklist_duration must not be smaller "
-                         "than 0, got {0}'".format(auto_blacklist_duration))
+                         "than 0, got {0}".format(auto_blacklist_duration))
 
     diagnostic_session_control = Services.DiagnosticSessionControl
     service_id = diagnostic_session_control.service_id
@@ -328,8 +329,9 @@ def __uds_discovery_wrapper(args):
 
 def service_discovery(arb_id_request, arb_id_response, timeout,
                       min_id=BYTE_MIN, max_id=BYTE_MAX, print_results=True):
-    """Scans for supported UDS services on the specified arbitration ID.
-       Returns a list of found service IDs.
+    """
+    Scans for supported UDS services on the specified arbitration ID.
+    Returns a list of found service IDs.
 
     :param arb_id_request: arbitration ID for requests
     :param arb_id_response: arbitration ID for responses
@@ -402,8 +404,9 @@ def __service_discovery_wrapper(args):
 
 
 def sub_discovery(arb_id_request, arb_id_response, diagnostic, service, timeout, print_results=True):
-    """Scans for supported UDS Diagnostic Session Control subservices on the specified arbitration ID.
-       Returns a list of found Diagnostic Session Control subservice IDs.
+    """
+    Scans for supported UDS Diagnostic Session Control subservices on the specified arbitration ID.
+    Returns a list of found Diagnostic Session Control subservice IDs.
 
     :param arb_id_request: arbitration ID for requests
     :param arb_id_response: arbitration ID for responses
@@ -484,13 +487,13 @@ def __sub_discovery_wrapper(args):
     service_name = UDS_SERVICE_NAMES.get(service, "Unknown service")
     # Print results
     if len(found_subservices) == 0:
-        print("\nNo Sub-Services were discovered for service {0:02x} - {1}.\n".format(service, service_name, end=' '))
+        print("\nNo Sub-Services were discovered for service {0:02x} - {1}.\n".format(service, service_name, end=" "))
     else:
-        print("\nSub-Services Discovered for Service {0:02x} - {1}:\n".format(service, service_name, end=' '))
+        print("\nSub-Services Discovered for Service {0:02x} - {1}:\n".format(service, service_name, end=" "))
         for subservice_id in found_subservices:
             nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)],
                                             "Unknown NRC value")
-            print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=' ')
+            print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=" ")
 
 
 def raw_send(arb_id_request, arb_id_response, service, session_type):
@@ -510,7 +513,8 @@ def raw_send(arb_id_request, arb_id_response, service, session_type):
 
 def tester_present(arb_id_request, delay, duration,
                    suppress_positive_response):
-    """Sends TesterPresent messages to 'arb_id_request'. Stops automatically
+    """
+    Sends TesterPresent messages to 'arb_id_request'. Stops automatically
     after 'duration' seconds or runs forever if this is None.
 
     :param arb_id_request: arbitration ID for requests
@@ -568,9 +572,10 @@ def __tester_present_wrapper(args):
 
 
 def ecu_reset(arb_id_request, arb_id_response, reset_type, timeout):
-    """Sends an ECU Reset message to 'arb_id_request'. Returns the first
-        response received from 'arb_id_response' within 'timeout' seconds
-        or None otherwise.
+    """
+    Sends an ECU Reset message to 'arb_id_request'. Returns the first
+    response received from 'arb_id_response' within 'timeout' seconds
+    or None otherwise.
 
     :param arb_id_request: arbitration ID for requests
     :param arb_id_response: arbitration ID for responses
@@ -732,9 +737,10 @@ def extended_session(arb_id_request, arb_id_response, session_type):
 
 def request_seed(arb_id_request, arb_id_response, level,
                  data_record, timeout):
-    """Sends a Request seed message to 'arb_id_request'. Returns the
-       first response received from 'arb_id_response' within 'timeout'
-       seconds or None otherwise.
+    """
+    Sends a Request seed message to 'arb_id_request'. Returns the
+    first response received from 'arb_id_response' within 'timeout'
+    seconds or None otherwise.
 
     :param arb_id_request: arbitration ID for requests
     :param arb_id_response: arbitration ID for responses
@@ -932,14 +938,14 @@ def __auto_wrapper(args):
 
                     # Print results
                     if len(found_subservices) == 0:
-                        print("\nNo Diagnostic Session Control Sub-Services were discovered\n", end=' ')
+                        print("\nNo Diagnostic Session Control Sub-Services were discovered\n", end=" ")
                     else:
                         print("\n")
-                        print("\nDiscovered Diagnostic Session Control Sub-Services:\n", end=' ')
+                        print("\nDiscovered Diagnostic Session Control Sub-Services:\n", end=" ")
                         for subservice_id in found_subservices:
                             nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)],
                                                             "Unknown NRC value")
-                            print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=' ')
+                            print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=" ")
 
                 if ServiceID.ECU_RESET in found_services:
 
@@ -982,14 +988,14 @@ def __auto_wrapper(args):
 
                     # Print results
                     if len(found_subservices) == 0:
-                        print("\nNo ECUReset Sub-Services were discovered.\n", end=' ')
+                        print("\nNo ECUReset Sub-Services were discovered.\n", end=" ")
                     else:
                         print("\n")
-                        print("\nDiscovered ECUReset Sub-Services:\n", end=' ')
+                        print("\nDiscovered ECUReset Sub-Services:\n", end=" ")
                         for subservice_id in found_subservices:
                             nrc_description = NRC_NAMES.get(subservice_status[found_subservices.index(subservice_id)],
                                                             "Unknown NRC value")
-                            print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=' ')
+                            print("\n0x{0:02x} : {1}".format(subservice_id, nrc_description), end=" ")
 
                 if ServiceID.SECURITY_ACCESS in found_services:
 
@@ -1076,13 +1082,13 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                 uds.P3_CLIENT = timeout
 
             if print_results:
-                print('Dumping DIDs in range 0x{:04x}-0x{:04x}\n'.format(
+                print("Dumping DIDs in range 0x{:04x}-0x{:04x}\n".format(
                     min_did, max_did))
-                print('Identified DIDs:')
-                print('DID    Value (hex)')
+                print("Identified DIDs:")
+                print("DID    Value (hex)")
             for identifier in range(min_did, max_did + 1):
                 if print_results:
-                    print(f'0x{identifier:04x}', end='\r', file=stderr)
+                    print(f"0x{identifier:04x}", end="\r", file=stderr)
                 response = uds.read_data_by_identifier(identifier=[identifier])
 
                 # Only keep positive responses
@@ -1104,7 +1110,7 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
                 # response[1:3] = Data Identifier (DID)
                 # response[3:] = data
                 if print_results:
-                    print('0x{:04x}'.format(identifier), list_to_hex_str(response[3:]))
+                    print("0x{:04x}".format(identifier), list_to_hex_str(response[3:]))
             if print_results:
                 print("\033[K", file=stderr)  # clear line
                 print("Done!")
@@ -1127,9 +1133,9 @@ def __read_mem_wrapper(args):
     results = read_memory(arb_id_request, arb_id_response, timeout, start_addr, mem_length, mem_size, address_byte_size,
                           memory_length_byte_size, print_results)
     if outfile:
-        with open(outfile, 'w') as f:
+        with open(outfile, "w") as f:
             for addr, data in results:
-                f.write(f'{addr:08x} {bytes(data[1:]).hex()}\n')
+                f.write(f"{addr:08x} {bytes(data[1:]).hex()}\n")
 
 
 def read_memory(arb_id_request, arb_id_response, timeout,
@@ -1185,10 +1191,10 @@ def read_memory(arb_id_request, arb_id_response, timeout,
             if timeout is not None:
                 uds.P3_CLIENT = timeout
             if print_results:
-                print('Dumping Memory in range 0x{:08x}-0x{:08x}\n'.format(
+                print("Dumping Memory in range 0x{:08x}-0x{:08x}\n".format(
                     start_addr, start_addr + mem_length - 1))
-                print('Identified Addresses:')
-                print('Address    Value (hex)')
+                print("Identified Addresses:")
+                print("Address    Value (hex)")
             expected_service_response_id = uds.get_service_response_id(ServiceID.READ_MEMORY_BY_ADDRESS)
             for identifier in range(start_addr, start_addr + mem_length, mem_size):
                 address_and_length_format = (memory_length_byte_size << 4) + address_byte_size
@@ -1202,11 +1208,11 @@ def read_memory(arb_id_request, arb_id_response, timeout,
                         # response [0] = positive response SID (0x63)
                         # response [1:] = data returned from memory read
                         if print_results and len(response) >= 2:
-                            print('0x{:08x}'.format(identifier), list_to_hex_str(response[1:]))
+                            print("0x{:08x}".format(identifier), list_to_hex_str(response[1:]))
                 # Negative response handling
                 elif response:
                     print(f"Could not dump 0x{mem_size:04x} bytes of memory from address 0x{identifier:08x} - "
-                          f"received response: {bytes(response).hex(' ')}")
+                          f"received response: {bytes(response).hex(" ")}")
                     nrc = response[2]
                     print_negative_response_code(nrc)
                     # This would be a good place to add code to unlock the ECU (if you know how and have the key)

@@ -161,7 +161,7 @@ The target ECU used for the development setup is an STM32F107 based dev-board fr
 * Filip Hesslund
 * Craig Smith (OpenGarages.org)
 * internot
-* Mathijs Hubrechtsen
+* Roos Hubrechtsen
 * Lear Corporation
 * sigttou
 * FearfulSpoon

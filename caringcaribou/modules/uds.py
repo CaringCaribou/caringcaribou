@@ -1316,7 +1316,7 @@ def write_dids(arb_id_request, arb_id_response, timeout, data, min_did=DUMP_DID_
 
                         # failed write
                         if not Iso14229_1.is_positive_response(response_write):
-                            if print_results:
+                            if print_results and len(response_write) >= 3:
                                 # Lookup table for applicable NRC values
                                 status = response_write[2]
                                 nrc_description = NRC_NAMES.get(status, "Unknown NRC value")
@@ -1329,7 +1329,7 @@ def write_dids(arb_id_request, arb_id_response, timeout, data, min_did=DUMP_DID_
 
                         # we could not read the DID so we can't verify, just bail
                         if not Iso14229_1.is_positive_response(response_read_1):
-                            if print_results:
+                            if print_results and len(response_read) >= 3:
                                 # Lookup table for applicable NRC values
                                 status = response_write[2]
                                 nrc_description = NRC_NAMES.get(status, "Unknown NRC value")
@@ -1359,7 +1359,7 @@ def write_dids(arb_id_request, arb_id_response, timeout, data, min_did=DUMP_DID_
                                 did = '0x{:04x}'.format(identifier), list_to_hex_str(response_write[3:])
                                 print(list_to_hex_str(response_write[3:]))
                         else:
-                            if print_results:
+                            if print_results and len(response) >= 3:
                                 # Lookup table for applicable NRC values
                                 status = response_write[2]
                                 nrc_description = NRC_NAMES.get(status, "Unknown NRC value")

@@ -1250,8 +1250,8 @@ def write_dids(arb_id_request, arb_id_response, timeout, data, min_did=DUMP_DID_
     :param timeout: seconds to wait for response before timeout, or None
                     for default UDS timeout
     :param data: data to write to device identifier
-    :param min_did: minimum device identifier to read
-    :param max_did: maximum device identifier to read
+    :param min_did: minimum device identifier to write
+    :param max_did: maximum device identifier to write
     :param verify: check if write succeeded by reading back data identifier
     :param print_results: whether progress should be printed to stdout
     :type arb_id_request: int

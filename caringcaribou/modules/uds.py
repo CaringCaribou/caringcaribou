@@ -1398,7 +1398,7 @@ def __parse_args(args):
   caringcaribou uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
   caringcaribou uds dump_dids 0x733 0x633
   caringcaribou uds dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1
-  caringcaribou uds write_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1 --data 0xABCD
+  caringcaribou uds write_dids -t 0.1 0x733 0x633 0x6300 0x6fff 0xDEADBEEF
   caringcaribou uds read_mem 0x733 0x633 --start_addr 0x0200 --mem_length 0x10000""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True

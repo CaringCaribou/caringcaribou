@@ -246,3 +246,69 @@ class UdsModuleTestCase(unittest.TestCase):
         expected_response_cnt = 1
         self.assertEqual(expected_response_cnt, len(responses))
         self.assertListEqual(responses[0][1], expected_response)
+
+    def test_write_did_success_verify(self):
+        min_did = self.ecu.REQUEST_IDENTIFIER_VALID_WRITE
+        max_did = self.ecu.REQUEST_IDENTIFIER_VALID_WRITE
+        timeout = None
+        data = bytes.fromhex("030405")
+        verify = True
+        print_results = True
+
+        # we end up with expected response [0x6E, 0xDE, 0xAD]
+        expected_response = [0x6E]
+        expected_response.append((self.ecu.REQUEST_IDENTIFIER_VALID_WRITE >> 8) & 0xFF)
+        expected_response.append(self.ecu.REQUEST_IDENTIFIER_VALID_WRITE & 0xFF)
+        print(f'before={self.ecu.WRITE_DATA}')
+        responses = uds.write_dids(arb_id_request=self.ARB_ID_REQUEST,
+                                   arb_id_response=self.ARB_ID_RESPONSE,
+                                   timeout=timeout,
+                                   data = data,
+                                   min_did=min_did,
+                                   max_did=max_did,
+                                   verify=verify,
+                                   print_results=print_results)
+
+        # make sure we get a positive response
+        # response looks like (identifier, [0x6E, DID_UPPER, DID_LOWER])
+        print(f'after={self.ecu.WRITE_DATA}')
+        expected_response_cnt = 1
+        self.assertEqual(expected_response_cnt, len(responses))
+        self.assertListEqual(responses[0][1], expected_response)
+
+        # we have no way of knowing if the write succeeded based only on the results
+        # so we check the underlying data ourselves
+        self.assertEqual(self.ecu.WRITE_DATA, data)
+
+    def test_write_did_success_skipverify(self):
+        min_did = self.ecu.REQUEST_IDENTIFIER_VALID_WRITE
+        max_did = self.ecu.REQUEST_IDENTIFIER_VALID_WRITE
+        timeout = None
+        data = bytes.fromhex("060708")
+        verify = False
+        print_results = True
+
+        # we end up with expected response [0x6e, 0xDE, 0xAD]
+        expected_response = [0x6E]
+        expected_response.append((self.ecu.REQUEST_IDENTIFIER_VALID_WRITE >> 8) & 0xFF)
+        expected_response.append(self.ecu.REQUEST_IDENTIFIER_VALID_WRITE & 0xFF)
+        responses = uds.write_dids(arb_id_request=self.ARB_ID_REQUEST,
+                                   arb_id_response=self.ARB_ID_RESPONSE,
+                                   timeout=timeout,
+                                   data = data,
+                                   min_did=min_did,
+                                   max_did=max_did,
+                                   verify=verify,
+                                   print_results=print_results)
+
+        # make sure we get a positive response
+        # response looks like (identifier, [0x6E, DID_UPPER, DID_LOWER])
+        expected_response_cnt = 1
+        self.assertEqual(expected_response_cnt, len(responses))
+        self.assertListEqual(responses[0][1], expected_response)
+
+        # the verify will take care of checking the data but we do it again anyways
+        self.assertEqual(self.ecu.WRITE_DATA, data)
+
+
+

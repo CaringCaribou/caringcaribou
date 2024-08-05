@@ -105,6 +105,10 @@ DUMP_DID_MIN = 0x0000
 DUMP_DID_MAX = 0xFFFF
 DUMP_DID_TIMEOUT = 0.2
 
+WRITE_DID_MIN = 0x0000
+WRITE_DID_MAX = 0xFFFF
+WRITE_DID_TIMEOUT = 0.2
+
 MEM_START_ADDR = 0
 MEM_LEN = 0x100
 MEM_SIZE = 0x10
@@ -1236,6 +1240,164 @@ def read_memory(arb_id_request, arb_id_response, timeout,
             return responses
 
 
+def __write_dids_wrapper(args):
+    """Wrapper used to initiate data identifier dump"""
+    arb_id_request = args.src
+    arb_id_response = args.dst
+    timeout = args.timeout
+    min_did = args.min_did
+    max_did = args.max_did
+    print_results = True
+    data = bytes.fromhex(args.data)
+    skip_verify = args.skipverify
+    verify = not skip_verify # skip_verify arg will show up as True, which means verify is False
+    
+    write_dids(arb_id_request, arb_id_response, timeout, data, min_did, max_did,
+              verify, print_results)
+
+def write_dids(arb_id_request, arb_id_response, timeout, data, min_did=DUMP_DID_MIN, 
+               max_did=DUMP_DID_MAX, verify=True, print_results=True):
+    """
+    Sends write data by identifier (DID) messages to 'arb_id_request'.
+    Returns a list of positive responses received from 'arb_id_response' within
+    'timeout' seconds or an empty list if no positive responses were received.
+
+    :param arb_id_request: arbitration ID for requests
+    :param arb_id_response: arbitration ID for responses
+    :param timeout: seconds to wait for response before timeout, or None
+                    for default UDS timeout
+    :param data: data to write to device identifier
+    :param min_did: minimum device identifier to write
+    :param max_did: maximum device identifier to write
+    :param verify: check if write succeeded by reading back data identifier
+    :param print_results: whether progress should be printed to stdout
+    :type arb_id_request: int
+    :type arb_id_response: int
+    :type timeout: float or None
+    :type data: byte
+    :type min_did: int
+    :type max_did: int
+    :type verify: bool
+    :type print_results: bool
+    :return: list of tuples containing DID and response bytes on success,
+             empty list if no responses
+    :rtype [(int, [int])] or []
+    """
+    try:
+        # Sanity checks
+        if isinstance(timeout, float) and timeout < 0.0:
+            raise ValueError("Timeout value ({0}) cannot be negative"
+                            .format(timeout))
+
+        if max_did < min_did:
+            raise ValueError("max_did must not be smaller than min_did -"
+                            " got min:0x{0:x}, max:0x{1:x}".format(min_did, max_did))
+
+        with IsoTp(arb_id_request=arb_id_request,
+                   arb_id_response=arb_id_response) as tp:
+            # Setup filter for incoming messages
+            tp.set_filter_single_arbitration_id(arb_id_response)
+            with Iso14229_1(tp) as uds:
+                # Set timeout
+                if timeout is not None:
+                    uds.P3_CLIENT = timeout
+
+                if print_results:
+                    print(f'Testing DIDs in range 0x{min_did:04x}-0x{max_did:04x}\n')
+
+                responses = []
+                for identifier in range(min_did, max_did + 1):
+                    initial_data = ''
+                    success = False
+                    if print_results:
+                        print(f'Current DID: 0x{identifier:04x}', end='\r', file=stderr)
+
+                    # write and verify - read, write, read
+                    if verify:
+                        # first we read
+                        response_read_1 = uds.read_data_by_identifier(identifier=[identifier])
+
+                        # we could not read the DID so we can't verify, just bail
+                        if not Iso14229_1.is_positive_response(response_read_1):
+                            if print_results:
+                                # Lookup table for applicable NRC values
+                                if response_read_1: 
+                                    status = response_read_1[2]
+                                    nrc_description = NRC_NAMES.get(status, "Unknown NRC value")
+                                    print(f'Could not read DID 0x{identifier:04x}, will NOT attempt to write since "verify" option was given. NRC={status:02x} {nrc_description}')
+                            continue
+                        initial_data = list_to_hex_str(response_read_1[3:]) 
+
+                        # now we write
+                        response_write = uds.write_data_by_identifier(identifier=identifier, data=data)
+
+                        # failed write
+                        if not Iso14229_1.is_positive_response(response_write):
+                            if print_results and len(response_write) >= 3:
+                                # Lookup table for applicable NRC values
+                                status = response_write[2]
+                                nrc_description = NRC_NAMES.get(status, "Unknown NRC value")
+                                print(f'Could not write {data.hex()} to DID 0x{identifier:04x}. NRC={status:02x} {nrc_description}')
+                            continue
+
+                        # verify the data actually changed (some ECUs responsd positively but underlying data does not change)
+                        # usually this indicates the ECU needs to be unlocked or data is read-only
+                        response_read_2 = uds.read_data_by_identifier(identifier=[identifier])
+
+                        # we could not read the DID so we can't verify, just bail
+                        if not Iso14229_1.is_positive_response(response_read_1):
+                            if print_results and len(response_read) >= 3:
+                                # Lookup table for applicable NRC values
+                                status = response_write[2]
+                                nrc_description = NRC_NAMES.get(status, "Unknown NRC value")
+                                print(f'Could not read DID 0x{identifier:04x}, cannot verify write succeeded. NRC={status:02x} {nrc_description}')
+                            continue
+
+                        # check that new data is different from old data
+                        if response_read_1 != response_read_2: 
+                            if print_results:
+                                print(f'Sucessfully wrote {data.hex()} to DID 0x{identifier:04x}')
+                            success = True
+                        else:
+                            if print_results:
+                                print(f'Failed to write {data.hex()} to DID 0x{identifier:04x} - ECU returned positive response but data did not change')
+
+
+                    # if user does not want to verify that data changed, they can just blast the write and hope for the best
+                    else:
+                        # write only
+                        response_write = uds.write_data_by_identifier(identifier=identifier, data=data)
+                        if response_write and Iso14229_1.is_positive_response(response_write):
+                            # we just assume the write was successful based on the positive response
+                            # it's up to the user to confirm the write really went through
+                            success = True
+                            if print_results:
+                                print(f'Received positive response after writing {data.hex()} to DID 0x{identifier:04x}')
+                                did = '0x{:04x}'.format(identifier), list_to_hex_str(response_write[3:])
+                                print(list_to_hex_str(response_write[3:]))
+                        else:
+                            if print_results and len(response) >= 3:
+                                # Lookup table for applicable NRC values
+                                status = response_write[2]
+                                nrc_description = NRC_NAMES.get(status, "Unknown NRC value")
+                                print(f'Could not write {data.hex()} to DID 0x{identifier:04x}. NRC={status:02x} {nrc_description}')
+
+                    if success:
+                        responses.append((identifier, response_write))
+
+                if print_results:
+                    print("Done!")
+                    print("\033[K", file=stderr) # clear line
+                return responses
+            
+    except KeyboardInterrupt:
+        print("\033[K", file=stderr) # clear line
+        print("Interrupted by user.\n")
+        return responses
+    except ValueError as e:
+        print(e)
+        return
+
 def __parse_args(args):
     """Parser for module arguments"""
     parser = argparse.ArgumentParser(
@@ -1253,6 +1415,7 @@ def __parse_args(args):
   caringcaribou uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
   caringcaribou uds dump_dids 0x733 0x633
   caringcaribou uds dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1
+  caringcaribou uds write_dids -t 0.1 0x733 0x633 0x6300 0x6fff 0xDEADBEEF
   caringcaribou uds read_mem 0x733 0x633 --start_addr 0x0200 --mem_length 0x10000""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
@@ -1464,6 +1627,34 @@ def __parse_args(args):
     parser_mem.add_argument("--outfile",
                             help="filename to write output to")
     parser_mem.set_defaults(func=__read_mem_wrapper)
+
+    # Parser for write_did
+    parser_wdid = subparsers.add_parser("write_dids")
+    parser_wdid.add_argument("src",
+                            type=parse_int_dec_or_hex,
+                            help="arbitration ID to transmit to")
+    parser_wdid.add_argument("dst",
+                            type=parse_int_dec_or_hex,
+                            help="arbitration ID to listen to")
+    parser_wdid.add_argument("-t", "--timeout",
+                            type=float, metavar="T",
+                            default=WRITE_DID_TIMEOUT,
+                            help="wait T seconds for response before "
+                                 "timeout")
+    parser_wdid.add_argument("min_did",
+                            type=parse_int_dec_or_hex,
+                            default=WRITE_DID_MIN,
+                            help=f"minimum device identifier (DID) to write")
+    parser_wdid.add_argument("max_did",
+                            type=parse_int_dec_or_hex,
+                            default=WRITE_DID_MAX,
+                            help=f"maximum device identifier (DID) to write")
+    parser_wdid.add_argument("data",
+                            help="data to write (no spaces) in hex format e.g. deadbeef")
+    parser_wdid.add_argument("-sv", "--skipverify", 
+                             action="store_true", 
+                             help="skip write verification step i.e. do not check if write succeeded by reading back data identifier")
+    parser_wdid.set_defaults(func=__write_dids_wrapper)
 
     # Parser for auto
     parser_auto = subparsers.add_parser("auto")

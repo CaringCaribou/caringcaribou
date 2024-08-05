@@ -210,6 +210,38 @@ optional arguments:
   --max_did MAX_DID  maximum device identifier (DID) to read (default: 0xFFFF)
 ```
 
+## Write DIDs
+Write data to one/multiple Data Identifiers (DIDs). By default, this command will verify the data was written successfully.
+This is accomplished by first reading the DID, writing the DID, reading the DID and comparing the two values. If they are different,
+the write was successful.
+
+On the other hand, the user can skip this verification step by passing the `-sv` flag. In this case, only a write will be performed.
+
+```
+$ caringcaribou uds write_dids -h
+
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
+Loading module 'uds'
+
+usage: caringcaribou uds write_dids [-h] [-t T] [-sv] src dst min_did max_did data
+
+positional arguments:
+  src                arbitration ID to transmit to
+  dst                arbitration ID to listen to
+  min_did            minimum device identifier (DID) to write
+  max_did            maximum device identifier (DID) to write
+  data               data to write (no spaces) in hex format e.g. deadbeef
+
+options:
+  -h, --help         show this help message and exit
+  -t T, --timeout T  wait T seconds for response before timeout
+  -sv, --skipverify  skip write verification step i.e. do not check if write succeeded by reading back data identifier
+```
+
+
 ## Auto
 Performs a fully automated diagnostics scan from start to finish, by using the already existing CC modules.
 

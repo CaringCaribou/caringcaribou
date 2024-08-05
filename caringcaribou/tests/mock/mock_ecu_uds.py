@@ -25,6 +25,9 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
     SECURITY_ACCESS_SEED = [0x36, 0x57]
     SECURITY_ACCESS_KEY = [0xC9, 0xA9]
 
+    REQUEST_IDENTIFIER_VALID_WRITE = 0xDEAD
+    REQUEST_IDENTIFIER_INVALID_WRITE = 0xBEEF
+
     def __init__(self, arb_id_request, arb_id_response, bus=None):
         MockEcu.__init__(self, bus)
         self.ARBITRATION_ID_ISO_14229_REQUEST = arb_id_request
@@ -38,6 +41,7 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
                             bus=self.bus)
         # Setup diagnostics on top of ISO-TP
         self.diagnostics = Iso14229_1(tp=self.iso_tp)
+        self.WRITE_DATA = [0x00, 0x01, 0x02]
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         MockEcuIsoTp.__exit__(self, None, None, None)
@@ -162,6 +166,9 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
             # DID which responds with DID + 1
             payload = [0xff, 0xff, self.IDENTIFIER_REQUEST_POSITIVE_RESPONSE]
             response_data = self.create_positive_response(service_id, payload)
+        elif data_id == [(self.REQUEST_IDENTIFIER_VALID_WRITE >> 8) & 0xFF, self.REQUEST_IDENTIFIER_VALID_WRITE & 0xFF]:
+            payload = self.WRITE_DATA
+            response_data = self.create_positive_response(service_id, payload)
         else:
             # Unmatched request - use a general reject response
             nrc = NegativeResponseCodes.GENERAL_REJECT
@@ -183,12 +190,24 @@ class MockEcuIso14229(MockEcuIsoTp, MockEcu):
                                         identifier_start_position,
                                         identifier_length)
         request_data = data[3:]
-        # TODO Actually write data to memory
         if identifier == self.REQUEST_IDENTIFIER_VALID:
             # Request for positive response
             # Standard specifies the response payload to be an echo of the data identifier from the request
             payload = data[identifier_start_position:identifier_start_position + identifier_length]
             response_data = self.create_positive_response(service_id, payload)
+
+        # use a unique DID here so don't interfere with reading tests
+        elif identifier == self.REQUEST_IDENTIFIER_VALID_WRITE:
+            # Request for positive response
+            # Standard specifies the response payload to be an echo of the data identifier from the request
+            payload = data[identifier_start_position:identifier_start_position + identifier_length]
+            response_data = self.create_positive_response(service_id, payload)
+
+            # overwrite the underlying memory
+            print(f'overwriting self.WRITE_DATA {self.WRITE_DATA} with {request_data}')
+            self.WRITE_DATA = request_data
+            print(f'new self.WRITE_DATA={self.WRITE_DATA}')
+
         elif identifier == self.REQUEST_IDENTIFIER_INVALID:
             # Request for negative response - use Conditions Not Correct
             nrc = NegativeResponseCodes.CONDITIONS_NOT_CORRECT

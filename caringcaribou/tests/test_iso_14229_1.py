@@ -16,7 +16,7 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
         self.ecu = MockEcuIso14229(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE)
         self.ecu.start_server()
         # Initialize virtual CAN bus
-        can_bus = can.Bus(DEFAULT_INTERFACE)
+        can_bus = can.Bus(context=DEFAULT_INTERFACE)
         # Setup diagnostics on top of ISO-TP layer
         self.tp = iso15765_2.IsoTp(self.ARB_ID_REQUEST, self.ARB_ID_RESPONSE, bus=can_bus)
         self.diagnostics = iso14229_1.Iso14229_1(self.tp)

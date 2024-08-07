@@ -70,7 +70,7 @@ class CanActions:
         :param arb_id: int default arbitration ID for object or None
         :param notifier_enabled: bool indicating whether a notifier for incoming message callbacks should be enabled
         """
-        self.bus = can.Bus(DEFAULT_INTERFACE)
+        self.bus = can.Bus(context=DEFAULT_INTERFACE)
         self.arb_id = arb_id
         self.bruteforce_running = False
         self.notifier = None

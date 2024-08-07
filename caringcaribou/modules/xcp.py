@@ -190,8 +190,8 @@ def xcp_arbitration_id_discovery(args):
         """
         Returns a bool indicating whether 'data' is a valid XCP response
 
-        :param msg: list of message data bytes
-        :return: True if data is a valid XCP response,
+        :param data: list of message data bytes
+        :msg: True if data is a valid XCP response,
                  False otherwise
         """
         data = msg.data
@@ -233,16 +233,17 @@ def xcp_arbitration_id_discovery(args):
         def discovery_end(s):
             print("\r{0}: Found {1} possible matches.".format(s, hit_counter))
 
-        can_wrap.bruteforce_arbitration_id([0xff], response_analyser_wrapper,
+        can_wrap.bruteforce_arbitration_id([0xff, 0x00], response_analyser_wrapper,
                                            min_id=min_id, max_id=max_id, callback_end=discovery_end)
 
 
 def xcp_command_discovery(args):
+    timeout = 5
     """Attempts to call all XCP commands and lists which ones are supported."""
     global connect_reply, command_reply
     send_arb_id = args.src
     rcv_arb_id = args.dst
-    connect_message = [0xff, 0, 0, 0, 0, 0, 0, 0]
+    connect_message = [0xFF, 0, 0, 0, 0, 0, 0, 0]
 
     def connect_callback_handler(msg):
         global connect_reply
@@ -250,16 +251,21 @@ def xcp_command_discovery(args):
             connect_reply = True
 
     print("XCP command discovery\n")
-    print("COMMAND{0}SUPPORTED".format(" " * 17))
+    print("COMMAND{0}RESPONSE".format(" " * 17))
     print("-" * 33)
     with CanActions(send_arb_id) as can_wrap:
+        can_wrap.bus.set_filters([
+            {"can_id": rcv_arb_id, "can_mask": 0x7FF, "extended": False},
+            {"can_id": send_arb_id, "can_mask": 0x7FF, "extended": False}
+        ])
         # Bruteforce against list of commands (excluding connect)
-        for cmd_code, cmd_desc in XCP_COMMAND_CODES[1:]:
+        # Don't try Connect and Disconnect discovery
+        for cmd_code, cmd_desc in XCP_COMMAND_CODES[2:]:
             # Connect
             connect_reply = False
             can_wrap.send_single_message_with_callback(connect_message, connect_callback_handler)
             connect_timestamp = datetime.now()
-            while not connect_reply and datetime.now() - connect_timestamp < timedelta(seconds=3):
+            while not connect_reply and datetime.now() - connect_timestamp < timedelta(seconds=timeout):
                 pass
             if not connect_reply:
                 print("ERROR: Connect timeout")
@@ -272,14 +278,20 @@ def xcp_command_discovery(args):
             def callback_handler(msg):
                 global command_reply
                 if msg.arbitration_id == rcv_arb_id:
-                    print("{0:<23} {1}".format(cmd_desc, msg.data[0] != 0xfe))
+                    if msg.data[0] == 0xFF:
+                        print("{0:<23} AVAILABLE".format(cmd_desc))
+                    elif (msg.data[0] == 0xFE) and (msg.data[1] == 0x20):
+                        print("{0:<23} NOT AVAILABLE".format(cmd_desc))
+                    else:
+                        print("{0:<23} {1} ({2})".format(cmd_desc,XCP_ERROR_CODES[msg.data[1]][0],
+                                                         hex(msg.data[1])))
                     command_reply = True
 
             command_reply = False
             # Send, wait for reply, clear listeners and move on
             can_wrap.send_single_message_with_callback(cmd_msg, callback=callback_handler)
             command_timestamp = datetime.now()
-            while not command_reply and datetime.now() - command_timestamp < timedelta(seconds=3):
+            while not command_reply and datetime.now() - command_timestamp < timedelta(seconds=timeout):
                 pass
             if not command_reply:
                 print("ERROR: Command timeout")
@@ -330,7 +342,7 @@ def xcp_get_basic_information(args):
         can_wrap.send_single_message_with_callback([0xf5, msg.data[4]], callback_wrapper(print_msg_as_text))
 
     # Define probe messages
-    probe_msgs = [ProbeMessage([0xff], decode_connect_response),  # Connect
+    probe_msgs = [ProbeMessage([0xff, 0x00], decode_connect_response),  # Connect
                   ProbeMessage([0xfb], decode_get_comm_mode_info_response),  # GetCommMode
                   ProbeMessage([0xfd], decode_get_status_response),  # GetStatus
                   ProbeMessage([0xfa, 0x00], handle_get_id_reply),  # GetId ASCII text
@@ -446,14 +458,14 @@ def xcp_memory_dump(args):
         else:
             print("Unexpected connect reply: {0}\n".format(msg))
 
-    # Calculate address bytes (4 bytes, the least significant first)
+    # Calculate address bytes (4 bytes, least significant first)
     r = []
     n = start_address
     bytes_left = length
     # Calculate start address (r is automatically reversed after connect if needed)
-    n &= 0xffffffff
+    n &= 0xFFFFFFFF
     for i in range(4):
-        r.append(n & 0xff)
+        r.append(n & 0xFF)
         n >>= 8
     # Make sure dump_file can be opened if specified (clearing it if it already exists)
     if dump_file:
@@ -467,7 +479,7 @@ def xcp_memory_dump(args):
     with CanActions(arb_id=send_arb_id) as can_wrap:
         print("Attempting XCP memory dump")
         # Connect and prepare for dump
-        can_wrap.send_single_message_with_callback([0xff, 0, 0, 0, 0, 0, 0, 0], handle_connect_reply)
+        can_wrap.send_single_message_with_callback([0xff], handle_connect_reply)
         # Idle timeout handling
         timeout_start = datetime.now()
         while not dump_complete and datetime.now() - timeout_start < timedelta(seconds=3):

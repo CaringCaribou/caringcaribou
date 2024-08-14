@@ -426,7 +426,8 @@ def parse_args(args):
     """
     parser = argparse.ArgumentParser(prog="caringcaribou dcm",
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     description="""Diagnostics module for CaringCaribou""",
+                                     description="""Diagnostics module for CaringCaribou
+DeprecationWarning: The DCM module has been replaced by the UDS module""",
                                      epilog="""Example usage:
   caringcaribou dcm discovery
   caringcaribou dcm discovery -blacklist 0x123 0x456

@@ -97,12 +97,6 @@ For instance, in oder to send the message `c0 ff ee` with arbitration ID `0xf00`
 
     $ caringcaribou -i vcan0 send message 0xf00#c0.ff.ee
 
-More information on the different modules is available here:
-+ [dcm-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/dcm.md)
-+ [xcp-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/xcp.md)
-+ [send-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/send.md)
-+ [listener-module](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/listener.md)
-
 ### Virtual CAN bus
 In order to communicate over CAN without access to a physical CAN bus, it is possible to use a virtual CAN bus instead. Doing this in Linux is generally as easy as running the following commands:
 
@@ -110,80 +104,130 @@ In order to communicate over CAN without access to a physical CAN bus, it is pos
     sudo ip link add dev vcan0 type vcan
     sudo ip link set vcan0 up
 
+
+### Available modules
+
+You can find more information and usage examples for each module in their respective documentation:
+
++ [Dump](dump.md)
++ [Send](send.md)
++ [Listener](listener.md)
++ [Fuzzer](fuzzer.md)
++ [UDS](dcm.md)
++ [UDS_fuzz](uds_fuzz.md)
++ [DoIP](doip.md)
++ [XCP](xcp.md)
+
 ## Example use
 In this example we have connected a compatible [hardware](https://github.com/CaringCaribou/caringcaribou/blob/master/README.md#hardware-requirements) (PiCAN) to our client computer (a Raspberry Pi) and installed the software according to the [instructions](https://github.com/CaringCaribou/caringcaribou/blob/master/documentation/howtoinstall.md#raspberry-pi).
+The PiCAN is then connected to a CAN bus that features one or more ECUs. 
 
-The PiCAN is then connected to a CAN bus that features one or more ECUs. Since we know very little about the target ECUs, a great start is to do some discovery. Currently, three types of discovery are available; dcm discovery, xcp discovery and the listener.
+Since we initially know nothing about the target ECUs, it's crucial to start with some reconnaissance. For this purpose, four main discovery types are available:
 
-#### The listener
-Let's start with the listener:
+- [listener](listener.md/#Listener)
+- [uds discovery](uds.md#Discovery)
+- [uds services](uds.md#Services)
+- [xcp discovery](xcp.md#Discovery)
 
-    caringcaribou -h
-    caringcaribou listener -h
-    caringcaribou listener
+Let's use all of them to see what information we can get.
 
-(stop the listener with ctrl-C)
-
+We're starting with the listener.
 ```
-Last ID: 0x002 (total found: 30)
+$ caringcaribou listener
 
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
+Loading module 'listener'
+
+Running listener (press Ctrl+C to exit)
+Last ID: 0x002 (2 unique arbitration IDs found)
+```
+(stop the listener with Ctrl-C)
+```
 Detected arbitration IDs:
 Arb id 0x001 114 hits
 Arb id 0x002 13 hits
 ```
 
-On our system we found two active arbitration IDs - probably sending some important signal/measurement repeatedly. Let's investigate if diagnostics are present on some ECUs.
+On our system we found two active arbitration IDs: 0x001 and 0x002 - probably sending some important signal/measurement repeatedly.
 
-#### Diagnostic discovery
+Now let's investigate if diagnostics are present on some ECUs. Thanks to 'listener' results, we know that there is no need to do discovery on 0x001 and 0x002, so lets start from ID 0x003.
 
-    caringcaribou dcm -h
-    caringcaribou dcm discovery -h
-    caringcaribou dcm discovery -min 0x003
 
-(no need to do discovery on 0x001 and 0x002)
-
+Start uds discovery from arbitration ID 0x003:
 ```
-Loaded module 'dcm'
+$ caringcaribou uds discovery -min 0x003
 
-Starting diagnostics service discovery
-Sending diagnostics Tester Present to 0x0733
-Found diagnostics at arbitration ID 0x0733, reply at 0x0633
-```
+-------------------
+CARING CARIBOU v0.x
+-------------------
 
-Great! Now we now what arbitration ID to use when we look for services and subfunctions:
+Loading module 'uds'
 
-    caringcaribou dcm services 0x733 0x633
+Sending Diagnostic Session Control to 0x07e0
+  Verifying potential response from 0x07e0
+    Resending 0x7e0...  Success
+Found diagnostics server listening at 0x07e0, response at 0x07e8
 
-This gives us that the service READ_DATA_BY_IDENTIFIER (0x22) is available. 0x22 is typically followed by a two byte parameter ID (PID). The two bytes are in positions 2 and 3 and since we want to try them all we enter both 2 and 3 into the subfunction discovery indices list
+Identified diagnostics:
 
-    caringcaribou dcm subfunc 0x733 0x633 0x22 2 3
-
-```
-Loading module 'dcm'
-
-Starting DCM sub-function discovery
-Probing sub-function 0x22 data ['0c', 'ab'] (found: 4)
-
-Found sub-functions for services 0x22 (READ_DATA_BY_IDENTIFIER)
-
-Sub-function 01 00
-Sub-function 01 01
-Sub-function 01 02
-Sub-function 02 00
-
-Terminated by user
++------------+------------+
+| CLIENT ID  | SERVER ID  |
++------------+------------+
+| 0x000007e0 | 0x000007e8 |
++------------+------------+
 ```
 
-#### XCP discovery
-Enough with diagnostics, let's investigate XCP in more or less the same way
-
-    caringcaribou xcp -h
-    caringcaribou xcp discovery -h
-    caringcaribou xcp discovery -min 0x003
-
-(no need to do discovery on 0x001 and 0x002)
+Great! Now we know the ID that the ECU uses to send responses (0x07e8) and the ID we can use to send requests (0x07e0). Let's use this knowledge to scan for available services.
 
 ```
+$ caringcaribou uds services 0x7e0 0x7e8
+
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
+Loading module 'uds'
+
+Probing service 0xff (255/255): found 19
+Done!
+
+Supported service 0x01: Unknown service
+Supported service 0x02: Unknown service
+Supported service 0x03: Unknown service
+Supported service 0x04: Unknown service
+Supported service 0x04: Unknown service
+Supported service 0x38: Unknown service
+Supported service 0x09: Unknown service
+Supported service 0x10: DIAGNOSTIC_SESSION_CONTROL
+Supported service 0x11: ECU_RESET
+Supported service 0x19: READ_DTC_INFORMATION
+Supported service 0x22: READ_DATA_BY_IDENTIFIER
+Supported service 0x23: READ_MEMORY_BY_ADDRESS
+Supported service 0x27: SECURITY_ACCESS
+Supported service 0x28: COMMUNICATION_CONTROL
+Supported service 0x2e: WRITE_DATA_BY_IDENTIFIER
+Supported service 0x2f: INPUT_OUTPUT_CONTROL_BY_IDENTIFIER
+Supported service 0x31: ROUTINE_CONTROL
+Supported service 0x3e: TESTER_PRESENT
+Supported service 0x85: CONTROL_DTC_SETTING
+```
+
+That was a good one! Look at how many services we discovered in this ECU. That's a great start for further UDS exploration.
+
+Enough with UDS, now let's look at another supported protocol - [XCP](xcp.md).
+
+Just like with UDS, we can start the discovery from ID 0x003:
+
+```
+$ caringcaribou xcp discovery -min 0x003
+
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
 Loaded module 'xcp'
 
 Starting XCP discovery

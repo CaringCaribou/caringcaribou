@@ -320,7 +320,7 @@ Terminated by user
 
 
 ## Security Seed
-Automated way for collecting the Seeds in given Diagnostic Session and Security Access level. You can also define the number of seeds to collect, as well as configure automatic resets and set the wait time between requests.
+An automated way to collect seeds for a specific security access level in a specific diagnostic session. You can also define the number of seeds to collect, as well as configure automatic resets and set the wait time between requests.
 
 ```
 $ caringcaribou uds security_seed -h

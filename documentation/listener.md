@@ -20,7 +20,7 @@ optional arguments:
  -r, --reverse  Reversed sorting of results
 ```
 
-# Example use:
+Example use:
 ```
 $ caringcaribou listener
 

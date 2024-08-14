@@ -155,7 +155,6 @@ On our system we found two active arbitration IDs: 0x001 and 0x002 - probably se
 
 Now let's investigate if diagnostics are present on some ECUs. Thanks to 'listener' results, we know that there is no need to do discovery on 0x001 and 0x002, so lets start from ID 0x003.
 
-
 Start uds discovery from arbitration ID 0x003:
 ```
 $ caringcaribou uds discovery -min 0x003

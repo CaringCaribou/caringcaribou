@@ -41,7 +41,6 @@ The `caringcaribou/tests` folder contains automated test suites and `/documentat
 A clean installation of Caring Caribou includes the following modules:
 
 ### dump - Dump CAN traffic
-
 Dumps incoming traffic to stdout (terminal output) or file
 
 Details here: [dump module](documentation/dump.md)

@@ -40,35 +40,6 @@ The `caringcaribou/tests` folder contains automated test suites and `/documentat
 ## List of Modules
 A clean installation of Caring Caribou includes the following modules:
 
-### uds - Universal Diagnostic Services
-Discovers and utilizes various ISO 14229-1 services.
-- discovery - Scans for ECUs supporting diagnostics services
-- services - Scans for diagnostics services supported by an ECU
-- subservices - Subservice enumeration of supported diagnostics services by an ECU
-- ecu_reset - Reset an ECU
-- testerpresent - Force an elevated session against an ECU to stay active
-- dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
-- read_mem - Read memory from an ECU
-- auto - Fully automated diagnostics scan, by using the already existing UDS submodules
-
-Details here: [uds module](documentation/uds.md)
-
-### xcp - Universal Measurement and Calibration Protocol (XCP)
-- discovery - Scans for ECUs supporting XCP
-- info - XCP Get Basic Information. Retrieves information about XCP abilities of an ECU
-- dump - XCP Upload. Used to dump ECU memory (such as SRAM, flash and bootloader) to file 
-
-Details here: [xcp module](documentation/xcp.md)
-
-### fuzzer - CAN fuzzer
-- random - sends random CAN messages
-- brute - brute forces all possible messages matching a given bit mask
-- mutate - mutate selected nibbles of a given message
-- replay - replay a log file from a previous fuzzing session
-- identify - replay a log file and identify message causing a specific event
-
-Details here: [fuzzer module](documentation/fuzzer.md)
-
 ### dump - Dump CAN traffic
 Dumps incoming traffic to stdout (terminal output) or file
 
@@ -84,13 +55,28 @@ Lists all distinct arbitration IDs being used on the CAN bus
 
 Details here: [listener module](documentation/listener.md)
 
-### test - Run test suite
-Runs automated Caring Caribou test suites
+### fuzzer - CAN fuzzer
+- random - sends random CAN messages
+- brute - brute forces all possible messages matching a given bit mask
+- mutate - mutate selected nibbles of a given message
+- replay - replay a log file from a previous fuzzing session
+- identify - replay a log file and identify message causing a specific event
 
-### dcm - [deprecated] Diagnostics Control Module
-**Note**: This module has been replaced by the [UDS](documentation/uds.md) module. It is still supported by CC due to legacy reasons.
+Details here: [fuzzer module](documentation/fuzzer.md)
 
-Details here: [dcm module](documentation/dcm.md)
+### uds - Universal Diagnostic Services
+Discovers and utilizes various ISO 14229-1 services.
+- discovery - Scans for ECUs supporting diagnostics services
+- services - Scans for diagnostics services supported by an ECU
+- subservices - Subservice enumeration of supported diagnostics services by an ECU
+- ecu_reset - Reset an ECU
+- testerpresent - Force an elevated session against an ECU to stay active
+- security_seed - An automated way to collect seeds for a specific security access level in a specific diagnostic session
+- dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
+- read_mem - Read memory from an ECU
+- auto - Fully automated diagnostics scan, by using the already existing UDS submodules
+
+Details here: [uds module](documentation/uds.md)
 
 ### uds_fuzz - Universal Diagnostic Services Fuzzer
 Fuzzing module for UDS security seed randomness evaluation and testing.
@@ -110,6 +96,21 @@ Discovers and utilizes various ISO 13400-2 services.
 - seed_randomness_fuzzer - ECUReset method fuzzing for seed randomness evaluation
 
 Details here: [doip module](documentation/doip.md)
+
+### xcp - Universal Measurement and Calibration Protocol (XCP)
+- discovery - Scans for ECUs supporting XCP
+- info - XCP Get Basic Information. Retrieves information about XCP abilities of an ECU
+- dump - XCP Upload. Used to dump ECU memory (such as SRAM, flash and bootloader) to file 
+
+Details here: [xcp module](documentation/xcp.md)
+
+### dcm - [deprecated] Diagnostics Control Module
+**Note**: This module has been replaced by the [UDS](documentation/uds.md) module. It is still supported by CC due to legacy reasons.
+
+Details here: [dcm module](documentation/dcm.md)
+
+### test - Run test suite
+Runs automated Caring Caribou test suites
 
 ## List of libraries/utilities
 The `caringcaribou/utils` folder contains the following:

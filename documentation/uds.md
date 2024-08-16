@@ -10,6 +10,7 @@ Supported modes:
 * subservices - Subservice enumeration of supported diagnostics services by an ECU
 * ecu_reset - Reset an ECU
 * testerpresent - Force an elevated diagnostics session against an ECU to stay active
+* security_seed - An automated way to collect seeds for a specific security access level in a specific diagnostic session
 * dump_dids - Dumps values of Dynamic Data Identifiers (DIDs)
 * read_mem - Read memory from an ECU
 * auto - Fully automated diagnostics scan, by using the already existing UDS submodules
@@ -80,6 +81,30 @@ optional arguments:
   -d D, --delay D       D seconds delay between messages (default: 0.01)
 ```
 
+Example use:
+```
+$ caringcaribou uds discovery
+
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
+Loading module 'uds'
+
+Sending Diagnostic Session Control to 0x07e0
+  Verifying potential response from 0x07e0
+    Resending 0x7e0...  Success
+Found diagnostics server listening at 0x07e0, response at 0x07e8
+
+Identified diagnostics:
+
++------------+------------+
+| CLIENT ID  | SERVER ID  |
++------------+------------+
+| 0x000007e0 | 0x000007e8 |
++------------+------------+
+```
+
 ## Services
 Scans an ECU (or rather, a given pair of request/response arbitration IDs) for supported diagnostics services.
 
@@ -102,6 +127,41 @@ optional arguments:
   -h, --help         show this help message and exit
   -t T, --timeout T  wait T seconds for response before timeout (default: 0.2)
 ```
+
+Example use:
+```
+$ caringcaribou uds services 0x7E0 0x7E8
+
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
+Loading module 'uds'
+
+Probing service 0xff (255/255): found 19
+Done!
+
+Supported service 0x01: Unknown service
+Supported service 0x02: Unknown service
+Supported service 0x03: Unknown service
+Supported service 0x04: Unknown service
+Supported service 0x04: Unknown service
+Supported service 0x38: Unknown service
+Supported service 0x09: Unknown service
+Supported service 0x10: DIAGNOSTIC_SESSION_CONTROL
+Supported service 0x11: ECU_RESET
+Supported service 0x19: READ_DTC_INFORMATION
+Supported service 0x22: READ_DATA_BY_IDENTIFIER
+Supported service 0x23: READ_MEMORY_BY_ADDRESS
+Supported service 0x27: SECURITY_ACCESS
+Supported service 0x28: COMMUNICATION_CONTROL
+Supported service 0x2e: WRITE_DATA_BY_IDENTIFIER
+Supported service 0x2f: INPUT_OUTPUT_CONTROL_BY_IDENTIFIER
+Supported service 0x31: ROUTINE_CONTROL
+Supported service 0x3e: TESTER_PRESENT
+Supported service 0x85: CONTROL_DTC_SETTING
+```
+
 
 ## Sub-services
 Scans a diagnostics service ID for supported sub-service IDs.
@@ -209,6 +269,116 @@ optional arguments:
   --min_did MIN_DID  minimum device identifier (DID) to read (default: 0x0000)
   --max_did MAX_DID  maximum device identifier (DID) to read (default: 0xFFFF)
 ```
+
+Example use:
+```
+$ caringcaribou uds dump_dids 0x7E0 0x7E8
+
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
+Loading module 'uds'
+
+Dumping DIDs in range 0x0000-0xffff
+
+Identified DIDs:
+DID    Value (hex)
+0x0100 00
+0x0102 00
+0x0104 0000
+0x0105 0000
+0x0106 00
+0x0108 00
+0x011b 00000009000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0x0121 00000019
+0x0153 005eeec64500020000005ed8b8fb00020000005ec2957500020000005eb48d2a00020000005e84a2e800020000005e72aac700020000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+0x0154 005ef6a90e40000000005ef6a34040000000005ef6a2af40000000005ef6a25140000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+0x0155 005e84950204000000005e84950104000000005e84950104000000005e84950004000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+0x0261 00
+0x028d 0c19
+0x029e 0019
+0x02a0 00120000000000210000001e00000001000000340000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0x02a1 00030000000000000000000000390000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0x02cd 00
+0x02ed 02010300000000000400
+0x02ee 04c00000000000000000
+...
+0x14d2 00
+0x14d4 0000
+0x14d8 61a7
+0x14f9 5a00
+0x1510 06
+0x1514 04
+0x1538 0000
+0x1558 01
+0x1588 08
+^C
+
+Terminated by user
+```
+
+
+## Security Seed
+An automated way to collect seeds for a specific security access level in a specific diagnostic session. You can also define the number of seeds to collect, as well as configure automatic resets and set the wait time between requests.
+
+```
+$ caringcaribou uds security_seed -h
+
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
+Loading module 'uds'
+
+usage: caringcaribou uds security_seed [-h] [-r RTYPE] [-d D] [-n NUM] stype level src dst
+
+positional arguments:
+  stype                 Session Type: 1=defaultSession 2=programmingSession 3=extendedSession 4=safetySession [0x40-0x5F]=OEM
+                        [0x60-0x7E]=Supplier [0x0, 0x5-0x3F, 0x7F]=ISOSAEReserved
+  level                 Security level: [0x1-0x41 (odd only)]=OEM 0x5F=EOLPyrotechnics [0x61-0x7E]=Supplier [0x0, 0x43-0x5E,
+                        0x7F]=ISOSAEReserved
+  src                   arbitration ID to transmit to
+  dst                   arbitration ID to listen to
+
+options:
+  -h, --help            show this help message and exit
+  -r RTYPE, --reset RTYPE
+                        Enable reset between security seed requests. Valid RTYPE integers are: 1=hardReset, 2=key off/on, 3=softReset,
+                        4=enable rapid power shutdown, 5=disable rapid power shutdown. (default: None)
+  -d D, --delay D       Wait D seconds between reset and security seed request. You'll likely need to increase this when using RTYPE:
+                        1=hardReset. Does nothing if RTYPE is None. (default: 0.01)
+  -n NUM, --num NUM     Specify a positive number of security seeds to capture before terminating. A '0' is interpreted as infinity.
+                        (default: 0)
+```
+
+Example use for collecting 10 seeds in the Diagnostic Session 0x3 (Extended), and Security Access level 0x3:
+```
+$ caringcaribou uds security_seed -n 10 0x3 0x3 0x7E0 0x7E8
+
+-------------------
+CARING CARIBOU v0.x
+-------------------
+
+Loading module 'uds'
+
+Security seed dump started. Press Ctrl+C to stop.
+
+Seed received: 2190c8e4	(Total captured: 10)
+
+Security Access Seeds captured:
+8ac56231
+178bc5e2
+773b1d8e
+b2592c96
+a251a8d4
+2b95ca65
+eb753a9d
+1b8dc663
+b5daed76
+2190c8e4
+```
+
 
 ## Auto
 Performs a fully automated diagnostics scan from start to finish, by using the already existing CC modules.

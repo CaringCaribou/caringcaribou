@@ -1,4 +1,6 @@
 # DCM
+> _**Note**: This module has been replaced by the [UDS](uds.md) module. It is still supported by CaringCaribou due to legacy reasons._
+
 ```
 $ caringcaribou dcm -h
 

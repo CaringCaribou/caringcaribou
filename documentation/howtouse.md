@@ -30,7 +30,7 @@ optional arguments:
   -i INTERFACE  force interface, e.g. 'can1' or 'vcan0'
 
 available modules:
-  dcm, dump, fuzzer, listener, send, test, xcp
+  dcm, doip, dump, fuzzer, listener, module_template, send, test, uds, uds_fuzz, xcp
 ```
 
 So in order to see usage information for e.g. the `send` module, run
@@ -144,7 +144,7 @@ Loading module 'listener'
 Running listener (press Ctrl+C to exit)
 Last ID: 0x002 (2 unique arbitration IDs found)
 ```
-(stop the listener with Ctrl-C)
+(stop the listener with Ctrl+C)
 ```
 Detected arbitration IDs:
 Arb id 0x001 114 hits

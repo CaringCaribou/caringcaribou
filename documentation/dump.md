@@ -29,7 +29,7 @@ Example usage:
 
 ```
  
-Example use of __dumping to file all messages available on CAN bus:__
+Example of __dumping to file all messages available on CAN bus:__
 ```
 $ caringcaribou dump -f output_all.txt      
 
@@ -66,7 +66,7 @@ Timestamp: 1724010990.107733        ID: 0121    S Rx                DL:  8    a0
 Timestamp: 1724010990.108550        ID: 0120    S Rx                DL:  8    96 02 00 07 00 00 ff 01     Channel: can0
 ```
 
-Example use of __dumping only messages with filtered arbitration ID 0x0a7:__
+Example of __dumping only messages with filtered arbitration ID 0x0a7:__
 ```
 $ caringcaribou dump -f output_filtered.txt 0x0a7      
 
@@ -99,7 +99,7 @@ Timestamp: 1724010939.098445        ID: 00a7    S Rx                DL:  8    74
 Timestamp: 1724010939.108472        ID: 00a7    S Rx                DL:  8    fd f7 dc 73 fd 3d f7 1c     Channel: can0
 ```
 
-Example use of __dumping only messages with filtered arbitration ID 0x0a7 with printing separating line after 1 second of silence on the bus:__
+Example of __dumping only messages with filtered arbitration ID 0x0a7 with printing separating line after 1 second of silence on the bus:__
 ```
 $ caringcaribou dump -s 1 -f output_filtered1.txt 0x0a7      
 
@@ -138,7 +138,7 @@ Timestamp: 1724267097.809346        ID: 00a7    S Rx                DL:  8    c4
 Timestamp: 1724267097.819252        ID: 00a7    S Rx                DL:  8    4d d7 5f 76 fd a1 97 1d     Channel: can0
 ```
 
-Example use of __dumping only messages with filtered arbitration ID 0x0a7 in candump format:__
+Example of __dumping only messages with filtered arbitration ID 0x0a7 in candump format:__
 ```
 $ caringcaribou dump -c -f output_filtered2.txt 0x0a7
 

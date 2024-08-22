@@ -33,7 +33,7 @@ Loading module 'listener'
 Running listener (press Ctrl+C to exit)
 Last ID: 0x002 (2 unique arbitration IDs found)
 ```
-(stop the listener with ctrl-C)
+(stop the listener with Ctrl+C)
 ```
 Detected arbitration IDs:
 Arb id 0x001 114 hits

@@ -83,7 +83,8 @@ def seed_randomness_fuzzer(args):
                         time.sleep(inter)
 
                     else:
-                        print_negative_response_code(response)
+                        nrc = response[2]
+                        print_negative_response_code(nrc)
                         break
 
                 # ECUReset
@@ -163,7 +164,8 @@ def delay_fuzzer(args):
                         stdout.flush()
 
                     else:
-                        print_negative_response_code(response)
+                        nrc = response[2]
+                        print_negative_response_code(nrc)
                         break
 
                 # ECUReset

@@ -83,6 +83,7 @@ def seed_randomness_fuzzer(args):
                         time.sleep(inter)
 
                     else:
+                        # Negative response handling
                         nrc = response[2]
                         print_negative_response_code(nrc)
                         break
@@ -164,6 +165,7 @@ def delay_fuzzer(args):
                         stdout.flush()
 
                     else:
+                        # Negative response handling
                         nrc = response[2]
                         print_negative_response_code(nrc)
                         break

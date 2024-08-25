@@ -1,6 +1,6 @@
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
 from caringcaribou.utils.iso14229_1 import Iso14229_1
-from caringcaribou.modules.uds import ecu_reset, print_negative_response, request_seed, extended_session
+from caringcaribou.modules.uds import ecu_reset, print_negative_response_code, request_seed, extended_session
 from sys import stdout
 import argparse
 import time
@@ -83,7 +83,9 @@ def seed_randomness_fuzzer(args):
                         time.sleep(inter)
 
                     else:
-                        print_negative_response(response)
+                        # Negative response handling
+                        nrc = response[2]
+                        print_negative_response_code(nrc)
                         break
 
                 # ECUReset
@@ -163,7 +165,9 @@ def delay_fuzzer(args):
                         stdout.flush()
 
                     else:
-                        print_negative_response(response)
+                        # Negative response handling
+                        nrc = response[2]
+                        print_negative_response_code(nrc)
                         break
 
                 # ECUReset

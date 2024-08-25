@@ -1,13 +1,16 @@
+import argparse
+import datetime
+import time
+
+from sys import stdout, stderr
+from typing import List
+
 from caringcaribou.utils.can_actions import auto_blacklist
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex
 from caringcaribou.utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
 from caringcaribou.utils.constants import ARBITRATION_ID_MIN
+from caringcaribou.utils.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, ServiceID, Services
 from caringcaribou.utils.iso15765_2 import IsoTp
-from caringcaribou.utils.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, Services, ServiceID
-from sys import stdout, stderr
-import argparse
-import datetime
-import time
 
 UDS_SERVICE_NAMES = {
     0x10: "DIAGNOSTIC_SESSION_CONTROL",
@@ -137,6 +140,19 @@ def print_negative_response_code(nrc):
     """
     nrc_name = get_negative_response_code_name(nrc)
     print(f"Negative Response Code (NRC): {hex(nrc)} - {nrc_name}")
+
+
+def process_negative_response(response: List[int]) -> None:
+    """
+    Processes a UDS negative response.
+
+    :param response: UDS response represented as list of integers
+    :type response: List[int]
+
+    :return: Nothing
+    """
+    if Iso14229_1.is_negative_response(response):
+        print_negative_response_code(response[2])
 
 
 def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
@@ -681,8 +697,7 @@ def __ecu_reset_wrapper(args):
                                              reset_type))
         else:
             # Negative response handling
-            nrc = response[2]
-            print_negative_response_code(nrc)
+            process_negative_response(response)
 
 
 def __security_seed_wrapper(args):
@@ -720,8 +735,7 @@ def __security_seed_wrapper(args):
                 stdout.flush()
             else:
                 # Negative response handling
-                nrc = response[2]
-                print_negative_response_code(nrc)
+                process_negative_response(response)
                 break
             if reset_type:
                 ecu_reset(arb_id_request, arb_id_response, reset_type, None)
@@ -1227,8 +1241,7 @@ def read_memory(arb_id_request, arb_id_response, timeout,
                 elif response:
                     print(f"Could not dump 0x{mem_size:04x} bytes of memory from address 0x{identifier:08x} - "
                           f"received response: {bytes(response).hex(' ')}")
-                    nrc = response[2]
-                    print_negative_response_code(nrc)
+                    process_negative_response(response)
                     # This would be a good place to add code to unlock the ECU (if you know how and have the key)
                     # but to keep this general, we'll just notify user
             if print_results:

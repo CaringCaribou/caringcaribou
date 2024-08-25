@@ -48,6 +48,7 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
         self.assertEqual(response_sid, expected_response_sid, "Response SID (SIDPR) '{0}' does not match expected "
                                                               "value '{1}'".format(hex(response_sid),
                                                                                    hex(expected_response_sid)))
+        self.assertFalse(self.diagnostics.is_negative_response(response))
         self.assertTrue(self.diagnostics.is_positive_response(response))
         self.assertListEqual(response_data, expected_data)
 
@@ -65,6 +66,7 @@ class DiagnosticsOverIsoTpTestCase(unittest.TestCase):
         request_sid = response[1]
         self.assertEqual(request_sid, service_id, "Request SID (SIDRQ) of response does not match expected value")
         self.assertFalse(self.diagnostics.is_positive_response(response))
+        self.assertTrue(self.diagnostics.is_negative_response(response))
         response_nrc = response[2]
         self.assertEqual(response_nrc, expected_nrc, "NRC of response does not match expected value")
 

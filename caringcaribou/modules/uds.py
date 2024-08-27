@@ -3,7 +3,6 @@ import datetime
 import time
 
 from sys import stdout, stderr
-from typing import List
 
 from caringcaribou.utils.can_actions import auto_blacklist
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex
@@ -142,12 +141,12 @@ def print_negative_response_code(nrc):
     print(f"Negative Response Code (NRC): {hex(nrc)} - {nrc_name}")
 
 
-def process_negative_response(response: List[int]) -> None:
+def process_negative_response(response: list[int]) -> None:
     """
     Processes a UDS negative response.
 
     :param response: UDS response represented as list of integers
-    :type response: List[int]
+    :type response: `list[int]`
 
     :return: Nothing
     """

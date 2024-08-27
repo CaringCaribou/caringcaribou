@@ -1,7 +1,5 @@
 import time
 
-from typing import List
-
 
 class DynamicallyDefinedIdentifierArg(object):
     def __init__(self, source_data_identifier,
@@ -295,26 +293,30 @@ class Iso14229_1(object):
         return response
 
     @staticmethod
-    def is_positive_response(response: List[int]) -> bool:
+    def is_positive_response(response: list[int]) -> bool:
         """
         Returns a bool indicating whether 'response' is positive
 
         :param response: ISO-14229-1 response data
-        :return: False if response is a NEGATIVE_RESPONSE, True otherwise
-        :rtype: bool
+        :type response: `list[int]`
+
+        :return: True if response is POSITIVE_RESPONSE, False otherwise
+        :rtype: `bool`
         """
         return response is not None and len(response) >= 2 and response[0] != Constants.NR_SI
 
     @staticmethod
-    def is_negative_response(response: List[int]) -> bool:
+    def is_negative_response(response: list[int]) -> bool:
         """
         Returns a bool indicating whether 'response' is negative
 
         :param response: ISO-14229-1 response data
+        :type response: `list[int]`
+
         :return: True if response is a NEGATIVE_RESPONSE, False otherwise
-        :rtype: bool
+        :rtype: `bool`
         """
-        return response is not None and len(response) >= 3 and response[0] == Constants.NR_SI
+        return response is not None and len(response) == 3 and response[0] == Constants.NR_SI
 
     def read_data_by_identifier(self, identifier):
         """

@@ -146,7 +146,7 @@ def process_negative_response(response: list[int]) -> None:
     Processes a UDS negative response.
 
     :param response: UDS response represented as list of integers
-    :type response: `list[int]`
+    :type response: list[int]
 
     :return: Nothing
     """

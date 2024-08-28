@@ -298,10 +298,10 @@ class Iso14229_1(object):
         Returns a bool indicating whether 'response' is positive
 
         :param response: ISO-14229-1 response data
-        :type response: `list[int]`
+        :type response: list[int]
 
         :return: True if response is POSITIVE_RESPONSE, False otherwise
-        :rtype: `bool`
+        :rtype: bool
         """
         return response is not None and len(response) >= 2 and response[0] != Constants.NR_SI
 
@@ -311,10 +311,10 @@ class Iso14229_1(object):
         Returns a bool indicating whether 'response' is negative
 
         :param response: ISO-14229-1 response data
-        :type response: `list[int]`
+        :type response: list[int]
 
         :return: True if response is a NEGATIVE_RESPONSE, False otherwise
-        :rtype: `bool`
+        :rtype: bool
         """
         return response is not None and len(response) == 3 and response[0] == Constants.NR_SI
 

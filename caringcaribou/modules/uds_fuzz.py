@@ -1,9 +1,11 @@
-from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
-from caringcaribou.utils.iso14229_1 import Iso14229_1
-from caringcaribou.modules.uds import ecu_reset, print_negative_response_code, request_seed, extended_session
-from sys import stdout
 import argparse
 import time
+
+from sys import stdout
+
+from caringcaribou.modules.uds import ecu_reset, extended_session, process_negative_response, request_seed
+from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex, str_to_int_list
+from caringcaribou.utils.iso14229_1 import Iso14229_1
 
 # Number of seconds to wait between messages
 DELAY_SECSEED_RESET = 0.011
@@ -84,8 +86,7 @@ def seed_randomness_fuzzer(args):
 
                     else:
                         # Negative response handling
-                        nrc = response[2]
-                        print_negative_response_code(nrc)
+                        process_negative_response(response)
                         break
 
                 # ECUReset
@@ -166,8 +167,7 @@ def delay_fuzzer(args):
 
                     else:
                         # Negative response handling
-                        nrc = response[2]
-                        print_negative_response_code(nrc)
+                        process_negative_response(response)
                         break
 
                 # ECUReset

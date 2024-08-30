@@ -51,7 +51,12 @@ setup(
             "uds = caringcaribou.modules.uds",
             "xcp = caringcaribou.modules.xcp",
         ]
-    }
+    },
+    extras_require={
+        'dev': [
+            'pytest',
+        ],
+    },
 )
 
 print(r"""-------------------------------------------------------------------

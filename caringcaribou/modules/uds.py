@@ -491,7 +491,7 @@ def sub_discovery(arb_id_request, arb_id_response, diagnostic, service, timeout,
                       status != NegativeResponseCodes.SUB_FUNCTION_NOT_SUPPORTED):
                     # Any other response than "service not supported" counts
                     found_subservices.append(i)
-                    subservice_status.append(response_service_id)
+                    subservice_status.append(status)
 
             time.sleep(timeout)
 

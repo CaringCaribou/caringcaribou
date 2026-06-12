@@ -73,7 +73,17 @@ class IsoTp:
 
     def set_filter_single_arbitration_id(self, arbitration_id):
         """Set a filter to only receive incoming messages on 'arbitration_id'"""
-        arbitration_id_filter = [{"can_id": arbitration_id, "can_mask": ARBITRATION_ID_MAX_EXTENDED}]
+        if arbitration_id > ARBITRATION_ID_MAX:
+            extended = True
+        else:
+            extended = False
+        arbitration_id_filter = [
+            {
+                "can_id": arbitration_id,
+                "can_mask": ARBITRATION_ID_MAX_EXTENDED,
+                "extended": extended
+            }
+        ]
         self._set_filters(arbitration_id_filter)
 
     def clear_filters(self):
